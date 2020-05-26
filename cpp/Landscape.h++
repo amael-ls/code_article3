@@ -19,7 +19,7 @@ class Landscape
 	friend class Population;
 	public :
 		// constructors
-		Landscape(std::string const& filenamePattern, std::string const& metadataFile);
+		Landscape(std::string const& metadataFile);
 
 	private :
 		// Files' name
