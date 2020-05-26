@@ -16,6 +16,9 @@
 // Shortcut namespace
 namespace fs = std::experimental::filesystem;
 
+// Environment* env = new Environment("../createParams/climate_2.txt", " = ");
+// 	std::cout << *env << std::endl;
+
 /****************************************/
 /******        Constructors        ******/
 /****************************************/
@@ -30,8 +33,6 @@ Landscape::Landscape(std::string const& metadataFile):
 	m_path = metadata.get_val<std::string>("path");
 	std::string delimiter = metadata.get_val<std::string>("delimiter");
 	std::string filenamePattern = metadata.get_val<std::string>("filenamePattern");
-
-	std::cout << metadata << std::endl;
 	
 	// Fill the environment
 	std::string filename;
@@ -54,8 +55,18 @@ Landscape::Landscape(std::string const& metadataFile):
 	}
 
 	if (counter < m_dim)
-		throw except_Landscape(m_dim);
+		throw except_Landscape(m_dim, counter);
 }
 
+/************************************/
+/******        Overload        ******/
+/************************************/
+Environment& Landscape::operator[] (int const i)
+{
+	if (i > m_dim)
+		throw except_Landscape(m_dim, i);
+
+	return m_envVec[i];
+}
 
 #endif

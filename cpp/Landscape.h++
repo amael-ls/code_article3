@@ -21,6 +21,10 @@ class Landscape
 		// constructors
 		Landscape(std::string const& metadataFile);
 
+		// Overloading
+		Environment& operator[] (int const i);
+		Environment* operator() (int const i);
+
 	private :
 		// Files' name
 		std::string const m_filenamePattern;
