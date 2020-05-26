@@ -13,7 +13,6 @@ class except_Landscape : public std::exception
 	public:
 		except_Landscape(int const dim);
 		except_Landscape(int const dim, std::string const& filename);
-		except_Landscape(int const dim, std::vector<Environment>::iterator const current, std::vector<Environment>::iterator const endVec);
 		const char* what() const throw();
 
 	private:
