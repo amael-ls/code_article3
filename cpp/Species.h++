@@ -34,7 +34,7 @@ class Species
 	public :
 		// constructors
 		// Species();
-		Species(const char* species_name, const std::string& delim);
+		Species(std::string const& species_filename, std::string const& species_path, const std::string& delim);
 
 		// friend functions and overload
 		// Species& operator=(const Species& species);

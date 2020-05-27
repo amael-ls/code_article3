@@ -13,32 +13,37 @@
 /****************************************/
 /******        Constructors        ******/
 /****************************************/
-Species::Species(const char* species_name, const std::string& delim)
+Species::Species(std::string const& species_filename, std::string const& species_path, const std::string& delim)
 {
+	// Read species' main file from the parameters got at the execution
+	std::string file_sp = species_path + species_filename;
+	par::Params speciesParams(file_sp.c_str(), delim);
+
+	// Species name
+	m_speciesName = speciesParams.get_val<std::string>("species");
+
 	// Create the files' name for a given species
-	std::string file_sp = species_name;
-	file_sp.append(".txt");
-	std::string file_G = species_name;
+	std::string file_G = species_path + m_speciesName;
 	file_G.append("_G.txt");
-	std::string file_M = species_name;
+
+	std::string file_M = species_path + m_speciesName;
 	file_M.append("_M.txt");
-	std::string file_allometries = species_name;
+
+	std::string file_allometries = species_path + m_speciesName;
 	file_allometries.append("_allometries.txt");
-	std::string file_scaling_G = species_name;
+
+	std::string file_scaling_G = species_path + m_speciesName;
 	file_scaling_G.append("_scaling_G.txt");
-	std::string file_scaling_M = species_name;
+
+	std::string file_scaling_M = species_path + m_speciesName;
 	file_scaling_M.append("_scaling_M.txt");
 
 	// Load parameters from files
-	par::Params speciesParams(file_sp.c_str(), delim);
 	par::Params speciesParams_G(file_G.c_str(), delim);
 	par::Params speciesParams_M(file_M.c_str(), delim);
 	par::Params speciesParams_allometries(file_allometries.c_str(), delim);
 	par::Params speciesParams_scaling_G(file_scaling_G.c_str(), delim);
 	par::Params speciesParams_scaling_M(file_scaling_M.c_str(), delim);
-
-	// Species name
-	m_speciesName = speciesParams.get_val<std::string>("species");
 
 	// Allometry parameters (height from dbh)
 	a = speciesParams_allometries.get_val<double>("a");
