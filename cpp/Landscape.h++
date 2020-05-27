@@ -22,8 +22,7 @@ class Landscape
 		Landscape(std::string const& metadataFile);
 
 		// Overloading
-		Environment& operator[] (int const i);
-		Environment* operator() (int const i);
+		Environment* operator[] (int const i);
 
 	private :
 		// Files' name
@@ -35,7 +34,7 @@ class Landscape
 		unsigned int m_nRow, m_nCol, m_dim;
 
 		// Vector of environment
-		std::vector<Environment> m_envVec;
+		std::vector<Environment*> m_envVec;
 };
 
 #endif

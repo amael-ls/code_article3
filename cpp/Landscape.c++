@@ -37,7 +37,7 @@ Landscape::Landscape(std::string const& metadataFile):
 	// Fill the environment
 	std::string filename;
 	unsigned int counter = 0;
-	std::vector<Environment>::iterator counter_it = m_envVec.begin();
+	std::vector<Environment*>::iterator counter_it = m_envVec.begin();
 
 	for(auto& p: fs::directory_iterator(m_path))
 	{
@@ -46,25 +46,26 @@ Landscape::Landscape(std::string const& metadataFile):
 		{
 			filename = m_path + "/" + filename;
 			std::cout << filename << std::endl;
-			m_envVec.emplace(counter_it, Environment(filename, delimiter));
+			Environment* env = new Environment(filename, delimiter);
+			m_envVec.emplace(counter_it, env);
 			++counter_it;
 			++counter;
 			if (counter > m_dim)
-				throw except_Landscape(m_dim, filename);
+				throw Except_Landscape(m_dim, filename);
 		}
 	}
 
 	if (counter < m_dim)
-		throw except_Landscape(m_dim, counter);
+		throw Except_Landscape(m_dim, counter);
 }
 
 /************************************/
 /******        Overload        ******/
 /************************************/
-Environment& Landscape::operator[] (int const i)
+Environment* Landscape::operator[] (int const i)
 {
 	if (i > m_dim)
-		throw except_Landscape(m_dim, i);
+		throw Except_Landscape(m_dim, i);
 
 	return m_envVec[i];
 }
