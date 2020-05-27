@@ -17,65 +17,71 @@
 
 // CODER RK4, JE PENSE QU'EULER EST TROP INSTABLE
 int main(int argc, char *argv[])
-{
-	Landscape test("f1.txt", "f2.txt");
-	// auto start = std::chrono::high_resolution_clock::now();
-	// std::cout << "Program " << argv[0] << " is running" << std::endl;
-	// std::cout << "Number of arguments: " << argc - 1 << std::endl;
-	//
-	// if (argc != 2)
-	// {
-	// 	std::cout << "ERROR (from main): missing argument" << std::endl;
-	// 	std::cout << "prototype: ./" << argv[0] << " simulationParameters.txt" << std::endl;
-	// 	exit(EXIT_FAILURE);
-	// }
-	//
-	// par::Params simulationParameters(argv[1], ":");
-	// std::cout << simulationParameters << std::endl;
-	//
-	// double maxCohorts = simulationParameters.get_val<double>("maxCohorts");
-	// double n_t = simulationParameters.get_val<double>("n_t");
-	// double t0 = simulationParameters.get_val<double>("t0");
-	// double t_max = simulationParameters.get_val<double>("t_max");
-	//
-	// Species* sp = new Species("../createParams/Populus_tremuloides", " = "); // Be extremely careful with the delimiter, especially white spaces
-	// // std::cout << *sp << std::endl;
-	//
-	// Environment* env = new Environment("../createParams/climate_2.txt", " = ");
-	// std::cout << *env << std::endl;
-	//
-	// try
-	// {
-	// 	Population pop2(maxCohorts, sp, "../createIC/ic_1.txt", env);
-	//
-	// 	pop2.sort(true);
-	// 	std::ofstream os_init("init.txt", std::ofstream::out);
-	// 	std::ofstream os_end("end.txt", std::ofstream::out);
-	// 	os_init << "density dbh" << std::endl;
-	// 	os_init << pop2;
-	// 	try
-	// 	{
-	// 		pop2.euler(n_t, t0, t_max);
-	// 	}
-	// 	catch (std::out_of_range & ex_oor)
-	// 	{
-	// 		std::cerr << "Error occured: " << ex_oor.what() << std::endl;
-	// 	}
-	// 	os_end << "density dbh" << std::endl;
-	// 	os_end << pop2;
-	// }
-	// catch (std::out_of_range & ex_oor)
-	// {
-	// 	std::cerr << "Error occured: " << ex_oor.what() << std::endl;
-	// }
-	// catch (std::runtime_error & ex_rt)
-	// {
-	// 	std::cerr << "Error occured: " << ex_rt.what() << std::endl;
-	// }
-	//
-	// auto finish = std::chrono::high_resolution_clock::now();
-	// std::chrono::duration<double> elapsed = finish - start;
-	// std::cout << "Elapsed time: " << elapsed.count() << " s" << std::endl;
+{	
+	auto start = std::chrono::high_resolution_clock::now();
+	std::cout << "Program " << argv[0] << " is running" << std::endl;
+	std::cout << "Number of arguments: " << argc - 1 << std::endl;
+	
+	if (argc != 2)
+	{
+		std::cout << "ERROR (from main): missing argument" << std::endl;
+		std::cout << "prototype: ./" << argv[0] << " simulationParameters.txt" << std::endl;
+		exit(EXIT_FAILURE);
+	}
+	
+	par::Params simulationParameters(argv[1], ":");
+	std::cout << simulationParameters << std::endl;
+	
+	double maxCohorts = simulationParameters.get_val<double>("maxCohorts");
+	double n_t = simulationParameters.get_val<double>("n_t");
+	double t0 = simulationParameters.get_val<double>("t0");
+	double t_max = simulationParameters.get_val<double>("t_max");
+	
+	Species* sp = new Species("../createParams/Populus_tremuloides", " = "); // Be extremely careful with the delimiter, especially white spaces
+	// std::cout << *sp << std::endl;
+
+	try
+	{
+		Landscape land("landscapeData.txt");
+		std::cout << *(land[0]) << std::endl;
+		try
+		{
+			Population pop2(maxCohorts, sp, "../createIC/ic_1.txt", land[0]);
+		
+			// pop2.sort(true);
+			// std::ofstream os_init("init.txt", std::ofstream::out);
+			// std::ofstream os_end("end.txt", std::ofstream::out);
+			// os_init << "density dbh" << std::endl;
+			// os_init << pop2;
+			// try
+			// {
+			// 	pop2.euler(n_t, t0, t_max);
+			// }
+			// catch (std::out_of_range & ex_oor)
+			// {
+			// 	std::cerr << "Error occurred: " << ex_oor.what() << std::endl;
+			// }
+			// os_end << "density dbh" << std::endl;
+			// os_end << pop2;
+		}
+		catch (std::out_of_range & ex_oor)
+		{
+			std::cerr << "Error occurred: " << ex_oor.what() << std::endl;
+		}
+		catch (std::runtime_error & ex_rt)
+		{
+			std::cerr << "Error occurred: " << ex_rt.what() << std::endl;
+		}
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		exit(EXIT_FAILURE);
+	}
+	
+	auto finish = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed = finish - start;
+	std::cout << "Elapsed time: " << elapsed.count() << " s" << std::endl;
 	return 0;
 }
 

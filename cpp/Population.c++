@@ -37,43 +37,25 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 	m_cohortsVec(maxCohorts), m_species(sp), m_env(env)
 {
 	if (m_maxCohorts < m_nonZeroCohort)
+		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
+
+	for (unsigned int i = 0; i < m_nonZeroCohort; ++i)
 	{
-		std::stringstream ss;
-		ss << "Error (from constructor): dimensions mismatch. maxCohort = " << m_maxCohorts;
-		ss << " nonZeroCohort = " << m_nonZeroCohort << std::endl;
-		throw(std::out_of_range (ss.str()));
+		m_cohortsVec[i].m_lambda = lambda[i];
+		m_cohortsVec[i].m_mu = mu[i];
+		m_cohortsVec[i].m_species = m_species;
 	}
 
-	try
+	for (unsigned int i = m_nonZeroCohort; i < m_maxCohorts; ++i)
 	{
-		for (unsigned int i = 0; i < m_nonZeroCohort; ++i)
-		{
-			m_cohortsVec[i].m_lambda = lambda[i];
-			m_cohortsVec[i].m_mu = mu[i];
-			m_cohortsVec[i].m_species = m_species;
-		}
-
-		for (unsigned int i = m_nonZeroCohort; i < m_maxCohorts; ++i)
-		{
-			m_cohortsVec[i].m_lambda = 0;
-			m_cohortsVec[i].m_mu = 0;
-			m_cohortsVec[i].m_species = m_species;
-		}
-	}
-	catch(const std::out_of_range& ex)
-	{
-		std::stringstream ss;
-		ss << "Error (from Constructor): maximum population size exceded" << ex.what();
-		throw (std::runtime_error (ss.str()));
+		m_cohortsVec[i].m_lambda = 0;
+		m_cohortsVec[i].m_mu = 0;
+		m_cohortsVec[i].m_species = m_species;
 	}
 
 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
 	if (m_s_inf < tallest_tree)
-	{
-		std::stringstream ss;
-		ss << "Error (from constructor): s_inf = " << m_s_inf << " must be larger than the tallest tree (" << tallest_tree << ")";
-		throw(std::out_of_range (ss.str()));
-	}
+		throw(Except_Population(m_s_inf, tallest_tree, ""));
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
@@ -86,19 +68,10 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 {
 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
 	if (m_s_inf < tallest_tree)
-	{
-		std::stringstream ss;
-		ss << "Error (from constructor): s_inf = " << m_s_inf << " must be larger than the tallest tree (" << tallest_tree << ")";
-		throw(std::out_of_range (ss.str()));
-	}
+		throw(Except_Population(m_s_inf, tallest_tree, ""));
 
 	if (m_maxCohorts < m_nonZeroCohort)
-	{
-		std::stringstream ss;
-		ss << "Error (from constructor): maxCohorts = " << m_maxCohorts << " must be larger than";
-		ss << " m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
-		throw(std::out_of_range (ss.str()));
-	}
+		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
 
 	 // Set species to each cohort
 	for (cohort_it it = m_cohortsVec.begin(); it != m_cohortsVec.end(); ++it)

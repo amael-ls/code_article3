@@ -44,6 +44,12 @@ Except_Population::Except_Population(int const maxCohorts, std::string const& fi
 	m_error_msg += "number of cohorts from file = " + filename + " exceeds maximum number = " + std::to_string(m_maxCohorts) + "\n";
 }
 
+Except_Population::Except_Population(int const maxCohorts, int const nonZero):
+	m_s_inf(-1), m_maxCohorts(maxCohorts)
+{
+	m_error_msg += "number of non zero cohorts = " + std::to_string(nonZero) + " exceeds maximum number = " + std::to_string(m_maxCohorts) + "\n";
+}
+
 const char* Except_Population::what() const throw()
 {
 	return (m_error_msg.c_str());
