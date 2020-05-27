@@ -86,9 +86,6 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 	m_maxCohorts(maxCohorts), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
 	m_species(sp), m_env(env)
 {
-	// std::cout << "From constr" << std::endl;
-	// std::cout << *env << std::endl;
-
 	std::ifstream inputFile(fileName);
 	if(!inputFile.is_open())
 	{
@@ -124,11 +121,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 			throw(Except_Population(m_maxCohorts, fileName));
 	}
 
-	std::cout << "non zero cohorts = " << m_nonZeroCohort << std::endl;
-	std::cout << "maximum cohorts allowed = " << m_maxCohorts << std::endl;
-
 	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
-	std::cout << "Size cohorts = " << m_cohortsVec.size() << std::endl;
 	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
 		m_cohortsVec.emplace_back(Cohort(sp));
 	
@@ -178,7 +171,7 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 	if(!outputCompReprod.is_open() || !outputPopTime.is_open())
 	{
 		std::stringstream ss;
-		ss << "*** ERROR (from Population::euler): cannot open file";
+		ss << "*** ERROR (from Population::euler): cannot open output files";
 		throw (std::runtime_error (ss.str()));
 	}
 
@@ -193,11 +186,7 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 			this->mergeCohorts(m_delta_s/8, 0.001);
 
 		if (m_maxCohorts < m_nonZeroCohort)
-		{
-			std::stringstream ss;
-			ss << "Error (from Euler): Index = " << m_nonZeroCohort << " out of boundaries. maxCohort = " << m_maxCohorts << std::endl;
-			throw(std::out_of_range (ss.str()));
-		}
+			throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
 
 		t = t0 + i*delta_t; // i starts at 0, hence it is explicit Euler
 		outputCompReprod << t + delta_t << " "; // I write t_{n + 1}, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)

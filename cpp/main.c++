@@ -29,49 +29,50 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	
-	par::Params simulationParameters(argv[1], ":");
+	par::Params simulationParameters(argv[1], ": "); // Be extremely careful with the delimiter, especially white spaces
 	std::cout << simulationParameters << std::endl;
 	
 	double maxCohorts = simulationParameters.get_val<double>("maxCohorts");
 	double n_t = simulationParameters.get_val<double>("n_t");
 	double t0 = simulationParameters.get_val<double>("t0");
 	double t_max = simulationParameters.get_val<double>("t_max");
+	std::string climate_file = simulationParameters.get_val<std::string>("climate_file");
+	std::string species_filenames = simulationParameters.get_val<std::string>("species_filenames");
+	std::string species_path = simulationParameters.get_val<std::string>("species_path");
 	
-	Species* sp = new Species("../createParams/Populus_tremuloides", " = "); // Be extremely careful with the delimiter, especially white spaces
+	Species* sp = new Species(species_filenames, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << *sp << std::endl;
 
 	try
 	{
-		Landscape land("landscapeData.txt");
+		Landscape land(climate_file);
 		std::cout << *(land[0]) << std::endl;
 		try
 		{
 			Population pop2(maxCohorts, sp, "../createIC/ic_1.txt", land[0]);
 		
-			// pop2.sort(true);
-			// std::ofstream os_init("init.txt", std::ofstream::out);
-			// std::ofstream os_end("end.txt", std::ofstream::out);
-			// os_init << "density dbh" << std::endl;
-			// os_init << pop2;
-			// try
-			// {
-			// 	pop2.euler(n_t, t0, t_max);
-			// }
-			// catch (std::out_of_range & ex_oor)
-			// {
-			// 	std::cerr << "Error occurred: " << ex_oor.what() << std::endl;
-			// }
-			// os_end << "density dbh" << std::endl;
-			// os_end << pop2;
+			pop2.sort(true);
+			std::ofstream os_init("init.txt", std::ofstream::out);
+			std::ofstream os_end("end.txt", std::ofstream::out);
+			os_init << "density dbh" << std::endl;
+			os_init << pop2;
+			try
+			{
+				pop2.euler(n_t, t0, t_max);
+			}
+			catch (const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+				exit(EXIT_FAILURE);
+			}
+			os_end << "density dbh" << std::endl;
+			os_end << pop2;
 		}
-		catch (std::out_of_range & ex_oor)
-		{
-			std::cerr << "Error occurred: " << ex_oor.what() << std::endl;
-		}
-		catch (std::runtime_error & ex_rt)
-		{
-			std::cerr << "Error occurred: " << ex_rt.what() << std::endl;
-		}
+		catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+		exit(EXIT_FAILURE);
+	}
 	}
 	catch(const std::exception& e)
 	{
