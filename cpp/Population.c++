@@ -11,6 +11,7 @@
 #include <cmath>
 
 // My headers
+#include "Error_classes.h++"
 #include "Population.h++"
 
 // Define typedef shortcuts
@@ -112,6 +113,9 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 	m_maxCohorts(maxCohorts), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
 	m_species(sp), m_env(env)
 {
+	// std::cout << "From constr" << std::endl;
+	// std::cout << *env << std::endl;
+
 	std::ifstream inputFile(fileName);
 	if(!inputFile.is_open())
 	{
@@ -128,14 +132,12 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		ss << "*** ERROR: file <" << fileName << "> must have density and dbh headers";
 		throw (std::runtime_error (ss.str()));
 	}
-
+	
 	double density(0), dbh(0);
 	size_t afterNumVal; // This value is set by std::stod to position of the next character in str after the numerical value
-	m_cohortsVec.resize(m_maxCohorts);
-	std::vector<Cohort>::iterator counter_it = m_cohortsVec.begin();
 	m_nonZeroCohort = 0;
 
-	while(counter_it != m_cohortsVec.end() && inputFile.good()) // Check later, I had a comma ',' instead of '&&'
+	while(inputFile.good())
 	{
 		getline(inputFile, line);
 		if (line.empty())
@@ -143,36 +145,26 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		density = std::stod(line, &afterNumVal);
 		dbh = std::stod(line.substr(afterNumVal));
 
-		m_cohortsVec.emplace(counter_it, Cohort(density, dbh, sp));
-		++counter_it;
+		m_cohortsVec.emplace_back(Cohort(density, dbh, sp));
 		++m_nonZeroCohort;
-	}
-
-	if (m_maxCohorts < m_nonZeroCohort)
-	{
-		std::stringstream ss;
-		ss << "Error (from constructor): maxCohorts = " << m_maxCohorts << " must be larger than";
-		ss << " m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
-		throw(std::out_of_range (ss.str()));
+		if (m_maxCohorts < m_nonZeroCohort)
+			throw(Except_Population(m_maxCohorts, fileName));
 	}
 
 	std::cout << "non zero cohorts = " << m_nonZeroCohort << std::endl;
 	std::cout << "maximum cohorts allowed = " << m_maxCohorts << std::endl;
 
+	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
+	std::cout << "Size cohorts = " << m_cohortsVec.size() << std::endl;
+	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
+		m_cohortsVec.emplace_back(Cohort(sp));
+	
 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
 	if (m_s_inf < tallest_tree)
-	{
-		std::stringstream ss;
-		ss << "Error (from constructor): s_inf = " << m_s_inf << " must be larger than the tallest tree (" << tallest_tree << ")";
-		throw(std::out_of_range (ss.str()));
-	}
+		throw(Except_Population(m_s_inf, tallest_tree, fileName));
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
-
-	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
-	for (; counter_it != m_cohortsVec.end(); ++counter_it)
-		m_cohortsVec.emplace(counter_it, Cohort(sp));
 }
 
 /********************************************/
