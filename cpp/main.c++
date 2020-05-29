@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
 	std::string climate_file = simulationParameters.get_val<std::string>("climate_file");
 	std::string species_filenames = simulationParameters.get_val<std::string>("species_filenames");
 	std::string species_path = simulationParameters.get_val<std::string>("species_path");
+	std::string init_file = simulationParameters.get_val<std::string>("init_file");
 	
 	Species* sp = new Species(species_filenames, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << *sp << std::endl;
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
 		std::cout << *(land[0]) << std::endl;
 		try
 		{
-			Population pop2(maxCohorts, sp, "../createIC/ic_1.txt", land[0]);
+			Population pop2(maxCohorts, sp, init_file, land[0]);
 		
 			pop2.sort(true);
 			std::ofstream os_init("init.txt", std::ofstream::out);

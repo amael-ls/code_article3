@@ -58,7 +58,8 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		throw(Except_Population(m_s_inf, tallest_tree, ""));
 
 	this->sort(true); // true to sort by decreasing size
-	this->competition();
+	// this->competition();
+	this->competition(0);
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
@@ -78,7 +79,8 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		it->m_species = m_species;
 
 	this->sort(true); // true to sort by decreasing size
-	this->competition();
+	// this->competition();
+	this->competition(0);
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
@@ -130,7 +132,8 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		throw(Except_Population(m_s_inf, tallest_tree, fileName));
 
 	this->sort(true); // true to sort by decreasing size
-	this->competition();
+	// this->competition();
+	this->competition(0);
 }
 
 /********************************************/
@@ -207,7 +210,8 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 
 		// std::cout << "m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
 		// Compute competition, basal area, and total density
-		this->competition();
+		// this->competition();
+		this->competition(t);
 		this->totalDensity_basalArea();
 		outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 
@@ -228,17 +232,20 @@ to estimate (check his Appendix2: Parameter estimation)
 double Population::reproduction()
 {
 	double popReprod = 0;
-	c_cohort_it it = m_cohortsVec.cbegin();
-	double G0 = m_species->v(0, m_s_star, m_env->annual_mean_temperature, m_env->annual_precipitation);
-	double fecundity = m_species->fecundity;
+	// c_cohort_it it = m_cohortsVec.cbegin();
+	// double G0 = m_species->v(0, m_s_star, m_env->annual_mean_temperature, m_env->annual_precipitation);
+	// // double G0 = 2.0;
+	// double fecundity = m_species->fecundity;
 
-	while (it->m_mu > m_s_star && it != m_cohortsVec.end())
-	{
-		popReprod += it->crownArea(m_s_star) * it->m_lambda;
-		++it;
-	}
+	// while (it->m_mu > m_s_star && it != m_cohortsVec.end())
+	// {
+	// 	// popReprod += it->crownArea(m_s_star) * it->m_lambda;
+	// 	popReprod += std::exp(-it->m_mu) * it->m_lambda;
+	// 	++it;
+	// }
 
-	popReprod *= fecundity/G0;
+	// // popReprod *= fecundity/G0;
+	// popReprod *= 1/G0;
 	return popReprod;
 }
 
@@ -266,7 +273,7 @@ void Population::competition()
 		// Reset the values
 		summedArea = 0;
 		it_cohort = m_cohortsVec.cbegin();
-		while ((it_cohort != m_cohortsVec.cend()) && (it_cohort->m_mu >= m_s_star))
+		while ((it_cohort->m_mu >= m_s_star) && (it_cohort != m_cohortsVec.cend()))
 		{
 			// crown area evaluated at s* given cohort of size m_mu, multiplied by density m_lambda of the cohort
 			summedArea = it_cohort->crownArea(m_s_star)*it_cohort->m_lambda;
@@ -276,6 +283,11 @@ void Population::competition()
 	}
 	if (m_s_star < 0)
 		m_s_star = 0;
+}
+
+void Population::competition(double const t)
+{
+	m_s_star = 0; // std::sqrt(1 - 2*m_species->d(0, 0, 0, 0)*t) - 1; // death rate is constant, so no problem
 }
 
 /* To compute the basal area of the community and the 'number of individuals'

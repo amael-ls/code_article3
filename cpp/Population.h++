@@ -53,6 +53,7 @@ class Population
 			std::string const& outCompReprod = "compReprod.txt", std::string const& popTimeFile = "popDyn.txt");
 		double reproduction();
 		void competition();
+		void competition(double const t);
 		void totalDensity_basalArea();
 
 		// Overloading
@@ -69,7 +70,7 @@ class Population
 		unsigned int m_maxCohorts; // maximal number of cohorts
 		unsigned int m_nonZeroCohort; // Number of non empty cohorts
 		// std::vector<Cohort>::iterator m_lastReproducer; // Last cohort able to reproduce (given sorted by decreasing order)
-		double const m_s_inf, m_delta_s;
+		double const m_s_inf, m_delta_s; // max possible size and size step for integration
 		std::vector<Cohort> m_cohortsVec; // The population of cohorts
 		Species* const m_species; // The pointer is constant, as a population shall not change species
 		Environment* const m_env; // The pointer is constant, as a population shall not change environment (but Temp/precip in Env could be dynamic)

@@ -127,34 +127,38 @@ Species::Species(std::string const& species_filename, std::string const& species
 // Individual growth rate (Checked, it equals the lme4 prediction)
 double Species::v(double s, double const s_star, double temp, double precip) const
 {
-	/*
-		It is assumed that none of the variables is scaled.
-	*/
-	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
+	// /*
+	// 	It is assumed that none of the variables is scaled.
+	// */
+	// bool cs = s_star < s; // ? false : true;
+	// double beta_0, beta_1, beta_2;
 
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_G)/scaling_dbh_sd_G;
-	temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
-	precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
+	// // Scaling all the variables (size, temperature and precipitation)
+	// s = (s - scaling_dbh_mu_G)/scaling_dbh_sd_G;
+	// temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
+	// precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
 
-	// Define the coefficient of the polynom of s
-	beta_0 = intercept_G +
-	(beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
-		beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
-	beta_T*temp + beta_T_sq*temp*temp + beta_P*precip + beta_P_sq*precip*precip;
+	// // Define the coefficient of the polynom of s
+	// beta_0 = intercept_G +
+	// (beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
+	// 	beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
+	// beta_T*temp + beta_T_sq*temp*temp + beta_P*precip + beta_P_sq*precip*precip;
 
-	beta_1 = beta_dbh + beta_dbh_T*temp + beta_dbh_T_sq*temp*temp +
-		beta_dbh_P*precip + beta_dbh_P_sq*precip*precip;
+	// beta_1 = beta_dbh + beta_dbh_T*temp + beta_dbh_T_sq*temp*temp +
+	// 	beta_dbh_P*precip + beta_dbh_P_sq*precip*precip;
 
-	beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
-		beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
+	// beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
+	// 	beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
 
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
+	// // Polynom of s (order 2)
+	// double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
 
-	// Growth function
-	return std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
+	// // Growth function
+	// return std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
+
+	// double results = ((2 + s_star)*std::exp(-s_star))/(1 + s); // with feedback loop
+	double results = 2/(1 + s); // without feedback loop
+	return (results);
 }
 
 // Individual death rate // mean(aa) = 0.7318187
@@ -164,27 +168,29 @@ double Species::d(double s, double const s_star, double temp, double precip) con
 		It is assumed that none of the variables is scaled.
 	*/
 
-	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
+	// bool cs = s_star < s; // ? false : true;
+	// double beta_0, beta_1, beta_2;
 
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
-	temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
-	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
+	// // Scaling all the variables (size, temperature and precipitation)
+	// s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
+	// temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
+	// precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
 
-	// Define the coefficient of the polynom of s
-	beta_0 = intercept_M +
-	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
-		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
-	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
+	// // Define the coefficient of the polynom of s
+	// beta_0 = intercept_M +
+	// (beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
+	// 	+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
+	// beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
 
-	beta_1 = beta_dbh_M;
+	// beta_1 = beta_dbh_M;
 
-	beta_2 = beta_dbh_sq_M;
+	// beta_2 = beta_dbh_sq_M;
 
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
-	return 1 / (1 + std::exp(-dbh_polynom));
+	// // Polynom of s (order 2)
+	// double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
+	// return 1 / (1 + std::exp(-dbh_polynom));
+
+	return (0.3);
 }
 
 // Differentiate individual growth rate
@@ -203,30 +209,34 @@ double Species::dv_ds(double s, double const s_star, double temp, double precip)
 		‘leave’ s* as understory trees.
 	*/
 
-	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
+	// bool cs = s_star < s; // ? false : true;
+	// double beta_0, beta_1, beta_2;
 
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_G)/scaling_dbh_sd_G;
-	temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
-	precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
+	// // Scaling all the variables (size, temperature and precipitation)
+	// s = (s - scaling_dbh_mu_G)/scaling_dbh_sd_G;
+	// temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
+	// precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
 
-	// Define the coefficient of the polynom of s
-	beta_0 = intercept_G +
-	(beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
-		beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
-	beta_T*temp + beta_T_sq*temp*temp + beta_P*precip + beta_P_sq*precip*precip;
+	// // Define the coefficient of the polynom of s
+	// beta_0 = intercept_G +
+	// (beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
+	// 	beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
+	// beta_T*temp + beta_T_sq*temp*temp + beta_P*precip + beta_P_sq*precip*precip;
 
-	beta_1 = beta_dbh + beta_dbh_T*temp + beta_dbh_T_sq*temp*temp +
-		beta_dbh_P*precip + beta_dbh_P_sq*precip*precip;
+	// beta_1 = beta_dbh + beta_dbh_T*temp + beta_dbh_T_sq*temp*temp +
+	// 	beta_dbh_P*precip + beta_dbh_P_sq*precip*precip;
 
-	beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
-		beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
+	// beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
+	// 	beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
 
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
+	// // Polynom of s (order 2)
+	// double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
 
-	return scaling_G_sd*(beta_1 + 2*beta_2*s) * std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
+	// return scaling_G_sd*(beta_1 + 2*beta_2*s) * std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
+
+	// double results = -((2 + s_star)*std::exp(-s_star))/((1 + s)*(1 + s)); // with feedback loop
+	double results = -2/((1 + s)*(1 + s)); // without feedback loop
+	return (results);
 }
 
 // Differentiate individual mortality rate
@@ -246,29 +256,30 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 		‘leave’ s* as understory trees.
 	*/
 
-	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
+	// bool cs = s_star < s; // ? false : true;
+	// double beta_0, beta_1, beta_2;
 
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
-	temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
-	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
+	// // Scaling all the variables (size, temperature and precipitation)
+	// s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
+	// temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
+	// precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
 
-	// Define the coefficient of the polynom of s
-	beta_0 = intercept_M +
-	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
-		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
-	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
+	// // Define the coefficient of the polynom of s
+	// beta_0 = intercept_M +
+	// (beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
+	// 	+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
+	// beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
 
-	beta_1 = beta_dbh_M;
+	// beta_1 = beta_dbh_M;
 
-	beta_2 = beta_dbh_sq_M;
+	// beta_2 = beta_dbh_sq_M;
 
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
-	double dbh_polynom_differentiate = beta_1 + 2*beta_2*s;
+	// // Polynom of s (order 2)
+	// double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
+	// double dbh_polynom_differentiate = beta_1 + 2*beta_2*s;
 
-	return dbh_polynom_differentiate / (2 + std::exp(-dbh_polynom) + std::exp(dbh_polynom));
+	// return dbh_polynom_differentiate / (2 + std::exp(-dbh_polynom) + std::exp(dbh_polynom));
+	return (0);
 }
 
 /************************************/
