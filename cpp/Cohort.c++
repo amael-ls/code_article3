@@ -115,8 +115,8 @@ double Cohort::crownArea(double const s_star) const
 std::vector<double> Cohort::ODE_II(double const s_star, Environment const& env)
 {
 	/* DESCRIPTION:
-		lambda = y[0], number of individuals in the cohort
-		mu = y[1], averaged size (the i-state)
+		m_lambda = y[0], number of individuals in the cohort
+		m_mu = y[1], averaged size (the i-state)
 		This function represents the dynamics of a cohort along its characteristics
 	*/
 	double temperature_growth = env.annual_mean_temperature;
@@ -131,17 +131,64 @@ std::vector<double> Cohort::ODE_II(double const s_star, Environment const& env)
 	return y;
 }
 
+// Second order scheme, from de Roos (1988), ODE (II) for RK4 methods
+std::vector<double> Cohort::ODE_II(double const lambda, double const mu, double const s_star, Environment const& env)
+{
+	/* DESCRIPTION:
+		m_lambda = y[0], number of individuals in the cohort
+		m_mu = y[1], averaged size (the i-state)
+		This function represents the dynamics of a cohort along its characteristics
+	*/
+	double temperature_growth = env.annual_mean_temperature;
+	double precipitation_growth = env.annual_precipitation;
+	double temperature_mortality = env.min_temperature_of_coldest_month;
+	double precipitation_mortality = env.precipitation_of_driest_quarter;
+
+	std::vector<double> y (2);
+	y[0] = -m_species->d(m_mu + mu, s_star, temperature_mortality, precipitation_mortality) * (m_lambda + lambda);
+	y[1] = m_species->v(m_mu + mu, s_star, temperature_growth, precipitation_growth);
+
+	return y;
+}
+
 // Second order scheme, from de Roos (1988), ODE (V). This is described in the paper
 std::vector<double> Cohort::ODE_V(double const s_star, Environment const& env, double const popReprod)
 {
 	/* DESCRIPTION:
-		lambda = y[0], number of individuals in the cohort
-		mu = y[1], averaged size (the i-state)
+		m_lambda = y[0], number of individuals in the cohort
+		m_mu = y[1], averaged size (the i-state)
 		This function represents the dynamics of a cohort at the boundary condition (i.e., newborns)
 	*/
 	std::vector<double> y (2);
 
 	double pi = m_lambda*m_mu;
+
+	double temperature_growth = env.annual_mean_temperature;
+	double precipitation_growth = env.annual_precipitation;
+	double temperature_mortality = env.min_temperature_of_coldest_month;
+	double precipitation_mortality = env.precipitation_of_driest_quarter;
+
+	y[0] = -m_species->d(0, s_star, temperature_mortality, precipitation_mortality) * m_lambda -
+		m_species->dd_ds(0, s_star, temperature_mortality, precipitation_mortality) * pi + popReprod;
+
+	y[1] = m_species->v(0, s_star, temperature_growth, precipitation_growth) *
+		m_lambda + m_species->dv_ds(0, s_star, temperature_growth, precipitation_growth) * pi -
+		m_species->d(0, s_star, temperature_mortality, precipitation_mortality) * pi;
+
+	return y;
+}
+
+// Second order scheme, from de Roos (1988), ODE (V) for RK4
+std::vector<double> Cohort::ODE_V(double const lambda, double const mu, double const s_star, Environment const& env, double const popReprod)
+{
+	/* DESCRIPTION:
+		m_lambda = y[0], number of individuals in the cohort
+		m_mu = y[1], averaged size (the i-state)
+		This function represents the dynamics of a cohort at the boundary condition (i.e., newborns)
+	*/
+	std::vector<double> y (2);
+
+	double pi = (m_lambda + lambda)*(m_mu + mu);
 
 	double temperature_growth = env.annual_mean_temperature;
 	double precipitation_growth = env.annual_precipitation;
@@ -181,62 +228,68 @@ void Cohort::rk4(double const t, double const delta_t, double const s_star, Envi
 	std::vector<double> (Cohort::*ode)(double, double, double, Environment const&))
 {
 	std::vector<double> fy = (this->*ode)(0, 0, s_star, env);
-	std::vector<double> k1, k2, k3, k4, k5, k6, k7;
-
+	std::vector<double> k1(2), k2(2), k3(2), k4(2);
+	
 	// k1 = Δt f(t_i, y_i)
 	std::transform(fy.begin(), fy.end(), k1.begin(),
 		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
 
-	// k2 = Δt f(t_i + 1/5 Δt, y_i + 1/5 k1)
-	k2 = (this->*ode)(1.0/4.0 * k1[0], 1.0/5.0 * k1[1], s_star, env);
+	// k2 = Δt f(t_i + 1/2 Δt, y_i + 1/2 k1)
+	k2 = (this->*ode)(1.0/2.0 * k1[0], 1.0/2.0 * k1[1], s_star, env);
 	std::transform(k2.begin(), k2.end(), k2.begin(),
 		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
 
-	// k3 = Δt f(t_i + 3/10 Δt, y_i + 3/40 k1 + 9/40 k2)
-	k3 = (this->*ode)(3.0/40.0 * k1[0] + 9.0/40.0 * k2[0],
-		3.0/40.0 * k1[1] + 9.0/40.0 * k2[1], s_star, env);
+	// k3 = Δt f(t_i + 1/2 Δt, y_i + 1/2 k2)
+	k3 = (this->*ode)(1.0/2.0 * k2[0], 1.0/2.0 * k2[1], s_star, env);
 	std::transform(k3.begin(), k3.end(), k3.begin(),
 		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
 
-	// k4 = Δt f(t_i + 4/5 Δt, y_i + 44/45 k1 - 56/15 k2 + 32/9 k3)
-	k4 = (this->*ode)(44.0/45.0 * k1[0] - 56.0/15.0 * k2[0] + 32.0/9.0 * k3[0],
-		44.0/45.0 * k1[1] - 56.0/15.0 * k2[1] + 32.0/9.0 * k3[1], s_star, env);
+	// k4 = Δt f(t_i + Δt, y_i + k3)
+	k4 = (this->*ode)(k3[0], k3[1], s_star, env);
 	std::transform(k4.begin(), k4.end(), k4.begin(),
 		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
 
-	// k5 = Δt f(t_i + 8/9 Δt, y_i + 19372/6561 k1 - 25360/2187 k2 + 64448/6561 k3 - 212/729 k4)
-	k5 = (this->*ode)(19372.0/6561.0 * k1[0] - 25360.0/2187.0 * k2[0] + 64448.0/6561.0 * k3[0] - 212.0/729.0 * k4[0],
-		19372.0/6561.0 * k1[1] - 25360.0/2187.0 * k2[1] + 64448.0/6561.0 * k3[1] - 212.0/729.0 * k4[1], s_star, env);
-	std::transform(k5.begin(), k5.end(), k5.begin(),
-		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
-
-	// k6 = Δt f(t_i + Δt, y_i + 9017/3168 k1 - 355/33 k2 + 46732/5247 k3 + 49/176 k4 - 5103/18656 k5)
-	k6 = (this->*ode)(9017.0/3168.0 * k1[0] - 355.0/33.0 * k2[0] + 46732.0/5247.0 * k3[0] + 49.0/176.0 * k4[0] - 5103.0/18656.0 * k5[0],
-		9017.0/3168.0 * k1[1] - 355.0/33.0 * k2[1] + 46732.0/5247.0 * k3[1] + 49.0/176.0 * k4[1] - 5103.0/18656.0 * k5[1], s_star, env);
-	std::transform(k6.begin(), k6.end(), k6.begin(),
-		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
-
-	// k7 = Δt f(t_i + Δt, y_i + 35/384 k1 + 0 k2 + 500/1113 k3 + 125/192 k4 - 2187/6784 k5 + 11/84 k6)
-	k7 = (this->*ode)(35.0/384.0 * k1[0] + 500.0/1113.0 * k3[0] + 125.0/192.0 * k4[0] - 2187.0/6784.0 * k5[0] + 11.0/84.0 * k6[0],
-		35.0/384.0 * k1[1] + 500.0/1113.0 * k3[1] + 125.0/192.0 * k4[1] - 2187.0/6784.0 * k5[1] + 11.0/84.0 * k6[1], s_star, env);
-	std::transform(k7.begin(), k7.end(), k7.begin(),
-		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
-
-	std::vector<double> y_next(2), z_next (2);
-
-	// y_next = 35/384 k1 + 0 k2 + 500/1113 k3 + 125/192 k4 - 2187/6784 k5 + 11/84 k6 + 0 k7
+	// y_n+1 = y_n + 1/6 k1 + 1/3 k2 + 1/3 k3 + 1/6 k4
 	for (unsigned int i = 0; i < k1.size(); ++i)
-		y_next[i] = fy[i] + 35.0/384.0 * k1[i] + 500.0/1113.0 * k3[i] + 125.0/192.0 * k4[i] - 2187.0/6784.0 * k5[i] + 11.0/84.0 * k6[i];
+		fy[i] = 1.0/6.0 * k1[i] + 1.0/3.0 * k2[i] + 1.0/3.0 * k3[i] + 1.0/6.0 * k4[i];
 
-	// z_next = 5179/57600 k1 + 0 k2 + 7571/16695 k3 + 393/640 k4 - 92097/339200 k5 + 187/2100 k6 + 1/40 k7
+	m_lambda = m_lambda + fy[0]; // k1, ..., k4 are already multiplied by delta_t
+	m_mu = m_mu + fy[1]; // k1, ..., k4 are already multiplied by delta_t
+}
+
+// Runge-Kutta 4 method for ODE V. Note that this function is only for autonomous systems
+void Cohort::rk4(double const t, double const delta_t, double const s_star, Environment const& env,
+	double const popReprod, std::vector<double> (Cohort::*ode)(double, double, double, Environment const&, double))
+{
+	std::vector<double> fy = (this->*ode)(0, 0, s_star, env, popReprod);
+
+		std::vector<double> k1(2), k2(2), k3(2), k4(2);
+	
+	// k1 = Δt f(t_i, y_i)
+	std::transform(fy.begin(), fy.end(), k1.begin(),
+		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
+
+	// k2 = Δt f(t_i + 1/2 Δt, y_i + 1/2 k1)
+	k2 = (this->*ode)(1.0/2.0 * k1[0], 1.0/2.0 * k1[1], s_star, env, popReprod);
+	std::transform(k2.begin(), k2.end(), k2.begin(),
+		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
+
+	// k3 = Δt f(t_i + 1/2 Δt, y_i + 1/2 k2)
+	k3 = (this->*ode)(1.0/2.0 * k2[0], 1.0/2.0 * k2[1], s_star, env, popReprod);
+	std::transform(k3.begin(), k3.end(), k3.begin(),
+		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
+
+	// k4 = Δt f(t_i + Δt, y_i + k3)
+	k4 = (this->*ode)(k3[0], k3[1], s_star, env, popReprod);
+	std::transform(k4.begin(), k4.end(), k4.begin(),
+		std::bind(std::multiplies<double>(), std::placeholders::_1, delta_t));
+
+	// y_n+1 = y_n + 1/6 k1 + 1/3 k2 + 1/3 k3 + 1/6 k4
 	for (unsigned int i = 0; i < k1.size(); ++i)
-		z_next[i] = fy[i] + 5179.0/57600.0 * k1[i] + 7571.0/16695.0 * k3[i] + 393.0/640.0 * k4[i] - 92097.0/339200.0 * k5[i] + 187.0/2100.0 * k6[i] + 1.0/40.0 * k7[i];
+		fy[i] = 1.0/6.0 * k1[i] + 1.0/3.0 * k2[i] + 1.0/3.0 * k3[i] + 1.0/6.0 * k4[i];
 
-	double err_vector; // RESTART HERE!!! this method. For now there might be a problem: I do not know how many steps I will use!
-	// Before doing any adaptive method, I will program RK4
-
-	m_lambda = m_lambda + delta_t * fy[0];
-	m_mu = m_mu + delta_t * fy[1];
+	m_lambda = m_lambda + fy[0]; // k1, ..., k4 are already multiplied by delta_t
+	m_mu = m_mu + fy[1]; // k1, ..., k4 are already multiplied by delta_t
 }
 
 // // Runge-Kutta-Dormand-Prince RK-45 method for ODE II. Note that this function is only for autonomous systems
