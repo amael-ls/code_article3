@@ -17,7 +17,7 @@
 
 // CODER RK4, JE PENSE QU'EULER EST TROP INSTABLE
 int main(int argc, char *argv[])
-{	
+{
 	auto start = std::chrono::high_resolution_clock::now();
 	std::cout << "Program " << argv[0] << " is running" << std::endl;
 	std::cout << "Number of arguments: " << argc - 1 << std::endl;
