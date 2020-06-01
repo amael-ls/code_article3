@@ -220,6 +220,66 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 	std::cout << "Pop::euler finishing" << std::endl;
 }
 
+// RK4
+void Population::rk4(unsigned int n_t, double t0, double t_max, std::string const& compReprodFile, std::string const& popTimeFile)
+{
+	double t;
+	double delta_t = (t_max - t0)/(n_t - 1);
+	double popReprod = 0;
+	cohort_it it;
+	cohort_it lim_it; // limit iterator
+
+	std::ofstream outputCompReprod (compReprodFile);
+	std::ofstream outputPopTime (popTimeFile);
+	if(!outputCompReprod.is_open() || !outputPopTime.is_open())
+	{
+		std::stringstream ss;
+		ss << "*** ERROR (from Population::euler): cannot open output files";
+		throw (std::runtime_error (ss.str()));
+	}
+
+	outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
+	outputPopTime << "density dbh" << std::endl;
+
+	std::cout << "Pop::rk4 starting" << std::endl;
+    for (unsigned int i = 0; i < n_t; ++i) // time loop
+	{
+		// Check there is space to create a new cohort and merge/delete if required
+		if (m_nonZeroCohort == m_maxCohorts)
+			this->mergeCohorts(m_delta_s/8, 0.001);
+
+		if (m_maxCohorts < m_nonZeroCohort)
+			throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
+
+		t = t0 + i*delta_t; // i starts at 0, hence it is explicit rk4
+		outputCompReprod << t + delta_t << " "; // I write t_{n + 1}, but remember RK4 y_{n + 1} = y_n + delta_t (1/6 k1 + 1/3 k2 + 1/3 k3 + 1/6 k4)
+		lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
+
+		// Integration within the size space Omega
+		for (it = m_cohortsVec.begin(); it != lim_it; ++it)
+			it->rk4(t, delta_t, m_s_star, *m_env, &Cohort::ODE_II);
+
+		// Dynamics at the boundary condition in size
+		popReprod = this->reproduction();
+		outputCompReprod << popReprod << " ";
+
+		// New cohort of species m_species, lambda = mu = 0
+		it->rk4(t, delta_t, m_s_star, *m_env, popReprod, &Cohort::ODE_V);
+		if (it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
+			m_nonZeroCohort += 1;
+
+		// std::cout << "m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
+		// Compute competition, basal area, and total density
+		// this->competition();
+		this->competition(t);
+		this->totalDensity_basalArea();
+		outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
+
+		outputPopTime << *this;
+    }
+	std::cout << "Pop::euler finishing" << std::endl;
+}
+
 /* Reproduction:
 Only canopy trees can reproduce, hence we stop at the last tree that can
 reproduce (i.e., the last tree taller than s*).
