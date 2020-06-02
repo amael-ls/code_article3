@@ -58,8 +58,8 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		throw(Except_Population(m_s_inf, tallest_tree, ""));
 
 	this->sort(true); // true to sort by decreasing size
-	// this->competition();
-	this->competition(0);
+	this->competition();
+	// this->competition(0);
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
@@ -79,8 +79,8 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		it->m_species = m_species;
 
 	this->sort(true); // true to sort by decreasing size
-	// this->competition();
-	this->competition(0);
+	this->competition();
+	// this->competition(0);
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
@@ -132,8 +132,8 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		throw(Except_Population(m_s_inf, tallest_tree, fileName));
 
 	this->sort(true); // true to sort by decreasing size
-	// this->competition();
-	this->competition(0);
+	this->competition();
+	// this->competition(0);
 }
 
 /********************************************/
@@ -192,6 +192,9 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 			throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
 
 		t = t0 + i*delta_t; // i starts at 0, hence it is explicit Euler
+		if (i % 100 == 0)
+			std::cout << i <<std::endl;
+		
 		outputCompReprod << t + delta_t << " "; // I write t_{n + 1}, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 		lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
@@ -210,8 +213,8 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 
 		// std::cout << "m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
 		// Compute competition, basal area, and total density
-		// this->competition();
-		this->competition(t);
+		this->competition();
+		// this->competition(t);
 		this->totalDensity_basalArea();
 		outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 
@@ -252,6 +255,9 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 			throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
 
 		t = t0 + i*delta_t; // i starts at 0, hence it is explicit rk4
+		if (i % 100 == 0)
+			std::cout << i <<std::endl;
+		
 		outputCompReprod << t + delta_t << " "; // I write t_{n + 1}, but remember RK4 y_{n + 1} = y_n + delta_t (1/6 k1 + 1/3 k2 + 1/3 k3 + 1/6 k4)
 		lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
@@ -270,8 +276,8 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 
 		// std::cout << "m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
 		// Compute competition, basal area, and total density
-		// this->competition();
-		this->competition(t);
+		this->competition();
+		// this->competition(t);
 		this->totalDensity_basalArea();
 		outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 
@@ -292,20 +298,19 @@ to estimate (check his Appendix2: Parameter estimation)
 double Population::reproduction()
 {
 	double popReprod = 0;
-	// c_cohort_it it = m_cohortsVec.cbegin();
-	// double G0 = m_species->v(0, m_s_star, m_env->annual_mean_temperature, m_env->annual_precipitation);
-	// // double G0 = 2.0;
-	// double fecundity = m_species->fecundity;
+	c_cohort_it it = m_cohortsVec.cbegin();
+	double G0 = m_species->v(0, m_s_star, m_env->annual_mean_temperature, m_env->annual_precipitation);
+	double fecundity = m_species->fecundity;
 
-	// while (it->m_mu > m_s_star && it != m_cohortsVec.end())
-	// {
-	// 	// popReprod += it->crownArea(m_s_star) * it->m_lambda;
-	// 	popReprod += std::exp(-it->m_mu) * it->m_lambda;
-	// 	++it;
-	// }
+	while (it->m_mu > m_s_star && it != m_cohortsVec.end())
+	{
+		popReprod += it->crownArea(m_s_star) * it->m_lambda;
+		// popReprod += std::exp(-it->m_mu) * it->m_lambda;
+		++it;
+	}
 
-	// // popReprod *= fecundity/G0;
-	// popReprod *= 1/G0;
+	popReprod *= fecundity/G0;
+	// popReprod *= 1.0/G0;
 	return popReprod;
 }
 
@@ -347,7 +352,7 @@ void Population::competition()
 
 void Population::competition(double const t)
 {
-	m_s_star = 0; // std::sqrt(1 - 2*m_species->d(0, 0, 0, 0)*t) - 1; // death rate is constant, so no problem
+	m_s_star = std::sqrt(1 - 2*m_species->d(0, 0, 0, 0)*t) - 1; // death rate is constant, so no problem
 }
 
 /* To compute the basal area of the community and the 'number of individuals'
