@@ -46,7 +46,7 @@ ana_sol = function(s0, t, d)
 	return ((1 + ana_dbh(s0, t))*exp(-d*t));
 
 #### Parameters
-d = 0.3; # cf C++ code, file Species.c++
+d = -0.3; # cf C++ code, file Species.c++
 t_end = 5
 nonZeroChorts = 3
 
@@ -101,6 +101,29 @@ points(log10(results[1:n + n, delta_t]), log10(diff[1:n + n, ana1]), pch = 20, c
 
 slopes_euler = (diff[1:(n-1), log10(ana1)] - diff[2:n, log10(ana1)])/(results[1:(n-1), log10(delta_t)] - results[2:n, log10(delta_t)])
 slopes_rk = (diff[2:n + n, log10(ana1)] - diff[1:(n-1) + n, log10(ana1)])/(results[2:n + n, log10(delta_t)] - results[1:(n-1) + n, log10(delta_t)])
+
+#### Plots part II (only when there are feedback loop and reproduction)
+## Competition, reproduction, basal area and total density
+compReprod = fread("compReprod.txt")
+
+## Plots
+par(mfrow = c(4,1))
+plot(compReprod$time, compReprod$reproduction, type = "l", lwd = 2,
+	xlab = "Time", ylab = "Reproduction")
+plot(compReprod$time, compReprod$competition, type = "l", lwd = 2,
+	xlab = "Time", ylab = "Competition")
+plot(compReprod$time, compReprod$basalArea, type = "l", lwd = 2,
+	xlab = "Time", ylab = "Basal area")
+plot(compReprod$time, compReprod$totalDensity, type = "l", lwd = 2,
+	xlab = "Time", ylab = "Total density")
+dev.off()
+
+comp_rollAvg = frollmean(x = compReprod[, competition], n = 50, algo = "exact")
+pdf("img1.pdf", height = 8, width = 10)
+plot(compReprod$time, compReprod$competition, type = "l", lwd = 2,
+	xlab = "Time", ylab = "Competition")
+lines(compReprod$time, comp_rollAvg, lwd = 2, col = "#3A28C8")
+dev.off()
 
 # for (i in 1:3)
 # {
