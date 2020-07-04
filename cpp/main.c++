@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 		std::cout << *(land[0]) << std::endl;
 		try
 		{
-			Population pop2(maxCohorts, sp, init_file, land[0]);
+			Population pop2(maxCohorts, sp, init_file, land[0], 0);
 		
 			pop2.sort(true);
 			std::ofstream os_init("init.txt", std::ofstream::out);
