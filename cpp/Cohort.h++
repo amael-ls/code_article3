@@ -33,9 +33,9 @@ class Cohort
 	friend class Population;
 	public :
 		Cohort();
-		Cohort(Species const *sp);
-		Cohort(Cohort const& cohort);
-		Cohort(double const lambda, double const mu, Species const *sp);
+		Cohort(Species const *sp, unsigned int birthIteration);
+		Cohort(Cohort const& cohort, unsigned int birthIteration);
+		Cohort(double const lambda, double const mu, Species const *sp, unsigned int birthIteration);
 
 		double crownArea(double const s_star) const;
 		double reproduction() const;
@@ -66,6 +66,7 @@ class Cohort
 	private :
 		double m_lambda, m_mu; // Density, dbh
 		Species const *m_species; // Species is constant, not the pointer so no problem with vector
+		unsigned int m_birthIteration; // Iteration at which the cohort appeared
 };
 
 #endif

@@ -34,16 +34,16 @@ Cohort::Cohort() :
 {}
 
 
-Cohort::Cohort(Species const *sp) :
-	m_lambda(0), m_mu(0), m_species(sp)
+Cohort::Cohort(Species const *sp, unsigned int birthIteration) :
+	m_lambda(0), m_mu(0), m_species(sp), m_birthIteration(birthIteration)
 {}
 
-Cohort::Cohort(Cohort const& cohort) :
-	m_lambda(cohort.m_lambda), m_mu(cohort.m_mu), m_species(cohort.m_species)
+Cohort::Cohort(Cohort const& cohort, unsigned int birthIteration) :
+	m_lambda(cohort.m_lambda), m_mu(cohort.m_mu), m_species(cohort.m_species), m_birthIteration(birthIteration)
 {}
 
-Cohort::Cohort(double const lambda, double const mu, Species const *sp) :
-	m_lambda(lambda), m_mu(mu), m_species(sp)
+Cohort::Cohort(double const lambda, double const mu, Species const *sp, unsigned int birthIteration) :
+	m_lambda(lambda), m_mu(mu), m_species(sp), m_birthIteration(birthIteration)
 {}
 
 /*******************************************/
@@ -299,7 +299,7 @@ std::ostream &operator<<(std::ostream &os, Cohort const& cohort)
 {
 	// os << std::setw(10);
 	// os << std::setprecision(5);
-	os << cohort.m_lambda << " " << cohort.m_mu;
+	os << cohort.m_birthIteration << " " << cohort.m_lambda << " " << cohort.m_mu;
 	return os;
 }
 
