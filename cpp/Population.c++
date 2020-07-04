@@ -31,10 +31,10 @@ typedef std::vector<Cohort>::const_iterator c_cohort_it;
 	Second constructor: set λ and μ to values provided by the user with a vector of cohorts
 
 */
-Population::Population(unsigned int const maxCohorts, Species* const sp,
-	std::vector<double> const & lambda, std::vector<double> const & mu, Environment* const env):
-	m_maxCohorts(maxCohorts), m_nonZeroCohort(lambda.size()), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
-	m_cohortsVec(maxCohorts), m_species(sp), m_env(env)
+Population::Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, 
+	std::vector<double> const & mu, Environment* const env, unsigned int currentIter):
+	m_maxCohorts(maxCohorts), m_nonZeroCohort(lambda.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter),
+	m_delta_s(m_s_inf/maxCohorts), m_cohortsVec(maxCohorts), m_species(sp), m_env(env)
 {
 	if (m_maxCohorts < m_nonZeroCohort)
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
@@ -63,7 +63,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
-	std::vector<Cohort> const & cohorts, Environment* const env):
+	std::vector<Cohort> const & cohorts, Environment* const env, unsigned int currentIter):
 	m_maxCohorts(maxCohorts), m_nonZeroCohort(cohorts.size()), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
 	m_cohortsVec(cohorts), m_species(sp), m_env(env)
 {
@@ -84,7 +84,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
-	std::string const& fileName, Environment* const env):
+	std::string const& fileName, Environment* const env, unsigned int currentIter):
 	m_maxCohorts(maxCohorts), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
 	m_species(sp), m_env(env)
 {
@@ -117,7 +117,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		density = std::stod(line, &afterNumVal);
 		dbh = std::stod(line.substr(afterNumVal));
 
-		m_cohortsVec.emplace_back(Cohort(density, dbh, sp));
+		m_cohortsVec.emplace_back(Cohort(density, dbh, sp, currentIter));
 		++m_nonZeroCohort;
 		if (m_maxCohorts < m_nonZeroCohort)
 			throw(Except_Population(m_maxCohorts, fileName));
@@ -125,7 +125,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 
 	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
 	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
-		m_cohortsVec.emplace_back(Cohort(sp));
+		m_cohortsVec.emplace_back(Cohort(sp, currentIter));
 	
 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
 	if (m_s_inf < tallest_tree)
@@ -179,11 +179,14 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 	}
 
 	outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
-	outputPopTime << "density dbh" << std::endl;
+	outputPopTime << "iteration iterationBirth density dbh" << std::endl;
+	outputPopTime << *this;
 
 	std::cout << "Pop::euler starting" << std::endl;
-    for (unsigned int i = 0; i < n_t; ++i) // time loop
+    for (unsigned int i = 1; i < n_t; ++i) // time loop
 	{
+		++m_currentIter;
+
 		// Check there is space to create a new cohort and merge/delete if required
 		if (m_nonZeroCohort == m_maxCohorts)
 			this->mergeCohorts(m_delta_s/8, 0.001);
@@ -191,11 +194,11 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 		if (m_maxCohorts < m_nonZeroCohort)
 			throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
 
-		t = t0 + i*delta_t; // i starts at 0, hence it is explicit Euler
+		t = t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 		if (i % 100 == 0)
 			std::cout << i <<std::endl;
 		
-		outputCompReprod << t + delta_t << " "; // I write t_{n + 1}, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
+		outputCompReprod << t + delta_t << " "; // Added delta_t because, t is one step behind (Euler explicit)
 		lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
 		// Integration within the size space Omega
@@ -220,7 +223,7 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 
 		outputPopTime << *this;
     }
-	std::cout << "Pop::euler finishing" << std::endl;
+	std::cout << "Pop::euler done" << std::endl;
 }
 
 // RK4
@@ -242,11 +245,14 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 	}
 
 	outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
-	outputPopTime << "density dbh" << std::endl;
+	outputPopTime << "iteration iterationBirth density dbh" << std::endl;
+	outputPopTime << *this;
 
 	std::cout << "Pop::rk4 starting" << std::endl;
     for (unsigned int i = 0; i < n_t; ++i) // time loop
 	{
+		++m_currentIter;
+		
 		// Check there is space to create a new cohort and merge/delete if required
 		if (m_nonZeroCohort == m_maxCohorts)
 			this->mergeCohorts(m_delta_s/8, 0.001);
@@ -283,7 +289,7 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 
 		outputPopTime << *this;
     }
-	std::cout << "Pop::euler finishing" << std::endl;
+	std::cout << "Pop::rk4 done" << std::endl;
 }
 
 /* Reproduction:
@@ -298,7 +304,7 @@ to estimate (check his Appendix2: Parameter estimation)
 double Population::reproduction()
 {
 	double popReprod = 0;
-	c_cohort_it it = m_cohortsVec.cbegin();
+/*	c_cohort_it it = m_cohortsVec.cbegin();
 	double G0 = m_species->v(0, m_s_star, m_env->annual_mean_temperature, m_env->annual_precipitation);
 	double fecundity = m_species->fecundity;
 
@@ -309,7 +315,7 @@ double Population::reproduction()
 		++it;
 	}
 
-	popReprod *= fecundity/G0;
+	popReprod *= fecundity/G0;*/
 	// popReprod *= 1.0/G0;
 	return popReprod;
 }
@@ -392,7 +398,7 @@ void Population::totalDensity_basalArea()
 std::ostream& operator<<(std::ostream& os, Population const &pop)
 {
 	for (c_cohort_it it = pop.m_cohortsVec.begin(); it != pop.m_cohortsVec.end(); ++it)
-		os << *it << std::endl;
+		os << pop.m_currentIter << " " << *it << std::endl;
 	return os;
 }
 

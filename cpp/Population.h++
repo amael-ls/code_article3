@@ -42,12 +42,12 @@ I list the functions here, but describe them in the associated c++ file:
 class Population
 {
 	public :
-		Population(unsigned int const maxCohorts, Species* const sp,
-			std::vector<double> const & lambda, std::vector<double> const & mu, Environment* const env);
-		Population(unsigned int const maxCohorts, Species* const sp,
-			std::vector<Cohort> const & cohorts, Environment* const env);
-		Population(unsigned int const maxCohorts, Species* const sp,
-			std::string const& fileName, Environment* const env);
+		Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda,
+			std::vector<double> const & mu, Environment* const env, unsigned int currentIter);
+		Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts,
+			Environment* const env, unsigned int currentIter);
+		Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName,
+			Environment* const env, unsigned int currentIter);
 
 		void euler(unsigned int n_t, double t0, double t_max,
 			std::string const& outCompReprod = "compReprod.txt", std::string const& popTimeFile = "popDyn.txt");
@@ -72,6 +72,7 @@ class Population
 		unsigned int m_maxCohorts; // maximal number of cohorts
 		unsigned int m_nonZeroCohort; // Number of non empty cohorts
 		// std::vector<Cohort>::iterator m_lastReproducer; // Last cohort able to reproduce (given sorted by decreasing order)
+		unsigned int m_currentIter;
 		double const m_s_inf, m_delta_s; // max possible size and size step for integration
 		std::vector<Cohort> m_cohortsVec; // The population of cohorts
 		Species* const m_species; // The pointer is constant, as a population shall not change species
