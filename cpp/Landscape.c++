@@ -4,7 +4,7 @@
 
 // Official headers
 // #include <iomanip> // std::setw, std::left, std::setprecision
-#include <experimental/filesystem> // To list files from folder
+#include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
 #include <stdexcept>
 #include <iostream>
 
@@ -12,12 +12,6 @@
 #include "Error_classes.h++"
 #include "Landscape.h++"
 #include "Params.h++"
-
-// Shortcut namespace
-namespace fs = std::experimental::filesystem;
-
-// Environment* env = new Environment("../createParams/climate_2.txt", " = ");
-// 	std::cout << *env << std::endl;
 
 /****************************************/
 /******        Constructors        ******/
@@ -39,7 +33,7 @@ Landscape::Landscape(std::string const& metadataFile):
 	unsigned int counter = 0;
 	std::vector<Environment*>::iterator counter_it = m_envVec.begin();
 
-	for(auto& p: fs::directory_iterator(m_path))
+	for(auto& p: std::filesystem::directory_iterator(m_path))
 	{
 		filename = p.path().filename();
 		if (filename.find(filenamePattern) != std::string::npos)
