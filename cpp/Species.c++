@@ -154,7 +154,7 @@ double Species::v(double s, double const s_star, double temp, double precip) con
 	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
 
 	// Growth function
-	return std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
+	return 1; // std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
 
 	// double results = ((2 + s_star)*std::exp(-s_star))/(1 + s); // with feedback loop
 	// double results = 2/(1 + s); // without feedback loop
@@ -188,7 +188,7 @@ double Species::d(double s, double const s_star, double temp, double precip) con
 
 	// Polynom of s (order 2)
 	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
-	return 1 / (1 + std::exp(-dbh_polynom));
+	return 0; // 1 / (1 + std::exp(-dbh_polynom));
 
 	// return (-0.3);
 }
@@ -232,7 +232,7 @@ double Species::dv_ds(double s, double const s_star, double temp, double precip)
 	// Polynom of s (order 2)
 	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
 
-	return scaling_G_sd*(beta_1 + 2*beta_2*s) * std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
+	return 0; // scaling_G_sd*(beta_1 + 2*beta_2*s) * std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
 
 	// double results = -((2 + s_star)*std::exp(-s_star))/((1 + s)*(1 + s)); // with feedback loop
 	// double results = -2/((1 + s)*(1 + s)); // without feedback loop
@@ -278,7 +278,7 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
 	double dbh_polynom_differentiate = beta_1 + 2*beta_2*s;
 
-	return dbh_polynom_differentiate / (2 + std::exp(-dbh_polynom) + std::exp(dbh_polynom));
+	return 0; // dbh_polynom_differentiate / (2 + std::exp(-dbh_polynom) + std::exp(dbh_polynom));
 	// return (0);
 }
 
