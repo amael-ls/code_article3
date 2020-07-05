@@ -11,11 +11,51 @@ library(tikzDevice)
 rm(list = ls())
 graphics.off()
 
+######## Part I: No dispersion effect (goudriann, 1986)
 #### Load results c++
 ## Path
 pathCpp = "../cpp/"
 
 ## Initial state
+init = fread(paste0(pathCpp, "initNoDisp.txt"))
+
+## Last state
+end = fread(paste0(pathCpp, "endNoDisp.txt"))
+
+## Competition, reproduction, basal area and total density
+compReprod = fread(paste0(pathCpp, "compReprodNoDisp.txt"))
+
+## Dynamics
+# Load the density and dbh dynamics of cohorts
+dyn = fread(paste0(pathCpp, "popDynNoDisp.txt"))
+
+# Determine the number of cohorts and time steps
+nbTimeSteps = dim(compReprod)[1]
+nbCohorts = dim(dyn)[1]/nbTimeSteps - ifelse(end[.N, density] == 0, 1, 0)
+
+#### Tikz plots
+tikz("./noDisp.tex", width = 3.1, height = 3.1) #, standAlone = TRUE)
+op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
+for (i in 1:nbCohorts)
+{
+	# Initial state
+	tikzCoord(init[i, dbh], 0, paste0("init_start_", i), units = "device")
+	tikzCoord(init[i, dbh], init[i, density], paste0("init_end_", i), units = "device")
+	tikzAnnotate(paste0("\\draw (init_start_", i, ") -- (init_end_", i, ");"))
+
+	# End state
+	tikzCoord(end[i, dbh], 0, paste0("end_start_", i), units = "device")
+	tikzCoord(end[i, dbh], end[i, density], paste0("end_end_", i), units = "device")
+	tikzAnnotate(paste0("\\draw[dashed] (end_start_", i, ") -- (end_end_", i, ");"))
+}
+dev.off()
+
+######## Part II: Population dynamics
+#### Load results c++
+## Path
+pathCpp = "../cpp/"
+
+	## Initial state
 init = fread(paste0(pathCpp, "init.txt"))
 
 ## Last state
