@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 			pop2.sort(true);
 			std::ofstream os_init("init.txt", std::ofstream::out);
 			std::ofstream os_end("end.txt", std::ofstream::out);
-			os_init << "density dbh" << std::endl;
+			os_init << "iteration iterationBirth density dbh" << std::endl;
 			os_init << pop2;
 			try
 			{
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 				std::cerr << e.what() << '\n';
 				exit(EXIT_FAILURE);
 			}
-			os_end << "density dbh" << std::endl;
+			os_end << "iteration iterationBirth density dbh" << std::endl;
 			os_end << pop2;
 		}
 		catch(const std::exception& e)

@@ -59,6 +59,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
+	this->totalDensity_basalArea();
 	// this->competition(0);
 }
 
@@ -80,6 +81,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
+	this->totalDensity_basalArea();
 	// this->competition(0);
 }
 
@@ -133,6 +135,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
+	this->totalDensity_basalArea();
 	// this->competition(0);
 }
 
@@ -179,6 +182,7 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 	}
 
 	outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
+	outputCompReprod << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 	outputPopTime << "iteration iterationBirth density dbh" << std::endl;
 	outputPopTime << *this;
 
