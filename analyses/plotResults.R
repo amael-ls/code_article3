@@ -35,19 +35,35 @@ nbCohorts = dim(dyn)[1]/nbTimeSteps - ifelse(end[.N, density] == 0, 1, 0)
 
 #### Tikz plots
 tikz("./noDisp.tex", width = 3.1, height = 3.1) #, standAlone = TRUE)
-op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
+op <- par(mar = c(2.5, 2.5, 2.5, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
+xmax = max(end[, dbh])
+ymax = max(end[, density])
+plot(x = NULL, y = NULL, xlim = c(0, xmax + 0.1),
+	ylim = c(0, ymax + 0.1), axes = FALSE, xlab = "Size",
+	ylab = "Density")
 for (i in 1:nbCohorts)
 {
 	# Initial state
-	tikzCoord(init[i, dbh], 0, paste0("init_start_", i), units = "device")
-	tikzCoord(init[i, dbh], init[i, density], paste0("init_end_", i), units = "device")
+	tikzCoord(init[i, dbh], 0, paste0("init_start_", i))
+	tikzCoord(init[i, dbh], init[i, density], paste0("init_end_", i))
 	tikzAnnotate(paste0("\\draw (init_start_", i, ") -- (init_end_", i, ");"))
 
 	# End state
-	tikzCoord(end[i, dbh], 0, paste0("end_start_", i), units = "device")
-	tikzCoord(end[i, dbh], end[i, density], paste0("end_end_", i), units = "device")
-	tikzAnnotate(paste0("\\draw[dashed] (end_start_", i, ") -- (end_end_", i, ");"))
+	tikzCoord(end[i, dbh], 0, paste0("end_start_", i))
+	tikzCoord(end[i, dbh], end[i, density], paste0("end_end_", i))
+	tikzAnnotate(paste0("\\draw[dashed] (end_end_", i, ") -- (end_start_", i, ");"))
+
+	# Arrow movement
+	tikzAnnotate(paste0("\\draw[arrow, draw = orange] (init_end_", i, ") -- (end_end_", i, ");"))
 }
+# Axes
+axis(side = 1, at = 0:xmax, labels = 0:xmax)
+axis(side = 2, at = 0:ymax, labels = 0:ymax)
+
+# Legend
+legend(x = "topleft", legend = c("t = 0", "t = 3"), xpd = TRUE,
+	lty = c("solid", "dashed"), lwd = 2, bty = "n", inset = c(0, -0.15))
+
 dev.off()
 
 ######## Part II: Population dynamics
