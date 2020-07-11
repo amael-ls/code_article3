@@ -34,6 +34,7 @@ writeCppClimate = function(climate, cppNames, id, crs, sep = " = ", rm = FALSE)
 		cat(paste0(cppNames[i], sep, climate[, cppNames[i], with = FALSE][[1]]), sep = "\n")
 
 	cat(paste0("plotArea", sep, 400), sep = "\n") # To modify!!!
+	cat(paste0("proj4string", sep, crs), sep = "\n") # To modify!!!
 
 	sink(file = NULL)
 }
@@ -68,14 +69,20 @@ clim = climate[dist == min(dist), ]
 #### Write file for Cpp
 writeCppClimate(clim, cppNames, id = 1, crs, sep = " = ", rm = TRUE)
 
-####
-## Load raster
-climate_rs = raster(paste0(loadPath, "clim60sec/clim_2010.grd"))
+# ####
+# ## Load raster
+# climate_rs = raster(paste0(loadPath, "clim60sec/clim_2010.grd"))
 
-## Define crop extent
-bottomLeft
-topLeft
-topRight
-bottomRight
+# ## Transform
+# climate_rs = projectRaster(climate_rs, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+# dir.create("./reprojRast")
+# writeRaster(climate_rs, filename = "reprojRast/clim_2010.grd", bandorder = "BIL")
 
-crop_extent = SpatialPoints()
+
+# ## Define crop extent
+# bottomLeft
+# topLeft
+# topRight
+# bottomRight
+
+# crop_extent = SpatialPoints()
