@@ -42,6 +42,7 @@ I list the functions here, but describe them in the associated c++ file:
 class Population
 {
 	public :
+		// Constructors
 		Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda,
 			std::vector<double> const & mu, Environment* const env, unsigned int currentIter);
 		Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts,
@@ -49,6 +50,7 @@ class Population
 		Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName,
 			Environment* const env, unsigned int currentIter);
 
+		// Dynamics
 		void euler(unsigned int n_t, double t0, double t_max,
 			std::string const& outCompReprod = "compReprod.txt", std::string const& popTimeFile = "popDyn.txt");
 		void rk4(unsigned int n_t, double t0, double t_max,
@@ -80,6 +82,8 @@ class Population
 		double m_s_star; // Competition, both used in dynamics and output variable
 		double m_basalArea; // Basal area, an output variable
 		double m_totalDensity; // Total density, an output variable: Integral[N(s, t) ds, from = 0, to = +Inf]
+		double m_localProducedSeeds; // Seeds produced in local patch (part of it are propagated)
+		double m_localSeedBank; // Seeds received from local source and from external source (dispersal)
 };
 
 #endif
