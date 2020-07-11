@@ -31,7 +31,7 @@ Landscape::Landscape(std::string const& metadataFile):
 	// Fill the environment
 	std::string filename;
 	unsigned int counter = 0;
-	std::vector<Environment*>::iterator counter_it = m_envVec.begin();
+	// std::vector<Environment*>::iterator counter_it = m_envVec.begin();
 
 	for(auto& p: std::filesystem::directory_iterator(m_path))
 	{
@@ -41,8 +41,8 @@ Landscape::Landscape(std::string const& metadataFile):
 			filename = m_path + "/" + filename;
 			std::cout << filename << std::endl;
 			Environment* env = new Environment(filename, delimiter);
-			m_envVec.emplace(counter_it, env);
-			++counter_it;
+			m_envVec.emplace_back(env);
+			// ++counter_it;
 			++counter;
 			if (counter > m_dim)
 				throw Except_Landscape(m_dim, filename);
@@ -51,6 +51,8 @@ Landscape::Landscape(std::string const& metadataFile):
 
 	if (counter < m_dim)
 		throw Except_Landscape(m_dim, counter);
+
+	std::cout << "Landscape constructed with success" << std::endl;
 }
 
 /************************************/

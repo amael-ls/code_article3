@@ -18,7 +18,7 @@ class Landscape
 	friend class Cohort;
 	friend class Population;
 	public :
-		// constructors
+		// Constructors
 		Landscape(std::string const& metadataFile);
 
 		// Overloading
