@@ -119,6 +119,7 @@ Species::Species(std::string const& species_filename, std::string const& species
 
 	// Others
 	maxDiameter = speciesParams.get_val<double>("maxDiameter");
+	dispersalThreshold = speciesParams.get_val<double>("dispersalThreshold");
 }
 
 /**************************************/

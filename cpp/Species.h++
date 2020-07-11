@@ -23,6 +23,9 @@ I list the functions here, but describe them in the associated c++ file:
 #include <string>
 #include <cmath>
 
+// My headers
+#include "Environment.h++"
+
 /*************************************/
 /******      CLASS SPECIES      ******/
 /*************************************/
@@ -47,6 +50,10 @@ class Species
 		double d(double s, double const s_star, double temp, double precip) const;
 		double dv_ds(double s, double const s_star, double temp, double precip) const;
 		double dd_ds(double s, double const s_star, double temp, double precip) const;
+
+		// Dispersal
+		double K(double distance) const;
+		double K(Environment source, Environment receiver) const;
 
 		// others
 		// bool compareName(Species* species_1, Species* species_2) const;
@@ -88,6 +95,7 @@ class Species
 
 		// Others
 		double maxDiameter;
+		double dispersalThreshold; // Value between 0 and 1. Threshold from which probability K(x, y) is considered 0
 };
 
 #endif
