@@ -31,8 +31,12 @@ class Environment
 	friend class Cohort;
 	friend class Population;
 	public :
+		// Constructors
 		Environment();
 		Environment(std::string const filename, const std::string& delim);
+
+		// Geography
+		double distance(Environment const Env2) const;
 
 		// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Environment const &pop);
@@ -57,5 +61,8 @@ class Environment
 		double latitude;
 		std::string proj4string;
 };
+
+// External functions
+double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2);
 
 #endif

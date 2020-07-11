@@ -5,7 +5,7 @@
 // Official headers
 #include <iomanip> // std::setw, std::left, std::setprecision
 #include <limits> // for std::numeric_limits<double>::infinity()
-#include <cmath> // for log
+#include <cmath> // for log, cos, sin, tg, M_PI
 
 // My headers
 #include "Environment.h++"
@@ -54,6 +54,42 @@ Environment::Environment(std::string const filename, const std::string& delim):
 	longitude = envParams.get_val<double>("longitude");
 	latitude = envParams.get_val<double>("latitude");
 	proj4string = envParams.get_val<std::string>("proj4string");
+}
+
+/*************************************/
+/******        Geography        ******/
+/*************************************/
+double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2)
+{
+	/*
+		It is assumed the longitudes and latitudes are in decimal degrees
+	*/
+
+	// Convert longitudes and latitudes to radians
+	longitude1 *= M_PI/180;
+	longitude2 *= M_PI/180;
+	latitude1 *= M_PI/180;
+	latitude2 *= M_PI/180;
+
+	// Differences of lon
+	double delta_lon = longitude2 - longitude1;
+	double delta_lat = latitude2 - latitude1;
+
+	// Compute dist in kilometers
+	double radiusEarth = 6371;
+
+	double haversine = sin(delta_lat/2)*sin(delta_lat/2) + cos(latitude1)*cos(latitude2)*sin(delta_lon/2)*sin(delta_lon/2);
+	double angle = 2*atan2(sqrt(haversine), sqrt(1 - haversine));
+
+	double dist = radiusEarth * angle;
+	
+	return dist;
+}
+
+double Environment::distance(Environment const Env2) const
+{
+	double dist = distancePoints(this->longitude, this->latitude, Env2.longitude, Env2.latitude);
+	return dist;
 }
 
 /************************************/
