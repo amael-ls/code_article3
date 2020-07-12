@@ -123,8 +123,13 @@ Species::Species(std::string const& species_filename, std::string const& species
 
 	// Dispersal parameters, not necessarily all provided by the user. Note: I could have used a map to optimise the coding...
 	keysToRead = speciesParams_dispersal.get_val<std::string>("keysToRead");
+	min_dispersalProba = false;
+	max_dispersalDist = false;
 	if (keysToRead.find("dispersalProbaThreshold") != std::string::npos)
+	{
 		dispersalProbaThreshold = speciesParams_dispersal.get_val<double>("dispersalProbaThreshold");
+		min_dispersalProba = true;
+	}
 
 	if (keysToRead.find("refKernel_doi") != std::string::npos)
 		refKernel_doi = speciesParams_dispersal.get_val<double>("refKernel_doi");
@@ -136,7 +141,10 @@ Species::Species(std::string const& species_filename, std::string const& species
 		relLDDtoSDD = speciesParams_dispersal.get_val<double>("relLDDtoSDD");
 
 	if (keysToRead.find("dispersalDistThreshold") != std::string::npos)
+	{
 		dispersalDistThreshold = speciesParams_dispersal.get_val<double>("dispersalDistThreshold");
+		max_dispersalDist = true;
+	}
 
 	// Others
 	maxDiameter = speciesParams.get_val<double>("maxDiameter");
@@ -429,7 +437,7 @@ std::ostream &operator<<(std::ostream &os, Species const& species)
 // Sort by alphabetical order
 bool operator<(Species const& species1, Species const& species2)
 {
-    return (species1.m_speciesName < species2.m_speciesName);
+	return (species1.m_speciesName < species2.m_speciesName);
 }
 
 #endif

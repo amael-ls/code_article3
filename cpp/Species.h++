@@ -32,8 +32,11 @@ I list the functions here, but describe them in the associated c++ file:
 
 class Species
 {
-	friend class Cohort;
+	// Friendship
 	friend class Population;
+	friend class Dispersal;
+	friend class Cohort;
+
 	public :
 		// constructors
 		// Species();
@@ -96,10 +99,12 @@ class Species
 		// Dispersal parameters, not necessarily all provided by the user
 		std::string keysToRead;
 		double dispersalProbaThreshold; // Value between 0 and 1. Threshold from which probability K(x, y) is considered 0
+		bool min_dispersalProba; // True if dispersalProbaThreshold is defined
 		std::string refKernel_doi; // The DOI from which the kernel is from
 		double propLDD; // Fraction of fecundity going to long-distance dispersal ---> p in Moorcroft, 0.1
 		double relLDDtoSDD; // Average long-distance dispersal relative to short-distance dispersal ---> 1/beta_l = 10 => beta_l = 0.1
 		double dispersalDistThreshold; // Threshold distance from which probability K(x, y) is considered 0 (i.e., max dist)
+		bool max_dispersalDist; // True if dispersalDistThreshold is defined
 
 		// Others
 		double maxDiameter;
