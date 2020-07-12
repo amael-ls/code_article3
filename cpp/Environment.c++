@@ -92,6 +92,12 @@ double Environment::distance(Environment const Env2) const
 	return dist;
 }
 
+std::ostream& Environment::printCoordinates(std::ostream& os) const
+{
+	os << this->longitude << "\t" << this->latitude << std::endl;
+	return os;
+}
+
 /************************************/
 /******        Overload        ******/
 /************************************/
@@ -124,6 +130,42 @@ std::ostream &operator<<(std::ostream &os, Environment const& env)
 	os << std::endl;
 
 	return os;
+}
+
+/*
+	Remark on the way environment is sorted:
+		- First by latitude, i.e., whatever the longitude, if an env is more to the south, it is smaller (i.e., the opposite direction of the latitude order)
+		- Seconde, by longitude if same latitudes. In this case east is superior to west
+	This is to keep the order R organise a raster. For example a 4 x 6 lattice is as follow:
+		1  2  3  4
+		5  6  7  8
+		9  ...  12
+		[...]   24
+	We sort in the way to make the Id increasing when longitude increase and latitude decrease,
+	where the Id is the index (from 1 to 24 in the R example. In C++ it would be shifted of -1)
+*/
+bool operator<(Environment const& env1, Environment const& env2)
+{
+	if (env1.latitude == env2.latitude)
+		return (env1.longitude < env2.longitude);
+	return (env1.latitude > env2.latitude); // Opposite direction of the latitude order, cf remark above
+}
+
+bool operator>(Environment const& env1, Environment const& env2)
+{
+	if (env1.latitude == env2.latitude)
+		return (env1.longitude > env2.longitude);
+	return (env1.latitude < env2.latitude); // Opposite direction of the latitude order, cf remark above
+}
+
+bool lessThan(Environment* env1, Environment* env2)
+{
+	return (*env1 < *env2);
+}
+
+bool greaterThan(Environment* env1, Environment* env2)
+{
+	return (*env1 > *env2);
 }
 
 #endif

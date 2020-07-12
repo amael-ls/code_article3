@@ -37,9 +37,12 @@ class Environment
 
 		// Geography
 		double distance(Environment const Env2) const;
+		std::ostream& printCoordinates(std::ostream& os) const;
 
 		// Overloading
-		friend std::ostream& operator<<(std::ostream& os, Environment const &pop);
+		friend std::ostream& operator<<(std::ostream& os, Environment const &env);
+		friend bool operator<(Environment const& env1, Environment const& env2);
+		friend bool operator>(Environment const& env1, Environment const& env2);
 
 	private :
 		// File name
@@ -64,5 +67,7 @@ class Environment
 
 // External functions
 double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2);
+bool lessThan(Environment* env1, Environment* env2);
+bool greaterThan(Environment* env1, Environment* env2);
 
 #endif
