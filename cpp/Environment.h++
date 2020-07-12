@@ -28,8 +28,10 @@ I list the functions here, but describe them in the associated c++ file:
 
 class Environment
 {
-	friend class Cohort;
 	friend class Population;
+	friend class Dispersal;
+	friend class Cohort;
+	
 	public :
 		// Constructors
 		Environment();

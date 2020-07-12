@@ -15,8 +15,10 @@
 
 class Landscape
 {
-	friend class Cohort;
 	friend class Population;
+	friend class Dispersal;
+	friend class Cohort;
+	
 	public :
 		// Constructors
 		Landscape(std::string const& metadataFile);
