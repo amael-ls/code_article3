@@ -6,6 +6,7 @@
 // #include <iomanip> // std::setw, std::left, std::setprecision
 #include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
 #include <stdexcept>
+#include <algorithm> // std::sort
 #include <iostream>
 
 // My headers
@@ -52,6 +53,8 @@ Landscape::Landscape(std::string const& metadataFile):
 	if (counter < m_dim)
 		throw Except_Landscape(m_dim, counter);
 
+	this->sort(true); // true to sort respecting raster order from R language
+
 	std::cout << "Landscape constructed with success" << std::endl;
 }
 
@@ -64,6 +67,27 @@ Environment* Landscape::operator[] (int const i)
 		throw Except_Landscape(m_dim, i);
 
 	return m_envVec[i];
+}
+
+std::ostream& operator<<(std::ostream& os, Landscape const &land)
+{
+	std::vector<Environment*>::const_iterator it = land.m_envVec.begin();
+	for (; it != land.m_envVec.end(); ++it)
+		(*it)->printCoordinates(os);
+	return os;
+}
+
+/***********************************/
+/******        Sorting        ******/
+/***********************************/
+void Landscape::sort(bool const rasterOrder_Rlang)
+{
+	std::vector<Environment*>::iterator first = m_envVec.begin();
+	std::vector<Environment*>::iterator last = m_envVec.end();
+	if (rasterOrder_Rlang)
+		std::sort(first, last, lessThan);
+	else
+		std::sort(first, last, greaterThan);
 }
 
 #endif

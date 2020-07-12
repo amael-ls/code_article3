@@ -22,7 +22,11 @@ class Landscape
 		Landscape(std::string const& metadataFile);
 
 		// Overloading
+		friend std::ostream& operator<<(std::ostream& os, Landscape const &land);
 		Environment* operator[] (int const i);
+
+		// Sorting
+		void sort(bool const rasterOrder_Rlang);
 
 	private :
 		// Files' name
