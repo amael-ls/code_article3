@@ -138,4 +138,33 @@ std::ostream &operator<<(std::ostream &os, par::Params const& params)
 	return os;
 }
 
+
+
+// // ========== CRASH TEST ZONE
+// template <>
+// std::vector<std::string> par::Params::get_val(const std::string &key) const
+// {
+// 	std::vector<std::string> result;
+// 	try
+// 	{
+// 		const std::vector<std::string> vals = data.at(key);
+// 		std::cout << "lalala: " << vals[0] << std::endl;
+// 		std::vector<std::string> lineData = split(vals[0], ", ");
+// 		for(int i = 0; i < lineData.size(); i++)
+// 		{
+// 			std::cout << lineData[i] << std::endl;
+// 			// result.push_back(vals[i]);
+// 		}
+// 	}
+// 	catch(const std::out_of_range& ex)
+// 	{
+// 		std::stringstream ss;
+// 		ss << "Warning: parameter parser tried to access unknown parameter <" << key << ">\t" << ex.what();
+// 		throw (std::runtime_error (ss.str()));
+// 	}
+
+// 	return result;
+// }
+
+
 #endif /* defined(PARAMS_C) */
