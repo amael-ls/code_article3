@@ -167,5 +167,20 @@ for (folder in ls_folders)
 	cat(paste0("maxDiameter = ", dbh_bounds[species_id == species_txt, dbh_infinity]), sep = "\n")
 	sink(file = NULL)
 
+	# Species dispersal parameters
+	outfileName = paste0("./", species_scientific, "_dispersal.txt")
+	if (file.exists(outfileName))
+		file.remove(outfileName)
+
+	keysToRead = c("dispersalThreshold", "refKernel_doi", "propLDD", "relLDDtoSDD")
+	sink(file = outfileName, append = TRUE)
+	cat(paste0("keysToRead = ", paste0(keysToRead, collapse = ", ")), sep = "\n")
+	cat(paste0("dispersalProbaThresold = ", 0.01), sep = "\n")
+	cat(paste0("refKernel_doi = ", "10.1016/j.jtbi.2005.12.019"), sep = "\n")
+	cat(paste0("propLDD = ", 0.1), sep = "\n")
+	cat(paste0("relLDDtoSDD = ", 0.1), sep = "\n")
+	cat(paste0("dispersalDistThresold = ", 5), sep = "\n") # Maximal distance dispersal in km
+	sink(file = NULL)
+
 	print(paste0("Species: ", species_scientific, " done"))
 }
