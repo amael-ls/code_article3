@@ -175,11 +175,11 @@ for (folder in ls_folders)
 	keysToRead = c("dispersalThreshold", "refKernel_doi", "propLDD", "relLDDtoSDD")
 	sink(file = outfileName, append = TRUE)
 	cat(paste0("keysToRead = ", paste0(keysToRead, collapse = ", ")), sep = "\n")
-	cat(paste0("dispersalProbaThresold = ", 0.01), sep = "\n")
+	cat(paste0("dispersalProbaThreshold = ", 0.01), sep = "\n")
 	cat(paste0("refKernel_doi = ", "10.1016/j.jtbi.2005.12.019"), sep = "\n")
 	cat(paste0("propLDD = ", 0.1), sep = "\n")
 	cat(paste0("relLDDtoSDD = ", 0.1), sep = "\n")
-	cat(paste0("dispersalDistThresold = ", 5), sep = "\n") # Maximal distance dispersal in km
+	cat(paste0("dispersalDistThreshold = ", 5), sep = "\n") # Maximal distance dispersal in km
 	sink(file = NULL)
 
 	print(paste0("Species: ", species_scientific, " done"))
