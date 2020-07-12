@@ -38,12 +38,16 @@ Species::Species(std::string const& species_filename, std::string const& species
 	std::string file_scaling_M = species_path + m_speciesName;
 	file_scaling_M.append("_scaling_M.txt");
 
+	std::string file_scaling_dispersal = species_path + m_speciesName;
+	file_scaling_dispersal.append("_dispersal.txt");
+
 	// Load parameters from files
 	par::Params speciesParams_G(file_G.c_str(), delim);
 	par::Params speciesParams_M(file_M.c_str(), delim);
 	par::Params speciesParams_allometries(file_allometries.c_str(), delim);
 	par::Params speciesParams_scaling_G(file_scaling_G.c_str(), delim);
 	par::Params speciesParams_scaling_M(file_scaling_M.c_str(), delim);
+	par::Params speciesParams_dispersal(file_scaling_dispersal.c_str(), delim);
 
 	// Allometry parameters (height from dbh)
 	a = speciesParams_allometries.get_val<double>("a");
@@ -117,9 +121,25 @@ Species::Species(std::string const& species_filename, std::string const& species
 	scaling_precip_mu_M = speciesParams_scaling_M.get_val<double>("scaling_precip_mu_M");
 	scaling_precip_sd_M = speciesParams_scaling_M.get_val<double>("scaling_precip_sd_M");
 
+	// Dispersal parameters, not necessarily all provided by the user. Note: I could have used a map to optimise the coding...
+	keysToRead = speciesParams_dispersal.get_val<std::string>("keysToRead");
+	if (keysToRead.find("dispersalProbaThreshold") != std::string::npos)
+		dispersalProbaThreshold = speciesParams_dispersal.get_val<double>("dispersalProbaThreshold");
+
+	if (keysToRead.find("refKernel_doi") != std::string::npos)
+		refKernel_doi = speciesParams_dispersal.get_val<double>("refKernel_doi");
+
+	if (keysToRead.find("propLDD") != std::string::npos)
+		propLDD = speciesParams_dispersal.get_val<double>("propLDD");
+
+	if (keysToRead.find("relLDDtoSDD") != std::string::npos)
+		relLDDtoSDD = speciesParams_dispersal.get_val<double>("relLDDtoSDD");
+
+	if (keysToRead.find("dispersalDistThreshold") != std::string::npos)
+		dispersalDistThreshold = speciesParams_dispersal.get_val<double>("dispersalDistThreshold");
+
 	// Others
 	maxDiameter = speciesParams.get_val<double>("maxDiameter");
-	dispersalThreshold = speciesParams.get_val<double>("dispersalThreshold");
 }
 
 /**************************************/
@@ -283,6 +303,20 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 	// return (0);
 }
 
+/*************************************/
+/******        Dispersal        ******/
+/*************************************/
+// From Moorcroft & Lewis 2006: Potential role of natural enemies during tree range expansions following climate change.
+// Rk: There kernel has small mistakes that have been corrected here
+double Species::K(double const distance) const
+{
+	double proba = 0;
+	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
+		proba = (1.0 - propLDD)/2.0*exp(-abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
+	
+	return proba;
+}
+
 /************************************/
 /******        Overload        ******/
 /************************************/
@@ -372,6 +406,18 @@ std::ostream &operator<<(std::ostream &os, Species const& species)
 	os << "Scaling (mortality precip):" << std::endl;
 	os << species.scaling_precip_mu_M << "\t" << species.scaling_precip_sd_M << std::endl;
 	os << std::endl;
+
+	os << "Dispersal parameters:" << std::endl;
+	if (species.keysToRead.find("dispersalProbaThreshold") != std::string::npos)
+		os << "dispersalProbaThreshold: " << species.dispersalProbaThreshold << std::endl;
+	if (species.keysToRead.find("refKernel_doi") != std::string::npos)
+		os << "refKernel_doi: " << species.refKernel_doi << std::endl;
+	if (species.keysToRead.find("propLDD") != std::string::npos)
+		os << "propLDD: " << species.propLDD << std::endl;
+	if (species.keysToRead.find("relLDDtoSDD") != std::string::npos)
+		os << "relLDDtoSDD: " << species.relLDDtoSDD << std::endl;
+	if (species.keysToRead.find("dispersalDistThreshold") != std::string::npos)
+		os << "dispersalDistThreshold: " << species.dispersalDistThreshold << std::endl;
 
 	os << "Maximal diameter (correspond to a 45m height):" << std::endl;
 	os << species.maxDiameter << std::endl;

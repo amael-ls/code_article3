@@ -52,8 +52,8 @@ class Species
 		double dd_ds(double s, double const s_star, double temp, double precip) const;
 
 		// Dispersal
-		double K(double distance) const;
-		double K(Environment source, Environment receiver) const;
+		double K(double const distance) const;
+		// double K(Environment source, Environment receiver) const;
 
 		// others
 		// bool compareName(Species* species_1, Species* species_2) const;
@@ -93,9 +93,16 @@ class Species
 		double scaling_dbh_mu_M, scaling_dbh_sd_M;
 		double scaling_temp_mu_M, scaling_temp_sd_M, scaling_precip_mu_M, scaling_precip_sd_M;
 
+		// Dispersal parameters, not necessarily all provided by the user
+		std::string keysToRead;
+		double dispersalProbaThreshold; // Value between 0 and 1. Threshold from which probability K(x, y) is considered 0
+		std::string refKernel_doi; // The DOI from which the kernel is from
+		double propLDD; // Fraction of fecundity going to long-distance dispersal ---> p in Moorcroft, 0.1
+		double relLDDtoSDD; // Average long-distance dispersal relative to short-distance dispersal ---> 1/beta_l = 10 => beta_l = 0.1
+		double dispersalDistThreshold; // Threshold distance from which probability K(x, y) is considered 0 (i.e., max dist)
+
 		// Others
 		double maxDiameter;
-		double dispersalThreshold; // Value between 0 and 1. Threshold from which probability K(x, y) is considered 0
 };
 
 #endif
