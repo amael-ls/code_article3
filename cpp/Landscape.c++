@@ -32,7 +32,6 @@ Landscape::Landscape(std::string const& metadataFile):
 	// Fill the environment
 	std::string filename;
 	unsigned int counter = 0;
-	// std::vector<Environment*>::iterator counter_it = m_envVec.begin();
 
 	for(auto& p: std::filesystem::directory_iterator(m_path))
 	{
@@ -40,10 +39,8 @@ Landscape::Landscape(std::string const& metadataFile):
 		if (filename.find(filenamePattern) != std::string::npos)
 		{
 			filename = m_path + "/" + filename;
-			std::cout << filename << std::endl;
 			Environment* env = new Environment(filename, delimiter);
 			m_envVec.emplace_back(env);
-			// ++counter_it;
 			++counter;
 			if (counter > m_dim)
 				throw Except_Landscape(m_dim, filename);
@@ -54,6 +51,15 @@ Landscape::Landscape(std::string const& metadataFile):
 		throw Except_Landscape(m_dim, counter);
 
 	this->sort(true); // true to sort respecting raster order from R language
+
+	// Compute Δlongitude and Δlatitude. No need to compute max and min of lon and lat: landscape is sorted
+	// We assume the lattice is regular. Otherwise Δlongitude and Δlatitude should both be in Environment.
+	std::vector<Environment*>::const_iterator it_first = m_envVec.cbegin();
+	m_deltaLon = (*it_first)->distance(**std::next(it_first));
+	if (std::next(it_first, m_nCol) < m_envVec.cend())
+		m_deltaLat = (*it_first)->distance(**std::next(it_first, m_nCol));
+	else
+		m_deltaLat = 0;
 
 	std::cout << "Landscape constructed with success" << std::endl;
 }

@@ -18,7 +18,7 @@ class Landscape
 	friend class Population;
 	friend class Dispersal;
 	friend class Cohort;
-	
+
 	public :
 		// Constructors
 		Landscape(std::string const& metadataFile);
@@ -38,6 +38,9 @@ class Landscape
 
 		// Dimensions
 		unsigned int m_nRow, m_nCol, m_dim;
+
+		// Spatial discretisation
+		double m_deltaLon, m_deltaLat; // Correspond to Δx and Δy respectively
 
 		// Vector of environment
 		std::vector<Environment*> m_envVec;
