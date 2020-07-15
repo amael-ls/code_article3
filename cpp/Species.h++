@@ -56,7 +56,8 @@ class Species
 
 		// Dispersal
 		double K(double const distance) const;
-		// double K(Environment source, Environment receiver) const;
+		double K(double delta_lon, double delta_lat) const;
+		double K(double const longitude1, double const latitude1, double const longitude2, double const latitude2) const;
 
 		// others
 		// bool compareName(Species* species_1, Species* species_2) const;

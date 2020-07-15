@@ -325,6 +325,26 @@ double Species::K(double const distance) const
 	return proba;
 }
 
+double Species::K(double delta_lon, double delta_lat) const
+{
+	double proba = 0;
+	double distance = sqrt(delta_lon*delta_lon + delta_lat*delta_lat);
+	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
+		proba = (1.0 - propLDD)/2.0*exp(-abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
+	
+	return proba;
+}
+
+double Species::K(double const longitude1, double const latitude1, double const longitude2, double const latitude2) const
+{
+	double proba = 0;
+	double distance = sqrt((longitude1 - longitude2)*(longitude1 - longitude2) + (latitude1 - latitude2)*(latitude1 - latitude2));
+	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
+		proba = (1.0 - propLDD)/2.0*exp(-abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
+	
+	return proba;
+}
+
 /************************************/
 /******        Overload        ******/
 /************************************/
