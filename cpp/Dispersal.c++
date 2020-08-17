@@ -48,7 +48,7 @@ void Dispersal::Kintegrand_lon(double x, double xminusa, double bminusx, double 
 	double *param = (double *) ptr; // casting
 	double const z = param[0];
 
-	y = m_species->K(x, z); // x*x*cos(sqrt(x - 3)) + 2 - cos(z)*sin(z) + exp(-z*z/2.0);
+	y = x*x*cos(sqrt(x - 3)) + 2 - cos(z)*sin(z) + exp(-z*z/2.0); // m_species->K(x, z); // 
 }
 
 void Dispersal::Kintegral_lon(double z, double xminusa, double bminusx, double &y, void *ptr) const // Watch out between integrand and integral!

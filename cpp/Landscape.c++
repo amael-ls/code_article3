@@ -28,6 +28,10 @@ Landscape::Landscape(std::string const& metadataFile):
 	m_path = metadata.get_val<std::string>("path");
 	std::string delimiter = metadata.get_val<std::string>("delimiter");
 	std::string filenamePattern = metadata.get_val<std::string>("filenamePattern");
+	std::string rasterOrder_Rlang = metadata.get_val<std::string>("rasterOrder_Rlang");
+
+	if (rasterOrder_Rlang == "true")
+		m_rasterOrder_Rlang = true;
 	
 	// Fill the environment
 	std::string filename;
@@ -50,7 +54,7 @@ Landscape::Landscape(std::string const& metadataFile):
 	if (counter < m_dim)
 		throw Except_Landscape(m_dim, counter);
 
-	this->sort(true); // true to sort respecting raster order from R language
+	this->sort(m_rasterOrder_Rlang); // true to sort respecting raster order from R language
 
 	// Compute Δlongitude and Δlatitude. No need to compute max and min of lon and lat: landscape is sorted
 	// We assume the lattice is regular. Otherwise Δlongitude and Δlatitude should both be in Environment.

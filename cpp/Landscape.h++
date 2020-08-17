@@ -42,6 +42,9 @@ class Landscape
 		// Spatial discretisation
 		double m_deltaLon, m_deltaLat; // Correspond to Δx and Δy respectively
 
+		// Boolean to order Landscape the way R does
+		bool m_rasterOrder_Rlang;
+
 		// Vector of environment
 		std::vector<Environment*> m_envVec;
 };

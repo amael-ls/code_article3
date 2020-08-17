@@ -32,14 +32,17 @@ class Cohort
 {
 	friend class Population;
 	public :
+		// Constructors
 		Cohort();
 		Cohort(Species const *sp, unsigned int birthIteration);
 		Cohort(Cohort const& cohort, unsigned int birthIteration);
 		Cohort(double const lambda, double const mu, Species const *sp, unsigned int birthIteration);
 
+		// Others
 		double crownArea(double const s_star) const;
 		double reproduction() const;
 
+		// Dynamics
 		std::vector<double> ODE_II(double const s_star, Environment const& env);
 		std::vector<double> ODE_II(double const lambda, double const mu, double const s_star, Environment const& env);
 		std::vector<double> ODE_V(double const s_star, Environment const& env, double const popReprod);

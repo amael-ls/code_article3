@@ -23,7 +23,7 @@ I list the functions here, but describe them in the associated c++ file:
 	In order to integrate the Kernel K, I had other choice to define a global variable and
 	a wrapper function to do a callback using alglib::autogkintegrate
 	If I could have modified the signature of the function, I would have done a safer wrapper,
-	but alglib::autogkintegrate accepts only a on type of function which is:
+	but alglib::autogkintegrate accepts only on type of function which is:
 		void (*func)(double x, double xminusa, double bminusx, double &y, void *ptr)
 	
 	Here is the signature of alglib::autogkintegrate
