@@ -35,8 +35,6 @@ extern void* pt2Object; // global variable which points to an arbitrary Dispersa
 
 class Dispersal
 {
-	friend class Population;
-
 	public :
 		// Constructors
 		Dispersal(Species const* const sp, Landscape const* const land, Environment const* const popEnv);
