@@ -15,11 +15,12 @@ class Forest
 		void spatialDynamics();
 
 		// Return pointers to the neighbour cells
-		std::vector<Population*> neighbours(unsigned int const target); //, double const deltaX, double const deltaY, double const maxDispersalDist
+		void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const;
 
 	private :
 		Landscape* m_land;
 		std::vector<Population> m_popVec; // de taille inf a land. Chq element -> 1 elem de land
+		Species *m_sp;
 };
 
 // Notes
