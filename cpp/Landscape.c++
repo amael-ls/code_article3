@@ -43,7 +43,7 @@ Landscape::Landscape(std::string const& metadataFile):
 		if (filename.find(filenamePattern) != std::string::npos)
 		{
 			filename = m_path + "/" + filename;
-			Environment* env = new Environment(filename, delimiter);
+			Environment* env = new Environment(filename, delimiter, counter);
 			m_envVec.emplace_back(env);
 			++counter;
 			if (counter > m_dim)
@@ -92,12 +92,22 @@ std::ostream& operator<<(std::ostream& os, Landscape const &land)
 /***********************************/
 void Landscape::sort(bool const rasterOrder_Rlang)
 {
+	// Sorting
 	std::vector<Environment*>::iterator first = m_envVec.begin();
 	std::vector<Environment*>::iterator last = m_envVec.end();
 	if (rasterOrder_Rlang)
 		std::sort(first, last, lessThan);
 	else
 		std::sort(first, last, greaterThan);
+	
+	// Renumbering
+	int patch_id = 0;
+	std::vector<Environment*>::iterator env_it;
+	for (env_it = m_envVec.begin(); env_it != m_envVec.end(); ++env_it)
+	{
+		(*env_it)->m_patchId = patch_id;
+		++patch_id;
+	}
 }
 
 #endif

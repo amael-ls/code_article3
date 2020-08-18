@@ -16,7 +16,8 @@
 class Landscape
 {
 	friend class Population;
-	friend class Dispersal;
+	// friend class Dispersal;
+	friend class Forest;
 	friend class Cohort;
 
 	public :
