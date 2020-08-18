@@ -36,6 +36,7 @@ class Environment
 		// Constructors
 		Environment();
 		Environment(std::string const filename, const std::string& delim);
+		Environment(std::string const filename, const std::string& delim, unsigned int const patchId);
 
 		// Geography
 		double distance(Environment const Env2) const;
@@ -62,6 +63,7 @@ class Environment
 		double plotArea;
 
 		// Spatial coordinates
+		unsigned int m_patchId;
 		double longitude;
 		double latitude;
 		std::string proj4string;

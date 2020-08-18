@@ -33,8 +33,8 @@ Environment::Environment():
 	proj4string = "";
 }
 
-Environment::Environment(std::string const filename, const std::string& delim):
-	m_fileName(filename)
+Environment::Environment(std::string const filename, const std::string& delim, unsigned int const patchId):
+	m_patchId(patchId), m_fileName(filename)
 {
 	// Load parameters from files
 	par::Params envParams(m_fileName.c_str(), delim, true);
@@ -55,6 +55,9 @@ Environment::Environment(std::string const filename, const std::string& delim):
 	latitude = envParams.get_val<double>("latitude");
 	proj4string = envParams.get_val<std::string>("proj4string");
 }
+
+Environment::Environment(std::string const filename, const std::string& delim):
+	Environment(filename, delim, 0) {} // Delegating constructor, must be C++ 11
 
 /*************************************/
 /******        Geography        ******/
