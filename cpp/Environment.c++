@@ -138,7 +138,7 @@ std::ostream &operator<<(std::ostream &os, Environment const& env)
 /*
 	Remark on the way environment is sorted:
 		- First by latitude, i.e., whatever the longitude, if an env is more to the south, it is smaller (i.e., the opposite direction of the latitude order)
-		- Seconde, by longitude if same latitudes. In this case east is superior to west
+		- Second, by longitude if same latitudes. In this case east is superior to west
 	This is to keep the order R organise a raster. For example a 4 x 6 lattice is as follow:
 		1  2  3  4
 		5  6  7  8
