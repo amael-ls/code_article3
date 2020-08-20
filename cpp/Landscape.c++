@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <algorithm> // std::sort
 #include <iostream>
+#include <cctype>
 
 // My headers
 #include "Error_classes.h++"
@@ -30,9 +31,13 @@ Landscape::Landscape(std::string const& metadataFile):
 	std::string filenamePattern = metadata.get_val<std::string>("filenamePattern");
 	std::string rasterOrder_Rlang = metadata.get_val<std::string>("rasterOrder_Rlang");
 
+	// Lower case rasterOrder
+	std::transform(rasterOrder_Rlang.begin(), rasterOrder_Rlang.end(), rasterOrder_Rlang.begin(),
+    	[](unsigned char c){ return std::tolower(c); });
+
 	if (rasterOrder_Rlang == "true")
 		m_rasterOrder_Rlang = true;
-	
+
 	// Fill the environment
 	std::string filename;
 	unsigned int counter = 0;
@@ -43,6 +48,7 @@ Landscape::Landscape(std::string const& metadataFile):
 		if (filename.find(filenamePattern) != std::string::npos)
 		{
 			filename = m_path + "/" + filename;
+			std::cout << filename << std::endl;
 			Environment* env = new Environment(filename, delimiter, counter);
 			m_envVec.emplace_back(env);
 			++counter;
