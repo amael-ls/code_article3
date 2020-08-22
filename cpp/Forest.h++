@@ -12,6 +12,7 @@
 class Forest
 {
 	public :
+		Forest(Landscape* land, Species* sp, std::vector<unsigned int> const indicesLand, std::string const init_path, std::string const init_filenamePattern, unsigned int const maxCohort);
 		void spatialDynamics();
 
 		// Return pointers to the neighbour cells
@@ -20,7 +21,10 @@ class Forest
 	private :
 		Landscape* m_land;
 		std::vector<Population> m_popVec; // de taille inf a land. Chq element -> 1 elem de land
-		Species *m_sp;
+		Species* m_sp;
+
+		// Landscape dimensions
+		unsigned int m_nRow_land, m_nCol_land, m_dim_land;
 };
 
 // Notes
