@@ -41,6 +41,8 @@ I list the functions here, but describe them in the associated c++ file:
 
 class Population
 {
+	friend class Forest;
+
 	public :
 		// Constructors
 		Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda,
