@@ -123,7 +123,7 @@ void par::Params::printParams(std::ostream &os) const
 	std::vector<std::string>::const_iterator it_vec;
 	for (; it != data.cend(); ++it)
 	{
-		os << std::right << std::setw(10) << it->first << ":" << std::endl;
+		os << std::right << std::setw(10) << "<" << it->first << "> :" << std::endl;
 		for (it_vec = (it->second).cbegin(); it_vec != (it->second).cend(); ++it_vec)
 			os << std::right << std::setw(40) << *it_vec << std::endl;
 		os << std::endl;
