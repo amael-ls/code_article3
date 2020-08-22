@@ -4,23 +4,42 @@
 
 // Official headers
 #include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
+#include <string>
 #include <cmath>
 
 // My headers
 #include "Forest.h++"
 
-Forest::Forest() {}
+Forest::Forest(Landscape* land, Species *sp, std::vector<unsigned int> const indicesLand, std::string const init_path, std::string const init_filenamePattern, unsigned int const maxCohort) :
+	m_land(land), m_sp(sp)
+{
+	m_nRow_land = m_land->m_nRow;
+	m_nCol_land = m_land->m_nCol;
+	m_dim_land = m_land->m_dim;
+
+	std::string init_filename(init_path + init_filenamePattern);
+
+	bool initialisedPatch;
+
+	for (unsigned int i = 0; i < m_land->m_dim; ++i)
+	{
+		initialisedPatch = m_land->m_initLoc[i];
+		if (initialisedPatch)
+		{
+			init_filename += std::to_string((m_land->m_envVec[i])->m_patchId);
+			m_popVec.emplace_back(Population(maxCohort, m_sp, init_filename, m_land->m_envVec[i], 0));
+		}
+	}
+}
 
 void Forest::spatialDynamics()
 {
 	std::vector<Population>::iterator target_it;
 	std::vector<int> boundingBox;
 
-	unsigned int counter = 0;
 	for (target_it = m_popVec.begin(); target_it != m_popVec.end(); ++target_it)
 	{
-		;
-		++counter;
+		neighbours_indices((target_it->m_env)->m_patchId, boundingBox);
 	}
 }
 
@@ -52,5 +71,7 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<int>& bou
 
 	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 }
+
+// Need to order Forest according to Spatial order 
 
 #endif
