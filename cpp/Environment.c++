@@ -38,7 +38,7 @@ Environment::Environment(std::string const filename, const std::string& delim, u
 {
 	// Load parameters from files
 	par::Params envParams(m_fileName.c_str(), delim, true);
-
+	
 	// Growth climate variables
 	annual_mean_temperature = envParams.get_val<double>("annual_mean_temperature");
 	annual_precipitation = envParams.get_val<double>("annual_precipitation");
@@ -57,7 +57,7 @@ Environment::Environment(std::string const filename, const std::string& delim, u
 }
 
 Environment::Environment(std::string const filename, const std::string& delim):
-	Environment(filename, delim, 0) {} // Delegating constructor, must be C++ 11
+	Environment(filename, delim, 0) {}
 
 /*************************************/
 /******        Geography        ******/
@@ -97,7 +97,7 @@ double Environment::distance(Environment const Env2) const
 
 std::ostream& Environment::printCoordinates(std::ostream& os) const
 {
-	os << this->longitude << "\t" << this->latitude << std::endl;
+	os << this->m_patchId << "\t" << this->longitude << "\t" << this->latitude << std::endl;
 	return os;
 }
 
