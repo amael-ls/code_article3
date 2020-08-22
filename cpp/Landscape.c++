@@ -30,10 +30,11 @@ Landscape::Landscape(std::string const& metadataFile):
 	std::string delimiter = metadata.get_val<std::string>("delimiter");
 	std::string filenamePattern = metadata.get_val<std::string>("filenamePattern");
 	std::string rasterOrder_Rlang = metadata.get_val<std::string>("rasterOrder_Rlang");
+	std::string isPopulated;
 
 	// Lower case rasterOrder
 	std::transform(rasterOrder_Rlang.begin(), rasterOrder_Rlang.end(), rasterOrder_Rlang.begin(),
-    	[](unsigned char c){ return std::tolower(c); });
+		[](unsigned char c){ return std::tolower(c); });
 
 	if (rasterOrder_Rlang == "true")
 		m_rasterOrder_Rlang = true;
@@ -49,8 +50,22 @@ Landscape::Landscape(std::string const& metadataFile):
 		{
 			filename = m_path + "/" + filename;
 			std::cout << filename << std::endl;
+
+			// Create environment
 			Environment* env = new Environment(filename, delimiter, counter);
 			m_envVec.emplace_back(env);
+			
+			// Fill the initLocation vector
+			par::Params envParams(filename.c_str(), delimiter, true);
+			isPopulated = envParams.get_val<std::string>("isPopulated");
+			std::transform(isPopulated.begin(), isPopulated.end(), isPopulated.begin(),
+				[](unsigned char c){ return std::tolower(c); });
+			
+			if (isPopulated == "true")
+				m_initLoc.emplace_back(true);
+			else
+				m_initLoc.emplace_back(false);
+			
 			++counter;
 			if (counter > m_dim)
 				throw Except_Landscape(m_dim, filename);

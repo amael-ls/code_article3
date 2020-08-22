@@ -48,6 +48,9 @@ class Landscape
 
 		// Vector of environment
 		std::vector<Environment*> m_envVec;
+
+		// Vector initial location (which patches are initially populated)
+		std::vector<bool> m_initLoc;
 };
 
 #endif
