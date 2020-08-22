@@ -62,7 +62,7 @@ loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
 
 ## C++ names
 cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month",
-	"annual_precipitation", "precipitation_of_driest_quarter", "longitude", "latitude")
+	"annual_precipitation", "precipitation_of_driest_quarter", "isPopulated", "longitude", "latitude")
 
 ## Load data
 # Climate
@@ -84,7 +84,7 @@ climate[, dist := sqrt((latitude - y)^2 + (longitude - x)^2)]
 clim = climate[dist == min(dist), ]
 
 #### Write file for Cpp
-writeCppClimate(clim, cppNames, id = 1, crs, sep = " = ", rm = TRUE)
+writeCppClimate(clim, cppNames, id = 81, crs, sep = " = ", rm = TRUE)
 
 #### Get climate within a disc
 ## Transform dist in m to km
@@ -98,6 +98,9 @@ for (id in 1:clim[, .N])
 #### Get climate from raster
 ## Load raster
 climate_rs = stack(paste0(loadPath, "clim60sec/clim_2010.grd"))
+
+# Projection
+crs = crs(climate_rs, asText = TRUE)
 
 # ## Transform raster if not done yet
 # if (!file.exists("./reprojRast/clim_2010.grd"))
@@ -125,11 +128,43 @@ croppedClimate = crop(climate_rs[[c("bio60_01", "bio60_06", "bio60_12", "bio60_1
 names(croppedClimate) = c("annual_mean_temperature", "min_temperature_of_coldest_month",
 	"annual_precipitation", "precipitation_of_driest_quarter")
 
-vals = as.data.table(rasterToPoints(croppedClimate))
-setnames(vals, old = c("x", "y"), new = c("latitude", "longitude"))
+## Change resolution to a 20 x 20 m
+# downScale_factors = floor(res(croppedClimate)/20)
+# croppedClimate_downscale = disaggregate(x = croppedClimate, fact = downScale_factors)
 
-for (id in 1:vals[, .N])
-	writeCppClimate(vals[id], cppNames, id, crs, sep = " = ", rm = TRUE)
+# nrow(croppedClimate)
+# ncol(croppedClimate)
+
+## Get centroid and in which cell it belongs
+centroid = colMeans(coordinates(croppedClimate))
+
+## Coerce to data table
+vals = as.data.table(rasterToPoints(croppedClimate))
+setnames(vals, old = c("x", "y"), new = c("longitude", "latitude"))
+
+vals[, id := 1:.N]
+vals[, isPopulated := "false"]
+vals[, dist := sqrt((longitude - centroid["x"])^2 + (latitude - centroid["y"])^2)]
+vals[dist == min(dist), isPopulated := "true"]
+vals[, writeCppClimate_DT(unlist(vals[id]), cppNames, id, crs, sep = " = ", rm = TRUE), by = id]
+
+# pdf("test.pdf", height = 8, width = 8)
+# croppedClimate = setValues(x = croppedClimate, values = sample(1:ncell(croppedClimate), ncell(croppedClimate), replace = TRUE), layer = 1)
+# plot(croppedClimate[["annual_mean_temperature"]])
+# text(x = coordinates(croppedClimate)[, "x"],
+# 	y = coordinates(croppedClimate)[, "y"], label = 1:ncell(croppedClimate), pos = 3)
+# text(x = coordinates(croppedClimate)[, "x"],
+# 	y = coordinates(croppedClimate)[, "y"], label = paste0("(", values(croppedClimate[["annual_mean_temperature"]]), ")"), pos = 1)
+# points(x = centroid["x"], y = centroid["y"], pch = 15, col = "black")
+# points(x = vals[dist == min(dist), longitude], y = vals[dist == min(dist), latitude], pch = 19, col = "blue")
+# dev.off()
+
+rs = projectRaster(croppedClimate, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
+nrow(rs)
+ncol(rs)
+
+vals = as.data.table(rasterToPoints(rs))
+setnames(vals, old = c("x", "y"), new = c("longitude", "latitude"))
 
 vals[, id := 1:.N]
 vals[, writeCppClimate_DT(unlist(vals[id]), cppNames, id, crs, sep = " = ", rm = TRUE), by = id]
