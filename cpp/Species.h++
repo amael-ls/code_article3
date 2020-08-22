@@ -34,7 +34,7 @@ class Species
 {
 	// Friendship
 	friend class Population;
-	friend class Dispersal;
+	friend class Forest;
 	friend class Cohort;
 
 	public :
