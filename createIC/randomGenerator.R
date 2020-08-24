@@ -1,72 +1,77 @@
 
 #### Aim of prog: Generate n random numbers such as their sum is alpha
-## Comment
-# This program generates n random densities of cohort such that the basal area is
-# alpha m^2/ha = alpha x 10e-4 (dimensionless number)
+## Comments
+# This program generates n random densities of cohort and their associated dbh, such that the basal area is
+# alpha m^2/ha = alpha x 10e-4 (dimensionless number).
+# It is using a dirichlet distribution which generates n numbers that sum to 1.
+# Multiply the output by alpha to get a sum to the desired BA
 # For instance, to generate a basal area 25 m^2/ha = 2.5e-3 (dimensionless number)
-# with 150 individuals in a plot of 400 m^2 we would do:
-#	- Compute the basal area (BA) for 400 m^2: BA = 400 * 2.5e-3 = 1
-#	- Generate 150 cohorts, each of them is a density that will correspond to a dbh in Ω
-#	- Their sum will be one, which corresponds to a BA of 25 in a 400 m^2 plot
+# with 150 individuals we would do:
+#	- Generate 150 dbh
+#	- Generate 150 numbers using dirichlet distribution: β_i = N_i * π * dbh_i^2/(4 . 10^4) such that the sum is alpha
+#	- From them, deduce N_i
+#	- Check that Σ N_i * π * dbh_i^2/(4 . 10^4) = alpha
 #
-# The dirichlet generator function is from MCMCpack
+## Output:
+#	- The output is a matrix of size nbPlots x nbCohorts
+#	- Each line is for one plot
+#	- Each column is associated to a dbh (i.e., same structure among plots)
+#
 # See https://reference.wolfram.com/language/ref/DirichletDistribution.html for more explanation on this distribtion
+#
 
-#### Probability density function of Dirichlet
-ddirichlet = function(x, alpha)
+#### Load library and clear memory
+library(rBeta2009) # If you cannot download it, check MCMCpack
+
+rm(list = ls())
+graphics.off()
+
+#### Tool function
+printIC(densities, dbh)
 {
-	dirichlet1 = function(x, alpha)
+	nbCohorts = ncol(densities)
+	nbPlots = nrow(densities)
+	if (length(dbh) != nbCohorts)
+		stop(paste0("The number of cohorts (", nbCohorts, ") should be the same number of dbh provided (", length(dbh), ")"))
+
+	for (i in 1:nrow(croppedClimate_rs))
 	{
-		logD = sum(lgamma(alpha)) - lgamma(sum(alpha))
-		s = sum((alpha-1)*log(x))
-		exp(sum(s)-logD)
+		sink(file = paste0(savingPath, metadata_fileName), append = TRUE)
+
+		cat(paste0("nRow", sep, m_nRow, sep = "\n"))
+		cat(paste0("nCol", sep, m_nCol, sep = "\n"))
+		cat(paste0("path", sep, m_path), sep = "\n")
+		cat(paste0("delimiter", sep, m_delimiter), sep = "\n")
+
+		sink(file = NULL)
 	}
-
-	# make sure x is a matrix
-	if(!is.matrix(x))
-		if(is.data.frame(x))
-			x = as.matrix(x)
-		else
-			x = t(x)
-	
-	if(!is.matrix(alpha))
-		alpha = matrix( alpha, ncol=length(alpha), nrow=nrow(x), byrow=TRUE)
-
-	if( any(dim(x) != dim(alpha)) )
-		stop("Mismatch between dimensions of x and alpha in ddirichlet().\n")
-
-	pd = vector(length=nrow(x))
-	for(i in 1:nrow(x))
-		pd[i] = dirichlet1(x[i,],alpha[i,])
-
-	# Enforce 0 <= x[i,j] <= 1, sum(x[i,]) = 1
-	pd[ apply( x, 1, function(z) any( z <0 | z > 1)) ] = 0
-	pd[ apply( x, 1, function(z) all.equal(sum( z ),1) !=TRUE) ] = 0
-	return(pd)
 }
 
-#### Random number generator for Dirichlet
-rdirichlet = function(n, alpha)
-{
-	l = length(alpha)
-	x = matrix(rgamma(l*n,alpha), ncol = l, byrow = TRUE)
-	sm = x %*% rep(1,l)
-	return(x/as.vector(sm))
-}
-
-#### Generate numbers
+#### Generate cohorts
 ## Parameters
-nbDensities = 150
-nbDraws = 10
+nbCohorts = 5
+maxDiameter = 960
+minDiameter = 2
+nbPlots = 3
 
-BA = 25
-plotArea = 400
-conversion = 1e-4
+set.seed(1969-08-18) # Woodstock seed
 
-sumTo = rep(BA * plotArea * conversion, nbDensities)
+alphaShape = abs(rnorm(nbCohorts, 0.5, 0.5))
+BA = 25 # m^2/ha
 
-## Generate tree densities
-treeDensities = rdirichlet(nbDraws, sumTo)
+## Generate beta numbers (read comments at the beginning)
+betas = BA*rdirichlet(nbPlots, alphaShape)
+
+## Generate dbh
+dbh = sample(x = minDiameter:maxDiameter, size = nbCohorts, replace = TRUE)
+
+## Deduce densities N
+densities = matrix(data = 0, nrow = nrow(betas), ncol = ncol(betas))
+for (i in 1:nbPlots)
+	for(j in 1:nbCohorts)
+		densities[i, j] = betas[i, j]*4*10^4/(pi*dbh[j]^2)
 
 ## Check cohorts basal area
-rowSums(treeDensities)
+for (i in 1:nbPlots)
+	if (!all.equal((dbh^2 %*% t(densities)[,i]*pi/(4*10^4))[1,1], BA))
+		print(paste0("Check row ", i, ". The basal area of this plot might not be the value expected"))
