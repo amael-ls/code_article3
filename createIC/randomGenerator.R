@@ -27,16 +27,19 @@ rm(list = ls())
 graphics.off()
 
 #### Tool function
-printIC = function(densities, dbh, path, filenamePattern, sep = " ", reset = TRUE)
+printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(densities), sep = " ", reset = TRUE)
 {
 	nbCohorts = ncol(densities)
 	nbPlots = nrow(densities)
 	if (length(dbh) != nbCohorts)
-		stop(paste0("The number of cohorts (", nbCohorts, ") should be the same number of dbh provided (", length(dbh), ")"))
+		stop(paste0("Number of cohorts (", nbCohorts, ") and dbh (", length(dbh), ") mismatch"))
+	
+	if (length(id_plots) != nbPlots)
+		stop(paste0("Number of plots (", nbPlots, ") and id_plots (", length(id_plots), ") mismatch"))
 
 	for (plot in 1:nbPlots)
 	{
-		file = paste0(path, filenamePattern, plot, ".txt")
+		file = paste0(path, filenamePattern, id_plots[plot], ".txt")
 
 		if (reset & file.exists(file))
 			file.remove(file)
@@ -84,10 +87,11 @@ for (i in 1:nbPlots)
 ## Parameters
 path = "./randomInitialCondition/"
 filenamePattern = "ic_"
+id_plots = readRDS("../createLandscape/populatedPatches.rds")
 
 ## Create folder
 if (!dir.exists(path))
 	dir.create(path)
 
 ## Write files
-printIC(densities, dbh, path, filenamePattern, sep = " ", reset = TRUE)
+printIC(densities, dbh, path, filenamePattern, id_plots[1:3], sep = " ", reset = TRUE)
