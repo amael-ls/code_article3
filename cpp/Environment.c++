@@ -14,7 +14,7 @@
 /******        Constructors        ******/
 /****************************************/
 Environment::Environment():
-	m_fileName("")
+	m_fileName(""), m_initPopulated(false)
 {
 	// Growth climate variables
 	annual_mean_temperature = std::numeric_limits<double>::infinity();
@@ -33,8 +33,8 @@ Environment::Environment():
 	proj4string = "";
 }
 
-Environment::Environment(std::string const filename, const std::string& delim, unsigned int const patchId):
-	m_patchId(patchId), m_fileName(filename)
+Environment::Environment(std::string const filename, const std::string& delim):
+	m_fileName(filename)
 {
 	// Load parameters from files
 	par::Params envParams(m_fileName.c_str(), delim, true);
@@ -47,17 +47,25 @@ Environment::Environment(std::string const filename, const std::string& delim, u
 	min_temperature_of_coldest_month = envParams.get_val<double>("min_temperature_of_coldest_month");
 	precipitation_of_driest_quarter = envParams.get_val<double>("precipitation_of_driest_quarter");
 
+	// Initially populated
+	std::string isPopulated = envParams.get_val<std::string>("isPopulated");
+	std::transform(isPopulated.begin(), isPopulated.end(), isPopulated.begin(),
+		[](unsigned char c){ return std::tolower(c); });
+	
+	if (isPopulated == "true")
+		m_initPopulated = true;
+	else
+		m_initPopulated = false;
+
 	// Plot area
 	plotArea = envParams.get_val<double>("plotArea");
 
 	// Spatial coordinates
 	longitude = envParams.get_val<double>("longitude");
 	latitude = envParams.get_val<double>("latitude");
+	m_patchId = envParams.get_val<double>("patch_id");
 	proj4string = envParams.get_val<std::string>("proj4string");
 }
-
-Environment::Environment(std::string const filename, const std::string& delim):
-	Environment(filename, delim, 0) {}
 
 /*************************************/
 /******        Geography        ******/

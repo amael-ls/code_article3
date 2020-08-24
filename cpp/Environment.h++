@@ -38,7 +38,6 @@ class Environment
 		// Constructors
 		Environment();
 		Environment(std::string const filename, const std::string& delim);
-		Environment(std::string const filename, const std::string& delim, unsigned int const patchId);
 
 		// Geography
 		double distance(Environment const Env2) const;
@@ -60,6 +59,9 @@ class Environment
 		// Mortality climate variables
 		double min_temperature_of_coldest_month;
 		double precipitation_of_driest_quarter;
+
+		// Initially populated
+		bool m_initPopulated;
 
 		// Plot area
 		double plotArea;
