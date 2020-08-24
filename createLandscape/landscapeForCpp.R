@@ -61,39 +61,8 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, sep = " = "
 loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
 
 ## C++ names
-cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month",
-	"annual_precipitation", "precipitation_of_driest_quarter", "isPopulated", "longitude", "latitude")
-
-## Load data
-# Climate
-climate = readRDS(paste0(loadPath, "createData/clim_2010.rds"))
-
-# Projection
-crs = crs(raster(paste0(loadPath, "clim60sec/clim_2010.grd")), asText = TRUE)
-
-## Rename columns climate data
-climVar = readRDS(paste0(loadPath, "createData/climaticVariables.rds"))
-setnames(climate, old = names(climate), new = c("latitude", "longitude", climVar))
-
-## Set (x, y) coordinates in NYC (A tree grows in Brooklyn...)
-x = 2150631.67
-y = -131511.69
-
-climate[, dist := sqrt((latitude - y)^2 + (longitude - x)^2)]
-# Apparently East river state park, fortunately there is uniqueness of the minimum!
-clim = climate[dist == min(dist), ]
-
-#### Write file for Cpp
-writeCppClimate(clim, cppNames, id = 81, crs, sep = " = ", rm = TRUE)
-
-#### Get climate within a disc
-## Transform dist in m to km
-climate[, dist := dist/1000]
-
-clim = climate[dist < 5]
-
-for (id in 1:clim[, .N])
-	writeCppClimate(clim[id], cppNames, id, crs, sep = " = ", rm = TRUE)
+cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month", "annual_precipitation",
+	"precipitation_of_driest_quarter", "isPopulated", "longitude", "latitude", "patch_id")
 
 #### Get climate from raster
 ## Load raster
@@ -101,18 +70,6 @@ climate_rs = stack(paste0(loadPath, "clim60sec/clim_2010.grd"))
 
 # Projection
 crs = crs(climate_rs, asText = TRUE)
-
-# ## Transform raster if not done yet
-# if (!file.exists("./reprojRast/clim_2010.grd"))
-# {
-# 	#Load raster
-# 	climate_rs = raster(paste0(loadPath, "clim60sec/clim_2010.grd"))
-
-# 	# Transform
-# 	climate_rs = projectRaster(climate_rs, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-# 	dir.create("./reprojRast")
-# 	writeRaster(climate_rs, filename = "reprojRast/clim_2010.grd", bandorder = "BIL")
-# }
 
 ## Define crop extent
 lonMin = -74
@@ -142,12 +99,25 @@ centroid = colMeans(coordinates(croppedClimate))
 vals = as.data.table(rasterToPoints(croppedClimate))
 setnames(vals, old = c("x", "y"), new = c("longitude", "latitude"))
 
-vals[, id := 1:.N]
+## Add id and isPopulated
+vals[, patch_id := 0:(.N - 1)] # C++ starts at 0, not 1
+vals[, rowNumber := 1:.N]
 vals[, isPopulated := "false"]
-vals[, dist := sqrt((longitude - centroid["x"])^2 + (latitude - centroid["y"])^2)]
-vals[dist == min(dist), isPopulated := "true"]
-vals[, writeCppClimate_DT(unlist(vals[id]), cppNames, id, crs, sep = " = ", rm = TRUE), by = id]
 
+## Compute distance to centroid
+vals[, dist := sqrt((longitude - centroid["x"])^2 + (latitude - centroid["y"])^2)]
+
+## Set patches that are populated (currently, only the closest to the centroid)
+vals[dist == min(dist), isPopulated := "true"]
+
+#### Save files
+## Environment files for C++ prog
+vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, sep = " = ", rm = TRUE), by = rowNumber]
+
+## Id files of populated patches (to create the Initial Condition in createIC folder)
+saveRDS(vals[ifelse(isPopulated == "true", TRUE, FALSE), patch_id], "./populatedPatches.rds")
+
+#### Plot to check centroid
 # pdf("test.pdf", height = 8, width = 8)
 # croppedClimate = setValues(x = croppedClimate, values = sample(1:ncell(croppedClimate), ncell(croppedClimate), replace = TRUE), layer = 1)
 # plot(croppedClimate[["annual_mean_temperature"]])
@@ -158,13 +128,3 @@ vals[, writeCppClimate_DT(unlist(vals[id]), cppNames, id, crs, sep = " = ", rm =
 # points(x = centroid["x"], y = centroid["y"], pch = 15, col = "black")
 # points(x = vals[dist == min(dist), longitude], y = vals[dist == min(dist), latitude], pch = 19, col = "blue")
 # dev.off()
-
-rs = projectRaster(croppedClimate, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")
-nrow(rs)
-ncol(rs)
-
-vals = as.data.table(rasterToPoints(rs))
-setnames(vals, old = c("x", "y"), new = c("longitude", "latitude"))
-
-vals[, id := 1:.N]
-vals[, writeCppClimate_DT(unlist(vals[id]), cppNames, id, crs, sep = " = ", rm = TRUE), by = id]
