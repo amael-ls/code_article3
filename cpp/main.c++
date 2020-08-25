@@ -6,19 +6,15 @@
 #include <chrono> // for high_resolution_clock
 #include <cmath>
 
-// #include "Population.h++"
+#include "Population.h++"
 #include "Landscape.h++"
+#include "Forest.h++"
 #include "Params.h++"
 
-#include "integration.h" // You need to copy paste all the src files from ALGLIB and then compile. Example:
-// g++ -I. -std=c++17 -o demo.out *.cpp main.c++ miscellaneous.c++ Species.c++ Params.c++ Landscape.c++ Environment.c++ Error_classes.c++
+// #include "integration.h" // You need to copy paste all the src files from ALGLIB and then compile. Example:
+// g++ -I. -std=c++17 -o demo.out *.cpp main.c++ Species.c++ Params.c++ Landscape.c++ Environment.c++ Error_classes.c++
 // Linking the library won't work
 // g++ -Wall -std=c++17 -I ~/Documents/Cpp_libraries/alglib_v3-16/src main.c++ -o test
-
-#include "Species.h++" // ---> To remove when pop is back
-// #include "miscellaneous.h++"
-#include "Dispersal.h++"
-// #include "globalVariable.h++"
 
 /*
 	In order to integrate the Kernel K, I had other choice to define a global variable and
@@ -45,7 +41,7 @@ int main(int argc, char *argv[])
 
 	if (argc != 2)
 	{
-		std::cout << "ERROR (from main): missing argument" << std::endl;
+		std::cout << "ERROR (from main): 1 argument is accepted only" << std::endl;
 		std::cout << "prototype: ./" << argv[0] << " simulationParameters.txt" << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -53,43 +49,48 @@ int main(int argc, char *argv[])
 	par::Params simulationParameters(argv[1], ": "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << simulationParameters << std::endl;
 	
-	double maxCohorts = simulationParameters.get_val<double>("maxCohorts");
+	unsigned int maxCohorts = simulationParameters.get_val<unsigned int>("maxCohorts");
 	double n_t = simulationParameters.get_val<double>("n_t");
 	double t0 = simulationParameters.get_val<double>("t0");
 	double t_max = simulationParameters.get_val<double>("t_max");
 	std::string climate_file = simulationParameters.get_val<std::string>("climate_file");
 	std::string species_filenames = simulationParameters.get_val<std::string>("species_filenames");
 	std::string species_path = simulationParameters.get_val<std::string>("species_path");
-	std::string init_file = simulationParameters.get_val<std::string>("init_file");
+	std::string init_filenamePattern = simulationParameters.get_val<std::string>("init_filenamePattern");
+	std::string init_path = simulationParameters.get_val<std::string>("init_path");
 	
 	Species* sp = new Species(species_filenames, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << *sp << std::endl;
 
 	// --- CRASH TEST ZONE TO REMOVE
 
-	Landscape land(climate_file);
+	Landscape *land = new Landscape(climate_file);
+	// std::cout << *land << std::endl;
 
-	double a = 0.84;
-	double b = 2.87;
-	double c = 5;
-	double d = 7;
+	Forest forest(land, sp, init_path, init_filenamePattern, maxCohorts);
+	forest.print();
+
+	// double a = 0.84;
+	// double b = 2.87;
+	// double c = 5;
+	// double d = 7;
 	
-	double arrayParams[2] = {c, d};
-	double (*params)[2] = &arrayParams;
+	// double arrayParams[2] = {c, d};
+	// double (*params)[2] = &arrayParams;
 
-	double value2d = 0;
+	// double value2d = 0;
 
-	Dispersal myDisp(sp, &land, land[0]);
+	// Dispersal myDisp(sp, &land, land[0]);
 
-	pt2Object = (void*) &myDisp;
+	// pt2Object = (void*) &myDisp;
 
-	alglib::autogkstate ss;
-	alglib::autogkreport reprep;
-	alglib::autogksmooth(a, b, ss);
-	alglib::autogkintegrate(ss, Dispersal::wrapper_To_Call_Kintegral, params);
-	alglib::autogkresults(ss, value2d, reprep);
+	// alglib::autogkstate ss;
+	// alglib::autogkreport reprep;
+	// alglib::autogksmooth(a, b, ss);
+	// alglib::autogkintegrate(ss, Dispersal::wrapper_To_Call_Kintegral, params);
+	// alglib::autogkresults(ss, value2d, reprep);
 
-	std::cout << value2d << std::endl;
+	// std::cout << value2d << std::endl;
 	
 	// --- END CRASH TEST ZONE
 
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
 		
 		// try
 		// {
-		// 	Population pop2(maxCohorts, sp, init_file, land[0], 0);
+		// 	Population pop2(maxCohorts, sp, init_filenamePattern, land[0], 0);
 		
 		// 	pop2.sort(true);
 		// 	std::ofstream os_init("init.txt", std::ofstream::out);
