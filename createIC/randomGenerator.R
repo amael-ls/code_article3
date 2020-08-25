@@ -19,6 +19,9 @@
 #
 # See https://reference.wolfram.com/language/ref/DirichletDistribution.html for more explanation on this distribtion
 #
+## Remark
+# If "id_plots" is requiered, then it is necessary to first create the landscape (see ../createLandscape/)
+#
 
 #### Load library and clear memory
 library(rBeta2009) # If you cannot download it, MCMCpack also have a dirichlet random generator
@@ -54,13 +57,19 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 	}
 }
 
-#### Generate cohorts
-## Parameters
+#### Parameters
+## Folder and id plots (for names initial condition)
+path = "./randomInitialCondition/"
+filenamePattern = "ic_"
+id_plots = readRDS("../createLandscape/populatedPatches.rds")
+
+## Cohorts 
 nbCohorts = 5
 maxDiameter = 960
 minDiameter = 2
-nbPlots = 3
+nbPlots = length(id_plots)
 
+#### Generate cohorts
 set.seed(1969-08-18) # Woodstock seed
 
 alphaShape = abs(rnorm(nbCohorts, 0.5, 0.5))
@@ -84,14 +93,9 @@ for (i in 1:nbPlots)
 		print(paste0("Check row ", i, ". The basal area of this plot might not be the value expected"))
 
 #### Write files initial condition
-## Parameters
-path = "./randomInitialCondition/"
-filenamePattern = "ic_"
-id_plots = readRDS("../createLandscape/populatedPatches.rds")
-
 ## Create folder
 if (!dir.exists(path))
 	dir.create(path)
 
 ## Write files
-printIC(densities, dbh, path, filenamePattern, id_plots[1:3], sep = " ", reset = TRUE)
+printIC(densities, dbh, path, filenamePattern, id_plots, sep = " ", reset = TRUE)
