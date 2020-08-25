@@ -10,14 +10,15 @@
 // My headers
 #include "Forest.h++"
 
-Forest::Forest(Landscape* land, Species *sp, std::vector<unsigned int> const indicesLand, std::string const init_path, std::string const init_filenamePattern, unsigned int const maxCohort) :
+Forest::Forest(Landscape* land, Species *sp, std::string const init_path, std::string const init_filenamePattern, unsigned int const maxCohort) :
 	m_land(land), m_sp(sp)
 {
 	m_nRow_land = m_land->m_nRow;
 	m_nCol_land = m_land->m_nCol;
 	m_dim_land = m_land->m_dim;
 
-	std::string init_filename(init_path + init_filenamePattern);
+	std::string pathFile(init_path + init_filenamePattern);
+	std::string init_filename;
 
 	bool initialisedPatch;
 
@@ -26,8 +27,8 @@ Forest::Forest(Landscape* land, Species *sp, std::vector<unsigned int> const ind
 		initialisedPatch = m_land->m_initLoc[i];
 		if (initialisedPatch)
 		{
-			init_filename += std::to_string((m_land->m_envVec[i])->m_patchId);
-			m_popVec.emplace_back(Population(maxCohort, m_sp, init_filename, m_land->m_envVec[i], 0));
+			init_filename = pathFile + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
+			m_popVec.emplace_back(Population(maxCohort, m_sp, init_filename, m_land->m_envVec[i], 0U)); // 0U for unsigned int
 		}
 	}
 }
@@ -72,6 +73,22 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<int>& bou
 	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 }
 
-// Need to order Forest according to Spatial order 
+// Need to order Forest according to Spatial order
+
+void Forest::print() const
+{
+	std::vector<Environment*>::const_iterator it = m_land->m_envVec.cbegin();
+	unsigned int counter(0), popCounter(0);
+	for (; it != m_land->m_envVec.cend(); ++it)
+	{
+		std::cout << (*it)->m_patchId << "    " << m_land->m_initLoc[counter] << std::endl;
+		if ((*it)->m_initPopulated)
+		{
+			std::cout << m_popVec[popCounter] << std::endl;
+			++popCounter;
+		}
+		++counter;
+	}
+}
 
 #endif
