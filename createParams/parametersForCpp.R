@@ -172,7 +172,7 @@ for (folder in ls_folders)
 	if (file.exists(outfileName))
 		file.remove(outfileName)
 
-	keysToRead = c("dispersalThreshold", "refKernel_doi", "propLDD", "relLDDtoSDD")
+	keysToRead = c("dispersalProbaThreshold", "refKernel_doi", "propLDD", "relLDDtoSDD") # , "dispersalDistThreshold"
 	sink(file = outfileName, append = TRUE)
 	cat(paste0("keysToRead = ", paste0(keysToRead, collapse = ", ")), sep = "\n")
 	cat(paste0("dispersalProbaThreshold = ", 0.01), sep = "\n")
