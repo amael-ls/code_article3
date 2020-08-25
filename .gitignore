@@ -6,3 +6,4 @@ cpp/test
 test/
 *.jpg
 *.pdf
+*.rds
