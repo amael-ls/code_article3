@@ -49,22 +49,13 @@ Landscape::Landscape(std::string const& metadataFile):
 		if (filename.find(filenamePattern) != std::string::npos)
 		{
 			filename = m_path + "/" + filename;
-			std::cout << filename << std::endl;
 
 			// Create environment
-			Environment* env = new Environment(filename, delimiter, counter);
+			Environment* env = new Environment(filename, delimiter);
 			m_envVec.emplace_back(env);
 			
 			// Fill the initLocation vector
 			par::Params envParams(filename.c_str(), delimiter, true);
-			isPopulated = envParams.get_val<std::string>("isPopulated");
-			std::transform(isPopulated.begin(), isPopulated.end(), isPopulated.begin(),
-				[](unsigned char c){ return std::tolower(c); });
-			
-			if (isPopulated == "true")
-				m_initLoc.emplace_back(true);
-			else
-				m_initLoc.emplace_back(false);
 			
 			++counter;
 			if (counter > m_dim)
@@ -77,12 +68,17 @@ Landscape::Landscape(std::string const& metadataFile):
 
 	this->sort(m_rasterOrder_Rlang); // true to sort respecting raster order from R language
 
+	// Fill vector initLoc (important to create it after sorting)
+	std::vector<Environment*>::const_iterator env_it = m_envVec.cbegin();
+	for (; env_it != m_envVec.cend(); ++env_it)
+		m_initLoc.emplace_back((*env_it)->m_initPopulated);
+
 	// Compute Δlongitude and Δlatitude. No need to compute max and min of lon and lat: landscape is sorted
 	// We assume the lattice is regular. Otherwise Δlongitude and Δlatitude should both be in Environment.
-	std::vector<Environment*>::const_iterator it_first = m_envVec.cbegin();
-	m_deltaLon = (*it_first)->distance(**std::next(it_first));
-	if (std::next(it_first, m_nCol) < m_envVec.cend())
-		m_deltaLat = (*it_first)->distance(**std::next(it_first, m_nCol));
+	env_it = m_envVec.cbegin();
+	m_deltaLon = (*env_it)->distance(**std::next(env_it));
+	if (std::next(env_it, m_nCol) < m_envVec.cend())
+		m_deltaLat = (*env_it)->distance(**std::next(env_it, m_nCol));
 	else
 		m_deltaLat = 0;
 
@@ -105,6 +101,7 @@ std::ostream& operator<<(std::ostream& os, Landscape const &land)
 	std::vector<Environment*>::const_iterator it = land.m_envVec.begin();
 	for (; it != land.m_envVec.end(); ++it)
 		(*it)->printCoordinates(os);
+
 	return os;
 }
 
