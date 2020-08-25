@@ -66,7 +66,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
 	std::vector<Cohort> const & cohorts, Environment* const env, unsigned int currentIter):
-	m_maxCohorts(maxCohorts), m_nonZeroCohort(cohorts.size()), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
+	m_maxCohorts(maxCohorts), m_nonZeroCohort(cohorts.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
 	m_cohortsVec(cohorts), m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
 {
 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
@@ -88,7 +88,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
 	std::string const& fileName, Environment* const env, unsigned int currentIter):
-	m_maxCohorts(maxCohorts), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
+	m_maxCohorts(maxCohorts), m_s_inf(sp->maxDiameter), m_currentIter(currentIter), m_delta_s(m_s_inf/maxCohorts),
 	m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
 {
 	std::ifstream inputFile(fileName);
