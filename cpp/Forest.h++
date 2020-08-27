@@ -12,21 +12,48 @@
 class Forest
 {
 	public :
-		Forest(Landscape* land, Species* sp, std::string const init_path, std::string const init_filenamePattern, unsigned int const maxCohort);
+		Forest(Landscape* land, Species* sp, std::string const forestParamsFilename);
 		void spatialDynamics();
 
-		// Return pointers to the neighbour cells
+	// Return pointers to the neighbour cells
 		void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const;
 
+	// Print function
 		void print() const;
 
+	// Sorting function
+		void sort(bool const rasterOrder_Rlang);
+
 	private :
+	// Forest parameters file
+		std::string const m_forestParamsFilename;
+
+	// Landscape
 		Landscape* m_land;
+		unsigned int m_nRow_land, m_nCol_land, m_dim_land; // Landscape dimensions
+	
+	// Order (see Landscape for more details)
+		bool m_rasterOrder_Rlang; // if true, then same order than a raster in R language
+	
+	// Species and population
 		std::vector<Population> m_popVec; // size(m_popVec) <= size(m_land)
+		unsigned int m_maxCohorts;
+
 		Species* m_sp;
 
-		// Landscape dimensions
-		unsigned int m_nRow_land, m_nCol_land, m_dim_land;
+	// Dynamics parameters
+		double  m_t0, m_tmax;
+		unsigned int m_nIter;
+
+	// Reading parameters
+		std::string m_initFilenamePattern;
+		std::string m_initPath;
+
+	// Saving options
+		std::string m_compReprodFile;
+		std::string m_popTimeFile;
+		bool m_saveOnlyLast;
+		unsigned int m_freqSave;
 };
 
 // Notes
