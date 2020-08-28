@@ -4,6 +4,7 @@
 
 // Official headers
 #include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
+#include <fstream>
 #include <string>
 #include <cmath>
 
@@ -22,7 +23,7 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 		m_initFilenamePattern = forestParams.get_val<std::string>("initFilenamePattern");
 		m_initPath = forestParams.get_val<std::string>("initPath");
 
-		m_compReprodFile = forestParams.get_val<std::string>("compReprodFile");
+		m_compReprodFilePattern = forestParams.get_val<std::string>("compReprodFilePattern");
 		m_popTimeFile = forestParams.get_val<std::string>("popTimeFile");
 
 		m_t0 = forestParams.get_val<double>("t0");
@@ -100,7 +101,8 @@ void Forest::spatialDynamics()
 		t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
 		{
-			; // Call euler
+			pop_it->reproduction(); // Compute local seed bank for each pop
+			// Call euler
 		}
 
 		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
@@ -159,6 +161,29 @@ void Forest::print() const
 			++popCounter;
 		}
 		++counter;
+	}
+}
+
+// Create output files (one per patch) containing local seed bank, s*, basal area, and total density
+void Forest::createOutputFiles() const
+{
+	std::vector<Environment*>::const_iterator env_it;
+	std::string name;
+	for (env_it = (m_land->m_envVec).cbegin(); env_it != (m_land->m_envVec).cend(); ++env_it)
+	{
+		std::ofstream outputCompReprod;
+		name = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((*env_it)->m_patchId);
+		
+		outputCompReprod.open(name, std::ofstream::trunc); // Discard the content of the file if already exists
+
+		if(!outputCompReprod.is_open())
+		{
+			std::stringstream ss;
+			ss << "*** ERROR (from Population::euler): cannot open output files";
+			throw (std::runtime_error (ss.str()));
+		}
+
+		outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
 	}
 }
 

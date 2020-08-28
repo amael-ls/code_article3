@@ -50,10 +50,14 @@ class Forest
 		std::string m_initPath;
 
 	// Saving options
-		std::string m_compReprodFile;
+		std::string m_compReprodFilePattern;
+		std::string m_pathCompReprodFile;
 		std::string m_popTimeFile;
 		bool m_saveOnlyLast;
 		unsigned int m_freqSave;
+
+	// Private functions
+		void createOutputFiles() const;
 };
 
 // Notes
