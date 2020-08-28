@@ -55,8 +55,6 @@ class Population
 		// Dynamics
 		void euler(double const t, double const delta_t,
 			std::string const& outCompReprod, std::string const& popTimeFile = "popDyn.txt");
-		void rk4(unsigned int n_t, double t0, double t_max,
-			std::string const& outCompReprod = "compReprod.txt", std::string const& popTimeFile = "popDyn.txt");
 		void reproduction();
 		void competition();
 		void competition(double const t);
