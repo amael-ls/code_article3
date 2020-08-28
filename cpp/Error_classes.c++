@@ -4,6 +4,15 @@
 
 #include "Error_classes.h++"
 
+/**********************************/
+/******        Forest        ******/
+/**********************************/
+Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIter):
+	m_freqSave(freqSave)
+{
+	m_error_msg += "the frequency of saving (" + std::to_string(m_freqSave) + ") is beyond tmax (" + std::to_string(nIter) + "). No output would be saved\n";
+}
+
 /*************************************/
 /******        Landscape        ******/
 /*************************************/

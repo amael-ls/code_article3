@@ -8,6 +8,20 @@
 #ifndef ERROR_CLASSES_H
 #define ERROR_CLASSES_H
 
+/**********************************/
+/******        Forest        ******/
+/**********************************/
+class Except_Forest : public std::exception
+{
+	public:
+		Except_Forest(unsigned int const freqSave, unsigned int const nIter);
+		const char* what() const throw();
+
+	private:
+		unsigned int m_freqSave;
+		std::string m_error_msg = "Error from Forest: ";
+};
+
 /*************************************/
 /******        Landscape        ******/
 /*************************************/
