@@ -165,11 +165,8 @@ values. Indeed, c++ starts iterations from 0. So when writing
 	xxx != yyy.begin() + m_nonZeroCohort
 it goes from 0 to m_nonZeroCohort - 1
 */
-void Population::euler(unsigned int n_t, double t0, double t_max, std::string const& compReprodFile, std::string const& popTimeFile)
+void Population::euler(double const t, double const delta_t, std::string const& compReprodFile, std::string const& popTimeFile)
 {
-	double t;
-	double delta_t = (t_max - t0)/(n_t - 1);
-	double popReprod = 0;
 	cohort_it it;
 	cohort_it lim_it; // limit iterator
 
@@ -182,53 +179,44 @@ void Population::euler(unsigned int n_t, double t0, double t_max, std::string co
 		throw (std::runtime_error (ss.str()));
 	}
 
+/*
 	outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
 	outputCompReprod << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 	outputPopTime << "iteration iterationBirth density dbh" << std::endl;
 	outputPopTime << *this;
+*/
 
-	std::cout << "Pop::euler starting" << std::endl;
-    for (unsigned int i = 1; i < n_t; ++i) // time loop
-	{
-		++m_currentIter;
+	// Check there is space to create a new cohort and merge/delete if required
+	if (m_nonZeroCohort == m_maxCohorts)
+		this->mergeCohorts(m_delta_s/8, 0.001);
 
-		// Check there is space to create a new cohort and merge/delete if required
-		if (m_nonZeroCohort == m_maxCohorts)
-			this->mergeCohorts(m_delta_s/8, 0.001);
+	if (m_maxCohorts < m_nonZeroCohort)
+		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
+	
+	outputCompReprod << t + delta_t << " "; // Added delta_t because, t is one step behind (Euler explicit)
+	lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
-		if (m_maxCohorts < m_nonZeroCohort)
-			throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
+	// Integration within the size space Omega
+	for (it = m_cohortsVec.begin(); it != lim_it; ++it)
+		it->euler(t, delta_t, m_s_star, *m_env, &Cohort::ODE_II);
 
-		t = t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
-		if (i % 100 == 0)
-			std::cout << i <<std::endl;
-		
-		outputCompReprod << t + delta_t << " "; // Added delta_t because, t is one step behind (Euler explicit)
-		lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
+	// Dynamics at the boundary condition in size
+	this->reproduction();
+	outputCompReprod << m_localProducedSeeds << " ";
 
-		// Integration within the size space Omega
-		for (it = m_cohortsVec.begin(); it != lim_it; ++it)
-			it->euler(t, delta_t, m_s_star, *m_env, &Cohort::ODE_II);
+	// New cohort of species m_species, lambda = mu = 0
+	it->euler(t, delta_t, m_s_star, *m_env, m_localProducedSeeds, &Cohort::ODE_V);
+	if (it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
+		m_nonZeroCohort += 1;
 
-		// Dynamics at the boundary condition in size
-		popReprod = this->reproduction();
-		outputCompReprod << popReprod << " ";
+	// std::cout << "m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
+	// Compute competition, basal area, and total density
+	this->competition();
+	// this->competition(t);
+	this->totalDensity_basalArea();
+	outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 
-		// New cohort of species m_species, lambda = mu = 0
-		it->euler(t, delta_t, m_s_star, *m_env, popReprod, &Cohort::ODE_V);
-		if (it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
-			m_nonZeroCohort += 1;
-
-		// std::cout << "m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
-		// Compute competition, basal area, and total density
-		this->competition();
-		// this->competition(t);
-		this->totalDensity_basalArea();
-		outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
-
-		outputPopTime << *this;
-    }
-	std::cout << "Pop::euler done" << std::endl;
+	outputPopTime << *this;
 }
 
 // RK4
@@ -236,7 +224,6 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 {
 	double t;
 	double delta_t = (t_max - t0)/(n_t - 1);
-	double popReprod = 0;
 	cohort_it it;
 	cohort_it lim_it; // limit iterator
 
@@ -254,7 +241,7 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 	outputPopTime << *this;
 
 	std::cout << "Pop::rk4 starting" << std::endl;
-    for (unsigned int i = 0; i < n_t; ++i) // time loop
+	for (unsigned int i = 0; i < n_t; ++i) // time loop
 	{
 		++m_currentIter;
 		
@@ -277,11 +264,11 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 			it->rk4(t, delta_t, m_s_star, *m_env, &Cohort::ODE_II);
 
 		// Dynamics at the boundary condition in size
-		popReprod = this->reproduction();
-		outputCompReprod << popReprod << " ";
+		this->reproduction();
+		outputCompReprod << m_localProducedSeeds << " ";
 
 		// New cohort of species m_species, lambda = mu = 0
-		it->rk4(t, delta_t, m_s_star, *m_env, popReprod, &Cohort::ODE_V);
+		it->rk4(t, delta_t, m_s_star, *m_env, m_localProducedSeeds, &Cohort::ODE_V);
 		if (it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
 			m_nonZeroCohort += 1;
 
@@ -293,7 +280,7 @@ void Population::rk4(unsigned int n_t, double t0, double t_max, std::string cons
 		outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 
 		outputPopTime << *this;
-    }
+	}
 	std::cout << "Pop::rk4 done" << std::endl;
 }
 
@@ -306,23 +293,18 @@ area (which is 0 for understorey trees). That is to say:
 The fecundity parameter is from table S4 Purves2008. It is a difficult parameter
 to estimate (check his Appendix2: Parameter estimation)
 */
-double Population::reproduction()
+void Population::reproduction()
 {
 	double popReprod = 0;
-/*	c_cohort_it it = m_cohortsVec.cbegin();
-	double G0 = m_species->v(0, m_s_star, m_env->annual_mean_temperature, m_env->annual_precipitation);
-	double fecundity = m_species->fecundity;
+	c_cohort_it cohort_it = m_cohortsVec.cbegin();
 
-	while (it->m_mu > m_s_star && it != m_cohortsVec.end())
+	while (cohort_it->m_mu > m_s_star && cohort_it != m_cohortsVec.end()) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
 	{
-		popReprod += it->crownArea(m_s_star) * it->m_lambda;
-		// popReprod += std::exp(-it->m_mu) * it->m_lambda;
-		++it;
+		popReprod += cohort_it->crownArea(m_s_star) * cohort_it->m_lambda;
+		++cohort_it;
 	}
 
-	popReprod *= fecundity/G0;*/
-	// popReprod *= 1.0/G0;
-	return popReprod;
+	m_localProducedSeeds = popReprod * m_species->fecundity;
 }
 
 /* Competition calculation:
