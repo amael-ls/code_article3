@@ -13,6 +13,11 @@ Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIt
 	m_error_msg += "the frequency of saving (" + std::to_string(m_freqSave) + ") is beyond tmax (" + std::to_string(nIter) + "). No output would be saved\n";
 }
 
+const char* Except_Forest::what() const throw()
+{
+	return (m_error_msg.c_str());
+}
+
 /*************************************/
 /******        Landscape        ******/
 /*************************************/
