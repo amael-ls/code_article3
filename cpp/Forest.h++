@@ -58,6 +58,7 @@ class Forest
 
 	// Private functions
 		void createOutputFiles() const;
+		void close_ofs();
 };
 
 // Notes

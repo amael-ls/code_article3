@@ -110,20 +110,56 @@ void Forest::spatialDynamics()
 	std::vector<int> boundingBox;
 
 	// Compute the total seed production for each population (the 2nd sum in eq 27 -> l index), and apply growth and mortality to each cohort of the pop (eq 14)
-	for (unsigned int i = 1; i < m_nIter; ++i) // time loop
+	if (!m_saveOnlyLast)
 	{
-		t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
-		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
 		{
-			pop_it->reproduction(); // Compute local seed bank for each pop
-			// Call euler
+			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
+			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			{
+				pop_it->reproduction(); // Compute local seed bank for each pop
+				pop_it->euler(t, delta_t, "toDel.txt", "toDel2.txt");
+				
+				if (i % m_freqSave == 0)
+					pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
+						<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
+			}
+
+			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			{
+				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
+			}
 		}
 
-		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-		{
-			neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
-		}
+		// Save final time
+		pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
+						<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
 	}
+	else
+	{
+		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
+		{
+			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
+			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			{
+				pop_it->reproduction(); // Compute local seed bank for each pop
+				pop_it->euler(t, delta_t, "toDel.txt", "toDel2.txt");	
+			}
+
+			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			{
+				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
+			}
+		}
+
+		// Save final time
+		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
+				<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
+	}
+	
+	// Close output files when simulation is done
+	this->close_ofs();
 }
 
 void Forest::neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const
@@ -180,4 +216,11 @@ void Forest::print() const
 	}
 }
 
+// Close ofstreams
+void Forest::close_ofs()
+{
+	std::vector<Population>::iterator pop_it;
+	for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+		pop_it->m_compReprod_ofs.close();
+}
 #endif
