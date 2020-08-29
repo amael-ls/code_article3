@@ -59,7 +59,11 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 		throw(Except_Population(m_s_inf, tallest_tree, ""));
 	
 	// Open ofstream, to close at the end of the simulation
-	m_compReprod_ofs.open(compReprodFilename, std::ofstream::trunc); // Discard the content of the file if already exists
+	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
+		std::filesystem::remove(compReprodFilename);
+	
+	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
+	
 	if(!m_compReprod_ofs.is_open())
 	{
 		std::stringstream ss;
@@ -91,7 +95,11 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		it->m_species = m_species;
 
 	// Open ofstream, to close at the end of the simulation
-	m_compReprod_ofs.open(compReprodFilename, std::ofstream::trunc); // Discard the content of the file if already exists
+	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
+		std::filesystem::remove(compReprodFilename);
+	
+	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
+
 	if(!m_compReprod_ofs.is_open())
 	{
 		std::stringstream ss;
@@ -155,7 +163,11 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		throw(Except_Population(m_s_inf, tallest_tree, fileName));
 
 	// Open ofstream, to close at the end of the simulation
-	m_compReprod_ofs.open(compReprodFilename, std::ofstream::trunc); // Discard the content of the file if already exists
+	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
+		std::filesystem::remove(compReprodFilename);
+	
+	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
+
 	if(!m_compReprod_ofs.is_open())
 	{
 		std::stringstream ss;
