@@ -32,7 +32,7 @@ typedef std::vector<Cohort>::const_iterator c_cohort_it;
 
 */
 Population::Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, 
-	std::vector<double> const & mu, Environment* const env, unsigned int currentIter):
+	std::vector<double> const & mu, Environment* const env, unsigned int currentIter, std::string const compReprodFilename):
 	m_maxCohorts(maxCohorts), m_nonZeroCohort(lambda.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter),
 	m_delta_s(m_s_inf/maxCohorts), m_cohortsVec(maxCohorts), m_species(sp), m_env(env),
 	m_localProducedSeeds(0), m_localSeedBank(0)
@@ -57,6 +57,16 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
 	if (m_s_inf < tallest_tree)
 		throw(Except_Population(m_s_inf, tallest_tree, ""));
+	
+	// Open ofstream, to close at the end of the simulation
+	m_compReprod_ofs.open(compReprodFilename, std::ofstream::trunc); // Discard the content of the file if already exists
+	if(!m_compReprod_ofs.is_open())
+	{
+		std::stringstream ss;
+		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
+		throw (std::runtime_error (ss.str()));
+	}
+	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
@@ -65,7 +75,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
-	std::vector<Cohort> const & cohorts, Environment* const env, unsigned int currentIter):
+	std::vector<Cohort> const & cohorts, Environment* const env, unsigned int currentIter, std::string const compReprodFilename):
 	m_maxCohorts(maxCohorts), m_nonZeroCohort(cohorts.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
 	m_cohortsVec(cohorts), m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
 {
@@ -80,6 +90,16 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 	for (cohort_it it = m_cohortsVec.begin(); it != m_cohortsVec.end(); ++it)
 		it->m_species = m_species;
 
+	// Open ofstream, to close at the end of the simulation
+	m_compReprod_ofs.open(compReprodFilename, std::ofstream::trunc); // Discard the content of the file if already exists
+	if(!m_compReprod_ofs.is_open())
+	{
+		std::stringstream ss;
+		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
+		throw (std::runtime_error (ss.str()));
+	}
+	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
+
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
 	this->totalDensity_basalArea();
@@ -87,7 +107,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
-	std::string const& fileName, Environment* const env, unsigned int currentIter):
+	std::string const& fileName, Environment* const env, unsigned int currentIter, std::string const compReprodFilename):
 	m_maxCohorts(maxCohorts), m_s_inf(sp->maxDiameter), m_currentIter(currentIter), m_delta_s(m_s_inf/maxCohorts),
 	m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
 {
@@ -134,6 +154,16 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 	if (m_s_inf < tallest_tree)
 		throw(Except_Population(m_s_inf, tallest_tree, fileName));
 
+	// Open ofstream, to close at the end of the simulation
+	m_compReprod_ofs.open(compReprodFilename, std::ofstream::trunc); // Discard the content of the file if already exists
+	if(!m_compReprod_ofs.is_open())
+	{
+		std::stringstream ss;
+		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
+		throw (std::runtime_error (ss.str()));
+	}
+	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
+
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
 	this->totalDensity_basalArea();
@@ -170,9 +200,10 @@ void Population::euler(double const t, double const delta_t, std::string const& 
 	cohort_it it;
 	cohort_it lim_it; // limit iterator
 
-	std::ofstream outputCompReprod (compReprodFile);
-	std::ofstream outputPopTime (popTimeFile);
-	if(!outputCompReprod.is_open() || !outputPopTime.is_open())
+	std::ofstream outputCompReprod;
+	outputCompReprod.open(compReprodFile, std::ofstream::app);
+	// std::ofstream outputPopTime (popTimeFile);
+	if(!outputCompReprod.is_open())
 	{
 		std::stringstream ss;
 		ss << "*** ERROR (from Population::euler): cannot open output files";
@@ -216,7 +247,9 @@ void Population::euler(double const t, double const delta_t, std::string const& 
 	this->totalDensity_basalArea();
 	outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 
-	outputPopTime << *this;
+	// outputPopTime << *this;
+	// Close output file
+	outputCompReprod.close();
 }
 
 /* Reproduction:
