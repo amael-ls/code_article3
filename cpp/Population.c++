@@ -63,19 +63,20 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 		std::filesystem::remove(compReprodFilename);
 	
 	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
-	
+
 	if(!m_compReprod_ofs.is_open())
 	{
 		std::stringstream ss;
 		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
 		throw (std::runtime_error (ss.str()));
 	}
-	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
 	this->totalDensity_basalArea();
-	// this->competition(0);
+	
+	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
+	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
@@ -106,12 +107,13 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
 		throw (std::runtime_error (ss.str()));
 	}
-	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
 	this->totalDensity_basalArea();
-	// this->competition(0);
+	
+	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
+	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp,
@@ -174,12 +176,13 @@ Population::Population(unsigned int const maxCohorts, Species* const sp,
 		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
 		throw (std::runtime_error (ss.str()));
 	}
-	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
 
 	this->sort(true); // true to sort by decreasing size
 	this->competition();
 	this->totalDensity_basalArea();
-	// this->competition(0);
+	
+	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
+	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 }
 
 /********************************************/
@@ -212,20 +215,7 @@ void Population::euler(double const t, double const delta_t, std::string const& 
 	cohort_it it;
 	cohort_it lim_it; // limit iterator
 
-	std::ofstream outputCompReprod;
-	outputCompReprod.open(compReprodFile, std::ofstream::app);
-	// std::ofstream outputPopTime (popTimeFile);
-	if(!outputCompReprod.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from Population::euler): cannot open output files";
-		throw (std::runtime_error (ss.str()));
-	}
-
-/*
-	outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
-	outputCompReprod << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
-	outputPopTime << "iteration iterationBirth density dbh" << std::endl;
+/*	outputPopTime << "iteration iterationBirth density dbh" << std::endl;
 	outputPopTime << *this;
 */
 
@@ -236,7 +226,7 @@ void Population::euler(double const t, double const delta_t, std::string const& 
 	if (m_maxCohorts < m_nonZeroCohort)
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
 	
-	outputCompReprod << t + delta_t << " "; // Added delta_t because, t is one step behind (Euler explicit)
+	// m_compReprod_ofs << t + delta_t << " "; // Added delta_t because, t is one step behind (Euler explicit)
 	lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
 	// Integration within the size space Omega
@@ -245,23 +235,23 @@ void Population::euler(double const t, double const delta_t, std::string const& 
 
 	// Dynamics at the boundary condition in size
 	this->reproduction();
-	outputCompReprod << m_localProducedSeeds << " ";
+	// m_compReprod_ofs << m_localProducedSeeds << " ";
 
-	// New cohort of species m_species, lambda = mu = 0
-	it->euler(t, delta_t, m_s_star, *m_env, m_localProducedSeeds, &Cohort::ODE_V);
-	if (it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
-		m_nonZeroCohort += 1;
+	// New cohort of species m_species, lambda = mu = 0 --> Should be treated separately
+	// it->euler(t, delta_t, m_s_star, *m_env, m_localProducedSeeds, &Cohort::ODE_V);
+	// if (it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
+	// 	m_nonZeroCohort += 1;
 
-	// std::cout << "m_nonZeroCohort = " << m_nonZeroCohort << std::endl;
 	// Compute competition, basal area, and total density
 	this->competition();
-	// this->competition(t);
 	this->totalDensity_basalArea();
-	outputCompReprod << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
+
+	// Write in output file
+	// m_compReprod_ofs << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
 
 	// outputPopTime << *this;
-	// Close output file
-	outputCompReprod.close();
+	// Close output file external to this function
+	// m_compReprod_ofs.close();
 }
 
 /* Reproduction:
