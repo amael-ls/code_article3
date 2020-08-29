@@ -29,7 +29,8 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 		// Saving options
 		m_compReprodFilePattern = forestParams.get_val<std::string>("compReprodFilePattern");
 		m_pathCompReprodFile = forestParams.get_val<std::string>("pathCompReprodFile");
-		m_popTimeFile = forestParams.get_val<std::string>("popTimeFile");
+		m_popDynFilePattern = forestParams.get_val<std::string>("popDynFilePattern");
+		m_pathPopDynFile = forestParams.get_val<std::string>("pathPopDynFile");
 		m_freqSave = forestParams.get_val<unsigned int>("freqSave");
 
 		// Simulation parameters
@@ -72,10 +73,18 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 			std::cout << "Directory <" << m_pathCompReprodFile << "> successfully created" << std::endl;
 		}
 
+		// Checking and creating folder m_pathPopDynFile if necessary
+		if (! std::filesystem::exists(m_pathPopDynFile))
+		{
+			std::filesystem::create_directories(m_pathPopDynFile);
+			std::cout << "Directory <" << m_pathPopDynFile << "> successfully created" << std::endl;
+		}
+
 		// Initialise cohorts existing at time 0
 		std::string pathFile(m_initPath + m_initFilenamePattern);
 		std::string init_filename;
 		std::string compReprodFilename;
+		std::string popDynFilename;
 
 		bool initialisedPatch;
 
@@ -86,7 +95,8 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 			{
 				init_filename = pathFile + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
 				compReprodFilename = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
-				m_popVec.emplace_back(Population(m_maxCohorts, m_sp, init_filename, m_land->m_envVec[i], 0U, compReprodFilename)); // 0U = unsigned int
+				popDynFilename = m_pathPopDynFile + m_popDynFilePattern + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
+				m_popVec.emplace_back(Population(m_maxCohorts, m_sp, init_filename, m_land->m_envVec[i], 0U, compReprodFilename, popDynFilename)); // 0U = unsigned int
 			}
 		}
 		std::cout << "Forest constructed with success, using file <" << m_forestParamsFilename << ">" << std::endl;
@@ -119,31 +129,15 @@ void Forest::spatialDynamics()
 			{
 				pop_it->reproduction(); // Compute local seed bank for each pop
 				pop_it->euler(t, delta_t, "toDel.txt", "toDel2.txt");
+				(pop_it->m_currentIter)++;
 				
 				if (i % m_freqSave == 0)
+				{
 					pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
 						<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
-			}
 
-			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-			{
-				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
-			}
-		}
-
-		// Save final time
-		pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
-						<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
-	}
-	else
-	{
-		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
-		{
-			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
-			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-			{
-				pop_it->reproduction(); // Compute local seed bank for each pop
-				pop_it->euler(t, delta_t, "toDel.txt", "toDel2.txt");	
+					pop_it->m_popDyn_ofs << *pop_it;
+				}
 			}
 
 			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
@@ -154,8 +148,38 @@ void Forest::spatialDynamics()
 
 		// Save final time
 		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+		{
 			pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
 				<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
+
+			pop_it->m_popDyn_ofs << *pop_it;
+		}
+	}
+	else
+	{
+		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
+		{
+			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
+			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			{
+				pop_it->reproduction(); // Compute local seed bank for each pop
+				pop_it->euler(t, delta_t, "toDel.txt", "toDel2.txt");	
+				(pop_it->m_currentIter)++;
+			}
+
+			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			{
+				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
+			}
+		}
+
+		// Save final time
+		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+		{
+			pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
+				<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
+			pop_it->m_popDyn_ofs << *pop_it;
+		}
 	}
 	
 	// Close output files when simulation is done

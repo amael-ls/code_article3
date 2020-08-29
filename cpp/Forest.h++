@@ -52,7 +52,8 @@ class Forest
 	// Saving options
 		std::string m_compReprodFilePattern;
 		std::string m_pathCompReprodFile;
-		std::string m_popTimeFile;
+		std::string m_popDynFilePattern;
+		std::string m_pathPopDynFile;
 		bool m_saveOnlyLast;
 		unsigned int m_freqSave;
 
