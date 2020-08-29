@@ -140,6 +140,8 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<int>& bou
 		maxDispersalDist = m_sp->dispersalDistThreshold;
 	else if (m_sp->min_dispersalProba) // It is actually stupid to compute it everytime... sp should get a function to compute maxDispersalDist and run it at construction
 		maxDispersalDist = 100; // To compute, use a dichotomy... while (integral from d to + inf > minDispProba) {++d}
+	else
+		maxDispersalDist = 100; // default value
 
 	int influenceRadius_x = std::ceil(maxDispersalDist/deltaX);
 	int influenceRadius_y = std::ceil(maxDispersalDist/deltaY);
@@ -177,30 +179,5 @@ void Forest::print() const
 		++counter;
 	}
 }
-
-// Create output files (one per patch) containing local seed bank, s*, basal area, and total density
-/*
-void Forest::createOutputFiles() const
-{
-	std::vector<Environment*>::const_iterator env_it;
-	std::string name;
-	for (env_it = (m_land->m_envVec).cbegin(); env_it != (m_land->m_envVec).cend(); ++env_it)
-	{
-		std::ofstream outputCompReprod;
-		name = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((*env_it)->m_patchId);
-		
-		outputCompReprod.open(name, std::ofstream::trunc); // Discard the content of the file if already exists
-
-		if(!outputCompReprod.is_open())
-		{
-			std::stringstream ss;
-			ss << "*** ERROR (from Population::euler): cannot open output files";
-			throw (std::runtime_error (ss.str()));
-		}
-
-		outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
-	}
-}
-*/
 
 #endif
