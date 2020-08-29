@@ -18,20 +18,24 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 {
 	try
 	{
-		// Read forest parameters from file forestParamsFilename
-		par::Params forestParams(forestParamsFilename.c_str(), "=");
+		/**** Read forest parameters from file forestParamsFilename ****/
+		// Load params
+		par::Params forestParams(forestParamsFilename.c_str(), " = ");
+
+		// Initial condition
 		m_initFilenamePattern = forestParams.get_val<std::string>("initFilenamePattern");
 		m_initPath = forestParams.get_val<std::string>("initPath");
 
+		// Saving options
 		m_compReprodFilePattern = forestParams.get_val<std::string>("compReprodFilePattern");
+		m_pathCompReprodFile = forestParams.get_val<std::string>("pathCompReprodFile");
 		m_popTimeFile = forestParams.get_val<std::string>("popTimeFile");
+		m_freqSave = forestParams.get_val<unsigned int>("freqSave");
 
+		// Simulation parameters
 		m_t0 = forestParams.get_val<double>("t0");
 		m_tmax = forestParams.get_val<double>("tmax");
 		m_nIter = forestParams.get_val<unsigned int>("nIter");
-		
-		m_freqSave = forestParams.get_val<unsigned int>("freqSave");
-
 		m_maxCohorts = forestParams.get_val<unsigned int>("maxCohorts");
 
 		// get rasterOrder_Rlang parameter
@@ -48,7 +52,10 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 			[](unsigned char c){ return std::tolower(c); });
 
 		if (saveOnlyLast == "true")
+		{
 			m_saveOnlyLast = true;
+			std::cout << "Only the last iteration will be saved, despite freqSave = " << m_freqSave << std::endl;
+		}
 
 		if (m_freqSave > m_tmax && !m_saveOnlyLast)
 			throw Except_Forest(m_freqSave, m_nIter);
@@ -58,9 +65,17 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 		m_nCol_land = m_land->m_nCol;
 		m_dim_land = m_land->m_dim;
 
-		// Initialise cohorts populated at time 0
+		// Checking and creating folder m_pathCompReprodFile if necessary
+		if (! std::filesystem::exists(m_pathCompReprodFile))
+		{
+			std::filesystem::create_directories(m_pathCompReprodFile);
+			std::cout << "Directory <" << m_pathCompReprodFile << "> successfully created" << std::endl;
+		}
+
+		// Initialise cohorts existing at time 0
 		std::string pathFile(m_initPath + m_initFilenamePattern);
 		std::string init_filename;
+		std::string compReprodFilename;
 
 		bool initialisedPatch;
 
@@ -70,15 +85,16 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 			if (initialisedPatch)
 			{
 				init_filename = pathFile + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
-				m_popVec.emplace_back(Population(m_maxCohorts, m_sp, init_filename, m_land->m_envVec[i], 0U)); // 0U = unsigned int
+				compReprodFilename = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
+				m_popVec.emplace_back(Population(m_maxCohorts, m_sp, init_filename, m_land->m_envVec[i], 0U, compReprodFilename)); // 0U = unsigned int
 			}
 		}
+		std::cout << "Forest constructed with success, using file <" << m_forestParamsFilename << ">" << std::endl;
 	}
 	catch(const std::exception& e)
 	{
 		std::cerr << e.what() << '\n';
 	}
-	std::cout << "Forest constructed with success, using file <" << m_forestParamsFilename << ">" << std::endl;
 }
 
 void Forest::spatialDynamics()
@@ -92,8 +108,6 @@ void Forest::spatialDynamics()
 	std::vector<Environment*>::iterator env_it;
 
 	std::vector<int> boundingBox;
-
-	double t = 0;
 
 	// Compute the total seed production for each population (the 2nd sum in eq 27 -> l index), and apply growth and mortality to each cohort of the pop (eq 14)
 	for (unsigned int i = 1; i < m_nIter; ++i) // time loop
@@ -165,6 +179,7 @@ void Forest::print() const
 }
 
 // Create output files (one per patch) containing local seed bank, s*, basal area, and total density
+/*
 void Forest::createOutputFiles() const
 {
 	std::vector<Environment*>::const_iterator env_it;
@@ -186,5 +201,6 @@ void Forest::createOutputFiles() const
 		outputCompReprod << "time reproduction competition basalArea totalDensity" << std::endl;
 	}
 }
+*/
 
 #endif
