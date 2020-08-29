@@ -46,12 +46,12 @@ class Population
 
 	public :
 		// Constructors
-		Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda,
-			std::vector<double> const & mu, Environment* const env, unsigned int currentIter, std::string const compReprodFilename);
-		Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts,
-			Environment* const env, unsigned int currentIter, std::string const compReprodFilename);
-		Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName,
-			Environment* const env, unsigned int currentIter, std::string const compReprodFilename);
+		Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, std::vector<double> const & mu,
+			Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
+		Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts, Environment* const env,
+			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
+		Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName, Environment* const env,
+			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
 
 		// Dynamics
 		void euler(double const t, double const delta_t,
@@ -86,6 +86,7 @@ class Population
 		double m_localProducedSeeds; // Seeds produced in local patch (part of it are propagated)
 		double m_localSeedBank; // Seeds received from local source and from external source (dispersal)
 		std::ofstream m_compReprod_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
+		std::ofstream m_popDyn_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
 };
 
 #endif
