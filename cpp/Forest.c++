@@ -58,13 +58,13 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 			std::cout << "Only the last iteration will be saved, despite freqSave = " << m_freqSave << std::endl;
 		}
 
-		if (m_freqSave > m_tmax && !m_saveOnlyLast)
-			throw Except_Forest(m_freqSave, m_nIter);
-
 		// Dimensions from landscape
 		m_nRow_land = m_land->m_nRow;
 		m_nCol_land = m_land->m_nCol;
 		m_dim_land = m_land->m_dim;
+
+		if (m_freqSave > m_tmax && !m_saveOnlyLast)
+			throw Except_Forest(m_freqSave, m_nIter, m_dim_land, false);
 
 		// Checking and creating folder m_pathCompReprodFile if necessary
 		if (! std::filesystem::exists(m_pathCompReprodFile))
@@ -87,6 +87,7 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 		std::string popDynFilename;
 
 		bool initialisedPatch;
+		unsigned int counterPop = 0;
 
 		for (unsigned int i = 0; i < m_land->m_dim; ++i)
 		{
@@ -97,6 +98,10 @@ Forest::Forest(Landscape* land, Species *sp, std::string const forestParamsFilen
 				compReprodFilename = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
 				popDynFilename = m_pathPopDynFile + m_popDynFilePattern + std::to_string((m_land->m_envVec[i])->m_patchId) + ".txt";
 				m_popVec.emplace_back(Population(m_maxCohorts, m_sp, init_filename, m_land->m_envVec[i], 0U, compReprodFilename, popDynFilename)); // 0U = unsigned int
+
+				++ counterPop;
+				if (counterPop > m_dim_land)
+					throw Except_Forest(m_freqSave, m_nIter, m_dim_land, true);
 			}
 		}
 		std::cout << "Forest constructed with success, using file <" << m_forestParamsFilename << ">" << std::endl;
@@ -115,20 +120,24 @@ void Forest::spatialDynamics()
 
 	// Iterators
 	std::vector<Population>::iterator pop_it;
-	std::vector<Environment*>::iterator env_it;
+	std::vector<Environment*>::iterator targetEnv_it;
+	std::vector<Environment*>::iterator sourceEnv_it;
 
+	// Variables for neighbours and recruitment
 	std::vector<int> boundingBox;
+	int index;
+
 
 	// Compute the total seed production for each population (the 2nd sum in eq 27 -> l index), and apply growth and mortality to each cohort of the pop (eq 14)
 	if (!m_saveOnlyLast)
 	{
-		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
+		for (unsigned int i = 1; i < 2; ++i) // time loop
 		{
 			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
 			{
 				pop_it->reproduction(); // Compute local seed bank for each pop
-				pop_it->euler(t, delta_t, "toDel.txt", "toDel2.txt");
+				pop_it->euler(t, delta_t);
 				(pop_it->m_currentIter)++;
 				
 				if (i % m_freqSave == 0)
@@ -140,9 +149,17 @@ void Forest::spatialDynamics()
 				}
 			}
 
-			for (env_it = m_land->m_envVec.begin(); pop_it != m_land->m_envVec.end(); ++env_it) // Starting reproduction prog
+			for (targetEnv_it = m_land->m_envVec.begin(); targetEnv_it != m_land->m_envVec.end(); ++targetEnv_it) // Starting reproduction prog
 			{
-				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
+				neighbours_indices((*targetEnv_it)->m_patchId, boundingBox); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
+				for (unsigned int row = boundingBox[0]; row < boundingBox[3]; ++row)
+				{
+					for (unsigned int col = boundingBox[1]; col < boundingBox[2]; ++col)
+					{
+						index = row*m_nCol_land + col;
+						std::cout << index << std::endl;
+					}
+				}
 			}
 		}
 
@@ -163,13 +180,23 @@ void Forest::spatialDynamics()
 			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
 			{
 				pop_it->reproduction(); // Compute local seed bank for each pop
-				pop_it->euler(t, delta_t, "toDel.txt", "toDel2.txt");	
+				pop_it->euler(t, delta_t);	
 				(pop_it->m_currentIter)++;
 			}
 
-			for (env_it = m_land->m_envVec.begin(); pop_it != m_land->m_envVec.end(); ++env_it)
+			for (targetEnv_it = m_land->m_envVec.begin(); targetEnv_it != m_land->m_envVec.end(); ++targetEnv_it) // Starting reproduction prog
 			{
-				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
+				neighbours_indices((*targetEnv_it)->m_patchId, boundingBox); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
+				std::cout << "PatchId = " << (*targetEnv_it)->m_patchId << std::endl;
+				for (unsigned int row = boundingBox[0]; row < boundingBox[3]; ++row)
+				{
+					for (unsigned int col = boundingBox[1]; col < boundingBox[2]; ++col)
+					{
+						index = row*m_nCol_land + col;
+						std::cout << index << std::endl;
+					}
+				}
+				std::cout << "-----------" << std::endl;
 			}
 		}
 
@@ -209,11 +236,23 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<int>& bou
 	int col_ind = target % nCol;
 	int row_ind = (int) (target - col_ind)/nCol;
 
-	topLeft_r = std::max(row_ind - influenceRadius_y, 0);
-	topLeft_c = std::max(col_ind - influenceRadius_x, 0);
-	topRight_c = std::min(col_ind + influenceRadius_x, nCol);
-	bottomLeft_r = std::min(row_ind + influenceRadius_y, nRow);
+	// Default neighbour is itself
+	topLeft_c = col_ind;
+	topRight_c = col_ind;
+	topLeft_r = row_ind;
+	bottomLeft_r = row_ind;
 
+	if (influenceRadius_x >= deltaX) // If more than itself is covered in longitude direction
+	{
+		topLeft_c = std::max(col_ind - influenceRadius_x, 0);
+		topRight_c = std::min(col_ind + influenceRadius_x, nCol);
+	}
+
+	if (influenceRadius_y >= deltaY) // If more than itself is covered in latitude direction
+	{
+		topLeft_r = std::max(row_ind - influenceRadius_y, 0);
+		bottomLeft_r = std::min(row_ind + influenceRadius_y, nRow);
+	}
 	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 }
 
