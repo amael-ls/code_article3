@@ -32,7 +32,7 @@ typedef std::vector<Cohort>::const_iterator c_cohort_it;
 
 */
 Population::Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, std::vector<double> const & mu,
-	Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
+	Environment* env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
 	m_maxCohorts(maxCohorts), m_nonZeroCohort(lambda.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter),
 	m_delta_s(m_s_inf/maxCohorts), m_cohortsVec(maxCohorts), m_species(sp), m_env(env),
 	m_localProducedSeeds(0), m_localSeedBank(0)
@@ -93,10 +93,13 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 
 	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
 	m_popDyn_ofs << *this;
+
+	// Telling the environment there is a population of species sp there
+	m_env->m_isPresent[m_species] = this;
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts,
-	Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
+	Environment* env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
 	m_maxCohorts(maxCohorts), m_nonZeroCohort(cohorts.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
 	m_cohortsVec(cohorts), m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
 {
@@ -146,10 +149,13 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::ve
 
 	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
 	m_popDyn_ofs << *this;
+
+	// Telling the environment there is a population of species sp there
+	m_env->m_isPresent[m_species] = this;
 }
 
 Population::Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName,
-	Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
+	Environment* env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
 	m_maxCohorts(maxCohorts), m_s_inf(sp->maxDiameter), m_currentIter(currentIter), m_delta_s(m_s_inf/maxCohorts),
 	m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
 {
@@ -231,6 +237,9 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::st
 
 	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
 	m_popDyn_ofs << *this;
+
+	// Telling the environment there is a population of species sp there
+	m_env->m_isPresent[m_species] = this;
 }
 
 /********************************************/

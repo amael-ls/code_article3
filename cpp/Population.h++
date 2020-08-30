@@ -79,7 +79,7 @@ class Population
 		double const m_s_inf, m_delta_s; // max possible size and size step for integration
 		std::vector<Cohort> m_cohortsVec; // The population of cohorts
 		Species* const m_species; // The pointer is constant, as a population shall not change species
-		Environment* const m_env; // The pointer is constant, as a population shall not change environment (but Temp/precip in Env could be dynamic)
+		Environment* m_env;
 		double m_s_star; // Competition, both used in dynamics and output variable
 		double m_basalArea; // Basal area, an output variable
 		double m_totalDensity; // Total density, an output variable: Integral[N(s, t) ds, from = 0, to = +Inf]
