@@ -48,6 +48,7 @@ class Except_Population : public std::exception
 	public:
 		Except_Population(int const s_inf, int const tallestTree, std::string const& filename);
 		Except_Population(int const maxCohorts, std::string const& filename);
+		Except_Population(int const maxCohorts, int const nbCohorts, double const t);
 		Except_Population(int const maxCohorts, int const nbCohorts);
 		const char* what() const throw();
 

@@ -68,6 +68,13 @@ Except_Population::Except_Population(int const maxCohorts, int const nbCohorts):
 	m_error_msg += "number of cohorts = " + std::to_string(nbCohorts) + " exceeds maximum number = " + std::to_string(m_maxCohorts) + "\n";
 }
 
+Except_Population::Except_Population(int const maxCohorts, int const nbCohorts, double const t):
+	m_maxCohorts(maxCohorts), m_s_inf(-1)
+{
+	m_error_msg += "number of cohorts = " + std::to_string(nbCohorts) + " exceeds maximum number = " +
+		std::to_string(m_maxCohorts) + " at time t = " + std::to_string(t)  + "\n";
+}
+
 const char* Except_Population::what() const throw()
 {
 	return (m_error_msg.c_str());
