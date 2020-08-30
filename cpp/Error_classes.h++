@@ -14,12 +14,14 @@
 class Except_Forest : public std::exception
 {
 	public:
-		Except_Forest(unsigned int const freqSave, unsigned int const nIter);
+		Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated);
 		const char* what() const throw();
 
 	private:
-		unsigned int m_freqSave;
 		std::string m_error_msg = "Error from Forest: ";
+		unsigned int const m_freqSave;
+		unsigned int const m_dimLandscape;
+		bool const m_overPopulated;
 };
 
 /*************************************/

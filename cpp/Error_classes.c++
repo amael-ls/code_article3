@@ -7,10 +7,14 @@
 /**********************************/
 /******        Forest        ******/
 /**********************************/
-Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIter):
-	m_freqSave(freqSave)
+Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated):
+	m_freqSave(freqSave), m_dimLandscape(dimLandscape), m_overPopulated(overPopulated)
 {
-	m_error_msg += "the frequency of saving (" + std::to_string(m_freqSave) + ") is beyond tmax (" + std::to_string(nIter) + "). No output would be saved\n";
+	if (m_freqSave > nIter)
+		m_error_msg += "the frequency of saving (" + std::to_string(m_freqSave) + ") is beyond tmax (" + std::to_string(nIter) + "). No output would be saved\n";
+	
+	if (m_overPopulated)
+		m_error_msg += "Landscape is overpopulated. Dimension = " + std::to_string(m_dimLandscape) + " cells.\n";
 }
 
 const char* Except_Forest::what() const throw()
