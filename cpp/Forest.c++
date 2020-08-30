@@ -140,7 +140,7 @@ void Forest::spatialDynamics()
 				}
 			}
 
-			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			for (env_it = m_land->m_envVec.begin(); pop_it != m_land->m_envVec.end(); ++env_it) // Starting reproduction prog
 			{
 				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
 			}
@@ -167,7 +167,7 @@ void Forest::spatialDynamics()
 				(pop_it->m_currentIter)++;
 			}
 
-			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+			for (env_it = m_land->m_envVec.begin(); pop_it != m_land->m_envVec.end(); ++env_it)
 			{
 				neighbours_indices((pop_it->m_env)->m_patchId, boundingBox);
 			}

@@ -49,15 +49,16 @@ int main(int argc, char *argv[])
 	par::Params simulationParameters(argv[1], ": "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << simulationParameters << std::endl;
 	
-	unsigned int maxCohorts = simulationParameters.get_val<unsigned int>("maxCohorts");
-	double n_t = simulationParameters.get_val<double>("n_t");
-	double t0 = simulationParameters.get_val<double>("t0");
-	double t_max = simulationParameters.get_val<double>("t_max");
+	// unsigned int maxCohorts = simulationParameters.get_val<unsigned int>("maxCohorts");
+	// double n_t = simulationParameters.get_val<double>("n_t");
+	// double t0 = simulationParameters.get_val<double>("t0");
+	// double t_max = simulationParameters.get_val<double>("t_max");
 	std::string climate_file = simulationParameters.get_val<std::string>("climate_file");
 	std::string species_filenames = simulationParameters.get_val<std::string>("species_filenames");
 	std::string species_path = simulationParameters.get_val<std::string>("species_path");
-	std::string init_filenamePattern = simulationParameters.get_val<std::string>("init_filenamePattern");
-	std::string init_path = simulationParameters.get_val<std::string>("init_path");
+	// std::string init_filenamePattern = simulationParameters.get_val<std::string>("init_filenamePattern");
+	// std::string init_path = simulationParameters.get_val<std::string>("init_path");
+	std::string forestDataFile = simulationParameters.get_val<std::string>("forestDataFile");
 	
 	Species* sp = new Species(species_filenames, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << *sp << std::endl;
@@ -67,8 +68,10 @@ int main(int argc, char *argv[])
 	Landscape *land = new Landscape(climate_file);
 	// std::cout << *land << std::endl;
 
-	Forest forest(land, sp, init_path, init_filenamePattern, maxCohorts);
+	Forest forest(land, sp, forestDataFile);
 	forest.print();
+
+	forest.spatialDynamics();
 
 	// double a = 0.84;
 	// double b = 2.87;
