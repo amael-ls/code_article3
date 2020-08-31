@@ -50,12 +50,14 @@ class Population
 			Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
 		Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts, Environment* const env,
 			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
+		Population(unsigned int const maxCohorts, Species* const sp, double const lambda, Environment* const env,
+			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
 		Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName, Environment* const env,
 			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
 
 		// Dynamics
-		void euler(double const t, double const delta_t,
-			std::string const& outCompReprod, std::string const& popTimeFile = "popDyn.txt");
+		void euler(double const t, double const delta_t);
+		void recruitment(double const t, double const delta_t);
 		void reproduction();
 		void competition();
 		void competition(double const t);
