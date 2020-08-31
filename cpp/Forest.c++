@@ -121,17 +121,20 @@ void Forest::spatialDynamics()
 	// Iterators
 	std::vector<Population>::iterator pop_it;
 	std::vector<Environment*>::iterator targetEnv_it;
-	std::vector<Environment*>::iterator sourceEnv_it;
+	Environment* sourceEnv;
 
 	// Variables for neighbours and recruitment
 	std::vector<int> boundingBox;
-	int index;
+	double targetSeedBank, seedContribution;
 
+	// Others
+	std::string compReprodFilename;
+	std::string popDynFilename;
 
 	// Compute the total seed production for each population (the 2nd sum in eq 27 -> l index), and apply growth and mortality to each cohort of the pop (eq 14)
 	if (!m_saveOnlyLast)
 	{
-		for (unsigned int i = 1; i < 2; ++i) // time loop
+		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
 		{
 			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
@@ -156,8 +159,8 @@ void Forest::spatialDynamics()
 				{
 					for (unsigned int col = boundingBox[1]; col < boundingBox[2]; ++col)
 					{
-						index = row*m_nCol_land + col;
-						std::cout << index << std::endl;
+						// index = row*m_nCol_land + col;
+						// std::cout << index << std::endl;
 					}
 				}
 			}
@@ -174,7 +177,7 @@ void Forest::spatialDynamics()
 	}
 	else
 	{
-		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
+		for (unsigned int i = 1; i < 2; ++i) // m_nIter; ++i) // time loop
 		{
 			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
@@ -186,17 +189,68 @@ void Forest::spatialDynamics()
 
 			for (targetEnv_it = m_land->m_envVec.begin(); targetEnv_it != m_land->m_envVec.end(); ++targetEnv_it) // Starting reproduction prog
 			{
+				// Reset local seed bank
+				targetSeedBank = 0;
+
+				// Get neighbours
 				neighbours_indices((*targetEnv_it)->m_patchId, boundingBox); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
-				std::cout << "PatchId = " << (*targetEnv_it)->m_patchId << std::endl;
-				for (unsigned int row = boundingBox[0]; row < boundingBox[3]; ++row)
+
+				// Cover all the sources within neighbours to collect dispersed seeds
+				for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
 				{
-					for (unsigned int col = boundingBox[1]; col < boundingBox[2]; ++col)
+					for (unsigned int col = boundingBox[1]; col <= boundingBox[2]; ++col) // Important: less than or equal to (<=)
 					{
-						index = row*m_nCol_land + col;
-						std::cout << index << std::endl;
+						sourceEnv = m_land->m_envVec[row*m_nCol_land + col]; // index = row*m_nCol_land + col;
+						if ((sourceEnv->m_isPresent).find(m_sp) != (sourceEnv->m_isPresent).end()) // if species is present in source
+						{
+							std::cout << "Entered" << std::endl;
+							// Compute contribution from source to target seed bank
+							seedContribution = (sourceEnv->m_isPresent)[m_sp]->m_localProducedSeeds; // x integral(K)
+							
+							// Update local seed bank used for target
+							targetSeedBank += seedContribution;
+
+							// Update source seed bank
+							(sourceEnv->m_isPresent)[m_sp]->m_localProducedSeeds -= seedContribution;
+							std::cout << "Exited" << std::endl;
+						}
 					}
 				}
-				std::cout << "-----------" << std::endl;
+				std::cout << "Target: " << targetSeedBank << std::endl;
+				if ((*targetEnv_it)->m_isPresent.find(m_sp) != ((*targetEnv_it)->m_isPresent).end()) // if species is present in target
+				{
+					if (targetSeedBank > 0)
+					{
+						std::cout << "Allo" << std::endl;
+						// Update the target local seed bank
+						((*targetEnv_it)->m_isPresent)[m_sp]->m_localSeedBank = targetSeedBank;
+
+						// Apply recruitment to the population, which apply euler to the boundary cohort and reset the population seedBank to 0
+						((*targetEnv_it)->m_isPresent)[m_sp]->recruitment(t, delta_t);
+					}
+				}
+				else
+				{
+					if (targetSeedBank > 0)
+					{
+						// Create new Population with one cohort
+						// --- Outputs' filename
+						std::cout << "No pop in target" << std::endl;
+						compReprodFilename = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((*targetEnv_it)->m_patchId) + ".txt";
+						popDynFilename = m_pathPopDynFile + m_popDynFilePattern + std::to_string((*targetEnv_it)->m_patchId) + ".txt";
+
+						// --- Add population to the forest
+						m_popVec.emplace_back(Population(m_maxCohorts, m_sp, targetSeedBank, *targetEnv_it, i, compReprodFilename, popDynFilename));
+						std::cout << "emplace_back done" << std::endl;
+
+						// Update the forest
+
+						// Sort the population vector in the same order than landscape
+
+						// The presence of species sp in the target environment is already set via population constructor
+					}
+				}
+				
 			}
 		}
 
