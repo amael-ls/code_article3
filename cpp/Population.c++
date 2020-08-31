@@ -294,6 +294,10 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::st
 
 	// Telling the environment there is a population of species sp there
 	m_env->m_isPresent[m_species] = this;
+
+	std::cout << "From constructor: " << *m_env << "    " <<
+		m_env->m_isPresent[m_species]->m_nonZeroCohort << std::endl;
+
 }
 
 /********************************************/
@@ -355,7 +359,8 @@ void Population::euler(double const t, double const delta_t)
 
 void Population::recruitment(double const t, double const delta_t)
 {
-	cohort_it recruitment_it = std::next(m_cohortsVec.begin() + m_nonZeroCohort); // Position of recruitment (which becomes a new cohort if size > threshold)
+	std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << std::endl;
+	cohort_it recruitment_it = m_cohortsVec.begin() + m_nonZeroCohort; // Position of recruitment (which becomes a new cohort if size > threshold)
 
 	if (recruitment_it >= m_cohortsVec.end())
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort, t));

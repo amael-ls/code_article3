@@ -69,9 +69,11 @@ int main(int argc, char *argv[])
 	// std::cout << *land << std::endl;
 
 	Forest forest(land, sp, forestDataFile);
-	forest.print();
+	// forest.print();
 
-	forest.spatialDynamics();
+	forest.fct1();
+
+	// forest.spatialDynamics();
 
 	// double a = 0.84;
 	// double b = 2.87;

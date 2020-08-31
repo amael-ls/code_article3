@@ -189,6 +189,10 @@ void Forest::spatialDynamics()
 
 			for (targetEnv_it = m_land->m_envVec.begin(); targetEnv_it != m_land->m_envVec.end(); ++targetEnv_it) // Starting reproduction prog
 			{
+				std::cout << "Bibibop: " << (*targetEnv_it)->m_patchId << std::endl;
+				if ((*targetEnv_it)->m_patchId == 34)
+					std::cout << "Bibibop2: " << (*targetEnv_it)->m_isPresent[m_sp]->m_env->m_patchId << std::endl;
+
 				// Reset local seed bank
 				targetSeedBank = 0;
 
@@ -216,12 +220,15 @@ void Forest::spatialDynamics()
 						}
 					}
 				}
-				std::cout << "Target: " << targetSeedBank << std::endl;
+				std::cout << "Target: " << (*targetEnv_it)->m_patchId << ", " << targetSeedBank << std::endl;
 				if ((*targetEnv_it)->m_isPresent.find(m_sp) != ((*targetEnv_it)->m_isPresent).end()) // if species is present in target
 				{
+					if ((*targetEnv_it)->m_patchId == 34)
+						targetSeedBank = 1;
+
 					if (targetSeedBank > 0)
 					{
-						std::cout << "Allo" << std::endl;
+						std::cout << "Allo: " << (((*targetEnv_it)->m_isPresent)[m_sp]->m_env)->m_patchId << std::endl;
 						// Update the target local seed bank
 						((*targetEnv_it)->m_isPresent)[m_sp]->m_localSeedBank = targetSeedBank;
 
@@ -339,5 +346,43 @@ void Forest::close_ofs()
 	std::vector<Population>::iterator pop_it;
 	for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
 		pop_it->m_compReprod_ofs.close();
+}
+
+
+// ************************************ //
+// ************************************ //
+// ************************************ //
+// Debug
+void Forest::fct1()
+{
+	auto it34 = m_land->m_envVec[34]->m_isPresent.cbegin();
+	auto it35 = m_land->m_envVec[35]->m_isPresent.cbegin();
+	auto it44 = m_land->m_envVec[44]->m_isPresent.cbegin();
+	auto it45 = m_land->m_envVec[45]->m_isPresent.cbegin();
+
+	for (; it34 != m_land->m_envVec[34]->m_isPresent.cend(); ++it34)
+	{
+		// std::cout << it34->first << "    " << &(it34->second) << std::endl;
+		std::cout << "pId = " << ((it34->second)->m_env)->m_patchId << std::endl;
+	}
+	
+	for (; it35 != m_land->m_envVec[35]->m_isPresent.cend(); ++it35)
+	{
+		// std::cout << it35->first << "    " << &(it35->second) << std::endl;
+		std::cout << "pId = " << ((it35->second)->m_env)->m_patchId << std::endl;
+	}
+
+	for (; it44 != m_land->m_envVec[44]->m_isPresent.cend(); ++it44)
+	{
+		// std::cout << it44->first << "    " << &(it44->second) << std::endl;
+		std::cout << "pId = " << ((it44->second)->m_env)->m_patchId << std::endl;
+	}
+
+	for (; it45 != m_land->m_envVec[45]->m_isPresent.cend(); ++it45)
+	{
+		// std::cout << it45->first << "    " << &(it45->second) << std::endl;
+		std::cout << "pId = " << ((it45->second)->m_env)->m_patchId << std::endl;
+	}
+
 }
 #endif

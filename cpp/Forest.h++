@@ -24,6 +24,9 @@ class Forest
 	// Sorting function
 		void sort(bool const rasterOrder_Rlang);
 
+	// Debug Fct
+		void fct1(); // Print address map isPresent;
+
 	private :
 	// Forest parameters file
 		std::string const m_forestParamsFilename;

@@ -118,6 +118,7 @@ std::ostream &operator<<(std::ostream &os, Environment const& env)
 
 	os << "Environment from file:" << std::endl;
 	os << env.m_fileName << std::endl;
+	os << "Patch id: " << env.m_patchId << std::endl;
 	os << std::endl;
 
 	os << "Growth climate variables:" << std::endl;
