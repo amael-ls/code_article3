@@ -11,34 +11,34 @@
 /**********************************/
 /******        Forest        ******/
 /**********************************/
-class Except_Forest : public std::exception
-{
-	public:
-		Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated);
-		const char* what() const throw();
+// class Except_Forest : public std::exception
+// {
+// 	public:
+// 		Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated);
+// 		const char* what() const throw();
 
-	private:
-		std::string m_error_msg = "Error from Forest: ";
-		unsigned int const m_freqSave;
-		unsigned int const m_dimLandscape;
-		bool const m_overPopulated;
-};
+// 	private:
+// 		std::string m_error_msg = "Error from Forest: ";
+// 		unsigned int const m_freqSave;
+// 		unsigned int const m_dimLandscape;
+// 		bool const m_overPopulated;
+// };
 
 /*************************************/
 /******        Landscape        ******/
 /*************************************/
-class Except_Landscape : public std::exception
-{
-	public:
-		Except_Landscape(int const dim);
-		Except_Landscape(int const dim, int const i);
-		Except_Landscape(int const dim, std::string const& filename);
-		const char* what() const throw();
+// class Except_Landscape : public std::exception
+// {
+// 	public:
+// 		Except_Landscape(int const dim);
+// 		Except_Landscape(int const dim, int const i);
+// 		Except_Landscape(int const dim, std::string const& filename);
+// 		const char* what() const throw();
 
-	private:
-		int m_dimLandscape;
-		std::string m_error_msg = "Error from Landscape: ";
-};
+// 	private:
+// 		int m_dimLandscape;
+// 		std::string m_error_msg = "Error from Landscape: ";
+// };
 
 /**************************************/
 /******        Population        ******/

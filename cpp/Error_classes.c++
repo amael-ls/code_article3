@@ -7,45 +7,45 @@
 /**********************************/
 /******        Forest        ******/
 /**********************************/
-Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated):
-	m_freqSave(freqSave), m_dimLandscape(dimLandscape), m_overPopulated(overPopulated)
-{
-	if (m_freqSave > nIter)
-		m_error_msg += "the frequency of saving (" + std::to_string(m_freqSave) + ") is beyond tmax (" + std::to_string(nIter) + "). No output would be saved\n";
+// Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated):
+// 	m_freqSave(freqSave), m_dimLandscape(dimLandscape), m_overPopulated(overPopulated)
+// {
+// 	if (m_freqSave > nIter)
+// 		m_error_msg += "the frequency of saving (" + std::to_string(m_freqSave) + ") is beyond tmax (" + std::to_string(nIter) + "). No output would be saved\n";
 	
-	if (m_overPopulated)
-		m_error_msg += "Landscape is overpopulated. Dimension = " + std::to_string(m_dimLandscape) + " cells.\n";
-}
+// 	if (m_overPopulated)
+// 		m_error_msg += "Landscape is overpopulated. Dimension = " + std::to_string(m_dimLandscape) + " cells.\n";
+// }
 
-const char* Except_Forest::what() const throw()
-{
-	return (m_error_msg.c_str());
-}
+// const char* Except_Forest::what() const throw()
+// {
+// 	return (m_error_msg.c_str());
+// }
 
 /*************************************/
 /******        Landscape        ******/
 /*************************************/
-Except_Landscape::Except_Landscape(int const dim, int const i):
-	m_dimLandscape(dim)
-{
-	if (i < dim)
-		m_error_msg += "not enough files provided. Length = " + std::to_string(m_dimLandscape) + " and number of read files = " + std::to_string(i) + "\n";
+// Except_Landscape::Except_Landscape(int const dim, int const i):
+// 	m_dimLandscape(dim)
+// {
+// 	if (i < dim)
+// 		m_error_msg += "not enough files provided. Length = " + std::to_string(m_dimLandscape) + " and number of read files = " + std::to_string(i) + "\n";
 	
-	if (i > dim)
-		m_error_msg += "Length = " + std::to_string(m_dimLandscape) + " and index = " + std::to_string(i) + "\n";
-}
+// 	if (i > dim)
+// 		m_error_msg += "Length = " + std::to_string(m_dimLandscape) + " and index = " + std::to_string(i) + "\n";
+// }
 
-Except_Landscape::Except_Landscape(int const dim, std::string const& filename):
-	m_dimLandscape(dim)
-{
-	m_error_msg = "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(m_dimLandscape) + ". ";
-	m_error_msg = "Last file provided: " + filename + "\n";
-}
+// Except_Landscape::Except_Landscape(int const dim, std::string const& filename):
+// 	m_dimLandscape(dim)
+// {
+// 	m_error_msg = "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(m_dimLandscape) + ". ";
+// 	m_error_msg = "Last file provided: " + filename + "\n";
+// }
 
-const char* Except_Landscape::what() const throw()
-{
-	return (m_error_msg.c_str());
-}
+// const char* Except_Landscape::what() const throw()
+// {
+// 	return (m_error_msg.c_str());
+// }
 
 /**************************************/
 /******        Population        ******/
