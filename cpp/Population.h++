@@ -36,6 +36,7 @@ I list the functions here, but describe them in the associated c++ file:
 #include <string>
 
 // My headers
+#include "Error_classes.h++"
 #include "Environment.h++"
 #include "Species.h++"
 #include "Cohort.h++"
@@ -46,21 +47,27 @@ class Population
 
 	public :
 		// Constructors
-		Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, std::vector<double> const & mu,
-			Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
-		Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts, Environment* const env,
-			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
-		Population(unsigned int const maxCohorts, Species* const sp, double const lambda, Environment* const env,
-			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
-		Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName, Environment* const env,
-			unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
+		Population(unsigned int const maxCohorts, double const s_inf, double const delta_s, Species const * const species);
+		Population(unsigned int const maxCohorts, double const s_inf, double const delta_s, Species const * const species, std::string const& filename);
+
+		// *********
+		// Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, std::vector<double> const & mu,
+		// 	Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
+		// Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts, Environment* const env,
+		// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
+		// Population(unsigned int const maxCohorts, Species* const sp, double const lambda, Environment* const env,
+		// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
+		// Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName, Environment* const env,
+		// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
 
 		// Dynamics
-		void euler(double const t, double const delta_t);
-		void recruitment(double const t, double const delta_t);
-		void reproduction();
-		void competition();
-		void competition(double const t);
+
+		// *********
+		void euler(double const t, double const delta_t, double const s_star, Environment const & env);
+		void recruitment(double const t, double const delta_t, double const s_star, Environment const & env);
+		double reproduction(double const s_star);
+		// void competition();
+		// void competition(double const t);
 		void totalDensity_basalArea();
 
 		// Overloading
@@ -68,27 +75,42 @@ class Population
 
 		// Sorting and organising
 		void sort(bool const decreasingOrder);
-		// void lastReproducer();
 		bool mergeCohorts(double const thresholdSimilarity, double const thresholdDensity);
 		void resetCohorts(std::vector<Cohort>::iterator const it);
 		void printNonZero() const;
 
 	private :
-		unsigned int m_maxCohorts; // maximal number of cohorts
-		unsigned int m_nonZeroCohort; // Number of non empty cohorts
-		// std::vector<Cohort>::iterator m_lastReproducer; // Last cohort able to reproduce (given sorted by decreasing order)
-		unsigned int m_currentIter;
-		double const m_s_inf, m_delta_s; // max possible size and size step for integration
+	// Length vector cohort and discretisation
+		unsigned int const m_maxCohorts; // Maximal number of cohorts
+		double const m_s_inf; // Maximal possible size
+		double const m_delta_s; // Size step for integration
+	
+	// Cohorts of species
 		std::vector<Cohort> m_cohortsVec; // The population of cohorts
-		Species* const m_species; // The pointer is constant, as a population shall not change species
-		Environment* m_env;
-		double m_s_star; // Competition, both used in dynamics and output variable
+		Species const * const m_species; // The pointer is constant, as a population shall not change species
+
+	// Dynamics
+	// --- Reproduction
+		unsigned int m_nonZeroCohort; // Number of non empty cohorts
+		double m_localSeedBank; // Seeds received from local source and from external source (dispersal)
+	
+	// --- Total population
 		double m_basalArea; // Basal area, an output variable
 		double m_totalDensity; // Total density, an output variable: Integral[N(s, t) ds, from = 0, to = +Inf]
-		double m_localProducedSeeds; // Seeds produced in local patch (part of it are propagated)
-		double m_localSeedBank; // Seeds received from local source and from external source (dispersal)
-		std::ofstream m_compReprod_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
-		std::ofstream m_popDyn_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
+
+	// --- Others
+		unsigned int m_currentIter;
+		
+		// double m_localProducedSeeds; // Seeds produced in local patch (part of it are propagated)
+		// double m_s_star; // Competition, both used in dynamics and output variable
+	
+		
+	// *********
+		// Environment* const m_env; // The pointer is constant, as a population shall not change of location. However, the environment properties can change (only ptr is constant)
+	// Saving files
+		// std::ofstream m_compReprod_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
+		// std::ofstream m_popDyn_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
+		
 };
 
 #endif
