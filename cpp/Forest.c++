@@ -4,6 +4,7 @@
 
 // Official headers
 #include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
+#include <algorithm> // std::sort
 #include <fstream>
 #include <string>
 #include <cmath>
@@ -15,6 +16,8 @@
 
 // Define typedef shortcuts
 typedef std::vector<Species*>::const_iterator c_species_it;
+typedef std::vector<Patch>::const_iterator c_patch_it;
+typedef std::vector<Patch>::iterator patch_it;
 
 Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> const speciesList, std::string const climateFilename) :
 	m_forestParamsFilename(forestParamsFilename), m_speciesList(speciesList)
@@ -152,6 +155,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 			throw Except_Landscape(m_dim_land, counterPatch);
 
 		// Sort forest
+		this->sort(m_rasterOrder_Rlang);
 
 		// Compute competition for each patch
 
@@ -403,14 +407,29 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 // 		pop_it->m_compReprod_ofs.close();
 // }
 
+/***********************************/
+/******        Sorting        ******/
+/***********************************/
+void Forest::sort(bool const rasterOrder_Rlang)
+{
+	// Sorting
+	std::vector<Patch>::iterator first = m_patchVec.begin();
+	std::vector<Patch>::iterator last = m_patchVec.end();
+
+	if (rasterOrder_Rlang)
+		std::sort(first, last);
+	else
+		std::sort(first, last, std::greater<Patch>());
+}
+
 // /************************************/
 // /******        Overload        ******/
 // /************************************/
 std::ostream& operator<<(std::ostream& os, Forest const &forest)
 {
-	std::vector<Patch>::const_iterator patch_it = forest.m_patchVec.cbegin();
-	for (; patch_it != forest.m_patchVec.cend(); ++patch_it)
-		os << *patch_it << std::endl;
+	c_patch_it it = forest.m_patchVec.cbegin();
+	for (; it != forest.m_patchVec.cend(); ++it)
+		os << *it << std::endl;
 	return os;
 }
 

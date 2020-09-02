@@ -25,7 +25,8 @@ class Forest
 	// // Sorting function
 	// 	void sort(bool const rasterOrder_Rlang);
 
-	// // Manage
+	// // Managing
+		void sort(bool const rasterOrder_Rlang);
 		// void addSpecies();
 	
 	// Overloading
