@@ -6,51 +6,53 @@
 #include <vector>
 
 // My headers
-#include "Landscape.h++"
-#include "Population.h++"
+// #include "Landscape.h++"
+#include "Species.h++"
+#include "Patch.h++"
 
 class Forest
 {
 	public :
-		Forest(Landscape* land, Species* sp, std::string const forestParamsFilename);
-		void spatialDynamics();
+		Forest(std::string const forestParamsFilename, std::vector<Species*> const speciesList, std::string const climateFilename);
+	// 	void spatialDynamics();
 
-	// Return pointers to the neighbour cells
-		void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const;
+	// // Return pointers to the neighbour cells
+	// 	void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const;
 
-	// Print function
-		void print() const;
+	// // Print function
+	// 	void print() const;
 
-	// Sorting function
-		void sort(bool const rasterOrder_Rlang);
+	// // Sorting function
+	// 	void sort(bool const rasterOrder_Rlang);
 
-	// Debug Fct
-		void fct1(); // Print address map isPresent;
+	// // Manage
+		// void addSpecies();
 
 	private :
 	// Forest parameters file
 		std::string const m_forestParamsFilename;
+		std::string m_initFilenamePattern;
+		std::string m_initPath;
 
-	// Landscape
-		Landscape* m_land;
-		unsigned int m_nRow_land, m_nCol_land, m_dim_land; // Landscape dimensions
+	// Landscape dimensions
+		unsigned int m_nRow_land, m_nCol_land, m_dim_land; // Landscape
 	
-	// Order (see Landscape for more details)
-		bool m_rasterOrder_Rlang; // if true, then same order than a raster in R language
+	// Landscape order; if true, then same order than a raster in R language
+		bool m_rasterOrder_Rlang;
 	
 	// Species and population
-		std::vector<Population> m_popVec; // size(m_popVec) <= size(m_land)
+		std::vector<Patch> m_patchVec;
 		unsigned int m_maxCohorts;
 
-		Species* m_sp;
+		std::vector<Species*> m_speciesList;
 
 	// Dynamics parameters
 		double  m_t0, m_tmax;
 		unsigned int m_nIter;
 
-	// Reading parameters
-		std::string m_initFilenamePattern;
-		std::string m_initPath;
+	// // Reading parameters
+	// 	std::string m_initFilenamePattern;
+	// 	std::string m_initPath;
 
 	// Saving options
 		std::string m_compReprodFilePattern;
@@ -60,9 +62,9 @@ class Forest
 		bool m_saveOnlyLast;
 		unsigned int m_freqSave;
 
-	// Private functions
-		void createOutputFiles() const;
-		void close_ofs();
+	// // Private functions
+	// 	void createOutputFiles() const;
+	// 	void close_ofs();
 };
 
 // Notes
