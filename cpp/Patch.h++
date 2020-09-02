@@ -15,19 +15,26 @@
 
 class Patch
 {
+	friend class Forest;
 	public:
 	// Constructors
 		Patch(Environment const& env, std::vector<Species*> speciesList, unsigned int const maxCohorts);
 		Patch(Environment const& env, Species* species, unsigned int const maxCohorts);
 		Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts);
 
+	// Dynamics
+		std::vector<Cohort*> getNonZeroCohorts() const;
+		void competition(double const tolHeight);
+
 	// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Patch const &patch);
+		friend bool operator<(Patch const& patch1, Patch const& patch2);
+		friend bool operator>(Patch const& patch1, Patch const& patch2);
 
 	private:
 	// Utilities
 		std::map <Species*, std::string> m_filenamePattern_map;
-		unsigned int const m_maxCohorts;
+		unsigned int m_maxCohorts;
 
 	// Populations
 		std::map <Species*, Population> m_pop_map; // One population (vector of cohorts) of a species present in Environment
