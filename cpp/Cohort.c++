@@ -30,21 +30,25 @@
 	Third constructor: Density λ, diameter μ, and species set
 */
 Cohort::Cohort() :
-	m_lambda(0), m_mu(0), m_species(NULL)
+	m_lambda(0), m_mu(0), m_height(0), m_species(NULL)
 {}
 
 
 Cohort::Cohort(Species const *sp, unsigned int birthIteration) :
-	m_lambda(0), m_mu(0), m_species(sp), m_birthIteration(birthIteration)
+	m_lambda(0), m_mu(0), m_height(0), m_species(sp), m_birthIteration(birthIteration)
 {}
 
 Cohort::Cohort(Cohort const& cohort, unsigned int birthIteration) :
 	m_lambda(cohort.m_lambda), m_mu(cohort.m_mu), m_species(cohort.m_species), m_birthIteration(birthIteration)
-{}
+{
+	m_height = 2;
+}
 
 Cohort::Cohort(double const lambda, double const mu, Species const *sp, unsigned int birthIteration) :
 	m_lambda(lambda), m_mu(mu), m_species(sp), m_birthIteration(birthIteration)
-{}
+{
+	m_height = 2;
+}
 
 /*******************************************/
 /******        Characteristics        ******/
@@ -305,12 +309,17 @@ std::ostream &operator<<(std::ostream &os, Cohort const& cohort)
 
 bool operator<(Cohort const& cohort1, Cohort const& cohort2)
 {
-    return (cohort1.m_mu < cohort2.m_mu);
+	return (cohort1.m_mu < cohort2.m_mu);
 }
 
 bool operator>(Cohort const& cohort1, Cohort const& cohort2)
 {
-    return (cohort1.m_mu > cohort2.m_mu);
+	return (cohort1.m_mu > cohort2.m_mu);
+}
+
+bool greaterCohortPtr(Cohort const* cohort1, Cohort const* cohort2)
+{
+	return (cohort1->m_mu > cohort2->m_mu);
 }
 
 #endif

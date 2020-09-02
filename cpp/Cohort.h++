@@ -65,11 +65,15 @@ class Cohort
 		friend std::ostream& operator<<(std::ostream& os, Cohort const &cohort);
 		friend bool operator<(Cohort const& cohort1, Cohort const& cohort2);
 		friend bool operator>(Cohort const& cohort1, Cohort const& cohort2);
+		friend bool greaterCohortPtr(Cohort const* cohort1, Cohort const* cohort2);
 
 	private :
-		double m_lambda, m_mu; // Density, dbh
+		double m_lambda, m_mu, m_height; // Density, dbh, height
 		Species const *m_species; // Species is constant, not the pointer so no problem with vector
 		unsigned int m_birthIteration; // Iteration at which the cohort appeared
 };
+
+// External function
+bool greaterCohortPtr(Cohort const* cohort1, Cohort const* cohort2);
 
 #endif
