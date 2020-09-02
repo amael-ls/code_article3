@@ -7,8 +7,8 @@
 #include <cmath>
 
 #include "Population.h++"
-#include "Landscape.h++"
-#include "Forest.h++"
+// #include "Landscape.h++"
+// #include "Forest.h++"
 #include "Params.h++"
 
 // #include "integration.h" // You need to copy paste all the src files from ALGLIB and then compile. Example:
@@ -65,13 +65,14 @@ int main(int argc, char *argv[])
 
 	// --- CRASH TEST ZONE TO REMOVE
 
-	Landscape *land = new Landscape(climate_file);
+	// Landscape *land = new Landscape(climate_file);
 	// std::cout << *land << std::endl;
 
-	Forest forest(land, sp, forestDataFile);
+	// Forest forest(land, sp, forestDataFile);
 	// forest.print();
 
-	forest.fct1();
+	// forest.fct1();
+	// forest.fct2();
 
 	// forest.spatialDynamics();
 
