@@ -55,6 +55,32 @@ can directly jump from cohorts to cohorts as the crown area is a step function
 of size s in this particular case. The flat-top case is also discontinuous, and
 there is no guarantee of having a solution for summedArea == 1.
 */
+void Patch::getNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts)
+{
+	population_it it_map = m_pop_map.begin();
+	std::vector<Cohort>::iterator it_cohort, lim_it;
+	Cohort* cohort_ptr;
+
+	for (; it_map != m_pop_map.end(); ++it_map)
+	{
+		it_cohort = ((it_map->second).m_cohortsVec).begin();
+		lim_it = it_cohort + (it_map->second).m_nonZeroCohort; // To avoid taking the zeros
+		for (; it_cohort != lim_it; ++it_cohort)
+		{
+			cohort_ptr = new Cohort(*it_cohort);
+			nonZeroCohorts.emplace_back(cohort_ptr);
+		}
+	}
+
+	delete cohort_ptr;
+
+	// Sort vector
+	std::sort(nonZeroCohorts.begin(), nonZeroCohorts.end(), greaterCohortPtr);
+
+	std::vector<Cohort *>::iterator it = nonZeroCohorts.begin();
+	for (; it != nonZeroCohorts.end(); ++it)
+		std::cout << **it << std::endl;
+}
 
 void Patch::competition(double const tolHeight)
 {

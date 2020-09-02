@@ -23,7 +23,7 @@ class Patch
 		Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts);
 
 	// Dynamics
-		std::vector<Cohort*> getNonZeroCohorts() const;
+		void getNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts);
 		void competition(double const tolHeight);
 
 	// Overloading
@@ -44,7 +44,7 @@ class Patch
 
 	// Dynamics
 	// --- Competition
-		double m_s_star;
+		double m_height_star; //The height at which the canopy is closed
 
 	// --- Reproduction
 		std::map <Species*, double> m_localSeedBank_map;
