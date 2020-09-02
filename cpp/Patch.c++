@@ -11,16 +11,29 @@ typedef std::map<Species*, Population>::const_iterator c_population_it;
 
 typedef std::map<Species*, std::string>::iterator filename_it;
 
-Patch::Patch(Environment env, std::vector<Species*> speciesList):
-	m_env(env)
+Patch::Patch(Environment const& env, std::vector<Species*> speciesList, unsigned int const maxCohorts):
+	m_maxCohorts(maxCohorts), m_env(env)
 {
 	std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
 	for (; species_it != speciesList.cend(); ++species_it)
 	{
 		m_filenamePattern_map[*species_it] = "not initialised.txt";
-		// m_pop_map[*species_it] = Population();
+		m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it));
 	}
 }
+
+Patch::Patch(Environment const& env, Species* species, unsigned int const maxCohorts):
+	m_maxCohorts(maxCohorts), m_env(env)
+{
+	m_pop_map.emplace(species, Population(maxCohorts, species));
+}
+
+Patch::Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts):
+	m_maxCohorts(maxCohorts), m_env(env)
+{
+	m_pop_map.emplace(species, Population(maxCohorts, species, initFilename));
+}
+
 
 // population_it pop_it = m_pop_map.begin();
 // filename_it file_it = m_filenamePattern_map.begin();
