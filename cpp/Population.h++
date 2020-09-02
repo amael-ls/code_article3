@@ -47,8 +47,8 @@ class Population
 
 	public :
 		// Constructors
-		Population(unsigned int const maxCohorts, double const s_inf, double const delta_s, Species const * const species);
-		Population(unsigned int const maxCohorts, double const s_inf, double const delta_s, Species const * const species, std::string const& filename);
+		Population(unsigned int const maxCohorts, Species const * const species);
+		Population(unsigned int const maxCohorts, Species const * const species, std::string const& filename);
 
 		// *********
 		// Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, std::vector<double> const & mu,

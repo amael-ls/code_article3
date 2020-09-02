@@ -1,17 +1,10 @@
 
+#ifndef POPULATION_C
+#define POPULATION_C
+
 // Official headers
-#include <algorithm> // std::sort
-#include <exception> // std::throw
-#include <stdexcept> // exceptions (bad_alloc, bad_cast, out_of_range, ...)
-#include <iomanip> // std::setw, std::left
-#include <fstream>
-#include <sstream>
-#include <string>
-// #include <chrono> // std::chrono::system_clock::now
-#include <cmath>
 
 // My headers
-#include "Error_classes.h++"
 #include "Population.h++"
 
 // Define typedef shortcuts
@@ -21,204 +14,34 @@ typedef std::vector<Cohort>::const_iterator c_cohort_it;
 /****************************************/
 /******        Constructors        ******/
 /****************************************/
-/*
-	The constructors are build in this order:
-	First constructor: set λ and μ to values provided separately by the user
-		λ, μ
-		calculate s_star
-		set m_crown_area, which is the area of the crown cross-section at s* for each cohort
-
-	Second constructor: set λ and μ to values provided by the user with a vector of cohorts
-
-*/
-Population::Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, std::vector<double> const & mu,
-	Environment* env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
-	m_maxCohorts(maxCohorts), m_nonZeroCohort(lambda.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter),
-	m_delta_s(m_s_inf/maxCohorts), m_cohortsVec(maxCohorts), m_species(sp), m_env(env),
-	m_localProducedSeeds(0), m_localSeedBank(0)
+Population::Population(unsigned int const maxCohorts, Species const * const species):
+	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species)
 {
-	if (m_maxCohorts < m_nonZeroCohort)
-		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
+	m_nonZeroCohort = 0;
+	m_currentIter = 0;
 
-	for (unsigned int i = 0; i < m_nonZeroCohort; ++i)
-	{
-		m_cohortsVec[i].m_lambda = lambda[i];
-		m_cohortsVec[i].m_mu = mu[i];
-		m_cohortsVec[i].m_species = m_species;
-	}
+	// Assign vector of cohorts
+	for (unsigned int i = 0; i < m_maxCohorts; ++i)
+		m_cohortsVec.emplace_back(Cohort(species, 0));
 
-	for (unsigned int i = m_nonZeroCohort; i < m_maxCohorts; ++i)
-	{
-		m_cohortsVec[i].m_lambda = 0;
-		m_cohortsVec[i].m_mu = 0;
-		m_cohortsVec[i].m_species = m_species;
-	}
-
-	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
-	if (m_s_inf < tallest_tree)
-		throw(Except_Population(m_s_inf, tallest_tree, ""));
-	
-	// Open ofstream m_compReprod_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
-		std::filesystem::remove(compReprodFilename);
-	
-	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
-
-	if(!m_compReprod_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
+	// Sort and compute basal area and total density
 	this->sort(true); // true to sort by decreasing size
-	this->competition();
 	this->totalDensity_basalArea();
-	
-	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
-	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
-
-	// Open ofstream m_popDyn_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
-		std::filesystem::remove(popDynFilename);
-	
-	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
-
-	if(!m_popDyn_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
-	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
-	m_popDyn_ofs << *this;
-
-	// Telling the environment there is a population of species sp there
-	m_env->m_isPresent[m_species] = this;
 }
 
-Population::Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts,
-	Environment* env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
-	m_maxCohorts(maxCohorts), m_nonZeroCohort(cohorts.size()), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
-	m_cohortsVec(cohorts), m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
+Population::Population(unsigned int const maxCohorts, Species const * const species, std::string const& filename):
+	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species)
 {
-	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
-	if (m_s_inf < tallest_tree)
-		throw(Except_Population(m_s_inf, tallest_tree, ""));
+	m_nonZeroCohort = 0;
+	m_currentIter = 0;
 
-	if (m_maxCohorts < m_nonZeroCohort)
-		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
-
-	 // Set species to each cohort
-	for (cohort_it it = m_cohortsVec.begin(); it != m_cohortsVec.end(); ++it)
-		it->m_species = m_species;
-
-	// Open ofstream m_compReprod_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
-		std::filesystem::remove(compReprodFilename);
-	
-	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
-
-	if(!m_compReprod_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
-	this->sort(true); // true to sort by decreasing size
-	this->competition();
-	this->totalDensity_basalArea();
-	
-	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
-	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
-
-	// Open ofstream m_popDyn_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
-		std::filesystem::remove(popDynFilename);
-	
-	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
-
-	if(!m_popDyn_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
-	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
-	m_popDyn_ofs << *this;
-
-	// Telling the environment there is a population of species sp there
-	m_env->m_isPresent[m_species] = this;
-}
-
-Population::Population(unsigned int const maxCohorts, Species* const sp, double const density, Environment* const env,
-	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
-	m_maxCohorts(maxCohorts), m_nonZeroCohort(0), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
-	m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
-{
-
-	m_cohortsVec.emplace_back(Cohort(density, 0, sp, currentIter));
-	++m_nonZeroCohort;
-	if (m_maxCohorts < m_nonZeroCohort)
-		throw(Except_Population(m_maxCohorts, 1));
-
-	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
-	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
-		m_cohortsVec.emplace_back(Cohort(sp, currentIter));
-	
-	// Open ofstream m_compReprod_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
-		std::filesystem::remove(compReprodFilename);
-	
-	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
-
-	if(!m_compReprod_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
-	this->sort(true); // true to sort by decreasing size
-	this->competition();
-	this->totalDensity_basalArea();
-	
-	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
-	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
-
-	// Open ofstream m_popDyn_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
-		std::filesystem::remove(popDynFilename);
-	
-	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
-
-	if(!m_popDyn_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
-	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
-	m_popDyn_ofs << *this;
-
-	// Telling the environment there is a population of species sp there
-	m_env->m_isPresent[m_species] = this;
-}
-
-Population::Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName,
-	Environment* env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
-	m_maxCohorts(maxCohorts), m_nonZeroCohort(0), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
-	m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
-{
-	std::ifstream inputFile(fileName);
+	// Assign vector of cohorts
+	// --- Open input file
+	std::ifstream inputFile(filename);
 	if(!inputFile.is_open())
 	{
 		std::stringstream ss;
-		ss << "*** ERROR: cannot open file <" << fileName << ">";
+		ss << "*** ERROR: cannot open file <" << filename << ">";
 		throw (std::runtime_error (ss.str()));
 	}
 
@@ -227,7 +50,7 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::st
 	if (line.find("density", 0) == std::string::npos || line.find("dbh", 0) == std::string::npos)
 	{
 		std::stringstream ss;
-		ss << "*** ERROR: file <" << fileName << "> must have density and dbh headers";
+		ss << "*** ERROR: file <" << filename << "> must have density and dbh headers";
 		throw (std::runtime_error (ss.str()));
 	}
 	
@@ -242,64 +65,184 @@ Population::Population(unsigned int const maxCohorts, Species* const sp, std::st
 		density = std::stod(line, &afterNumVal);
 		dbh = std::stod(line.substr(afterNumVal));
 
-		m_cohortsVec.emplace_back(Cohort(density, dbh, sp, currentIter));
+		m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
 		++m_nonZeroCohort;
 		if (m_maxCohorts < m_nonZeroCohort)
-			throw(Except_Population(m_maxCohorts, fileName));
+			throw(Except_Population(m_maxCohorts, filename));
 	}
 
 	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
 	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
-		m_cohortsVec.emplace_back(Cohort(sp, currentIter));
+		m_cohortsVec.emplace_back(Cohort(species, 0));
 	
 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
 	if (m_s_inf < tallest_tree)
-		throw(Except_Population(m_s_inf, tallest_tree, fileName));
+		throw(Except_Population(m_s_inf, tallest_tree, filename));
 
-	// Open ofstream m_compReprod_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
-		std::filesystem::remove(compReprodFilename);
-	
-	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
-
-	if(!m_compReprod_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
+	// Sort and compute basal area and total density
 	this->sort(true); // true to sort by decreasing size
-	this->competition();
 	this->totalDensity_basalArea();
-	
-	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
-	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
-
-	// Open ofstream m_popDyn_ofs, to close at the end of the simulation
-	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
-		std::filesystem::remove(popDynFilename);
-	
-	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
-
-	if(!m_popDyn_ofs.is_open())
-	{
-		std::stringstream ss;
-		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
-
-	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
-	m_popDyn_ofs << *this;
-
-	// Telling the environment there is a population of species sp there
-	m_env->m_isPresent[m_species] = this;
-
-	std::cout << "From constructor: " << *m_env << "    " <<
-		m_env->m_isPresent[m_species]->m_nonZeroCohort << std::endl;
-
 }
 
+
+// Population::Population(unsigned int const maxCohorts, Species* const sp, double const density, Environment* const env,
+// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
+// 	m_maxCohorts(maxCohorts), m_nonZeroCohort(0), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
+// 	m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
+// {
+
+// 	m_cohortsVec.emplace_back(Cohort(density, 0, sp, currentIter));
+// 	++m_nonZeroCohort;
+// 	if (m_maxCohorts < m_nonZeroCohort)
+// 		throw(Except_Population(m_maxCohorts, 1));
+
+// 	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
+// 	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
+// 		m_cohortsVec.emplace_back(Cohort(sp, currentIter));
+	
+// 	// Open ofstream m_compReprod_ofs, to close at the end of the simulation
+// 	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
+// 		std::filesystem::remove(compReprodFilename);
+	
+// 	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
+
+// 	if(!m_compReprod_ofs.is_open())
+// 	{
+// 		std::stringstream ss;
+// 		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
+// 		throw (std::runtime_error (ss.str()));
+// 	}
+
+// 	this->sort(true); // true to sort by decreasing size
+// 	this->competition();
+// 	this->totalDensity_basalArea();
+	
+// 	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
+// 	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
+
+// 	// Open ofstream m_popDyn_ofs, to close at the end of the simulation
+// 	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
+// 		std::filesystem::remove(popDynFilename);
+	
+// 	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
+
+// 	if(!m_popDyn_ofs.is_open())
+// 	{
+// 		std::stringstream ss;
+// 		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
+// 		throw (std::runtime_error (ss.str()));
+// 	}
+
+// 	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
+// 	m_popDyn_ofs << *this;
+
+// 	// Telling the environment there is a population of species sp there
+// 	m_env->m_isPresent[m_species] = this;
+// 	m_env->m_test = this;
+// }
+
+// ! -----
+
+// Population::Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName,
+// 	Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename):
+// 	m_maxCohorts(maxCohorts), m_nonZeroCohort(0), m_currentIter(currentIter), m_s_inf(sp->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
+// 	m_species(sp), m_env(env), m_localProducedSeeds(0), m_localSeedBank(0)
+// {
+// 	std::ifstream inputFile(fileName);
+// 	if(!inputFile.is_open())
+// 	{
+// 		std::stringstream ss;
+// 		ss << "*** ERROR: cannot open file <" << fileName << ">";
+// 		throw (std::runtime_error (ss.str()));
+// 	}
+
+// 	std::string line;
+// 	getline(inputFile, line);
+// 	if (line.find("density", 0) == std::string::npos || line.find("dbh", 0) == std::string::npos)
+// 	{
+// 		std::stringstream ss;
+// 		ss << "*** ERROR: file <" << fileName << "> must have density and dbh headers";
+// 		throw (std::runtime_error (ss.str()));
+// 	}
+	
+// 	double density(0), dbh(0);
+// 	size_t afterNumVal; // This value is set by std::stod to position of the next character in str after the numerical value
+
+// 	while(inputFile.good())
+// 	{
+// 		getline(inputFile, line);
+// 		if (line.empty())
+// 			continue;
+// 		density = std::stod(line, &afterNumVal);
+// 		dbh = std::stod(line.substr(afterNumVal));
+
+// 		m_cohortsVec.emplace_back(Cohort(density, dbh, sp, currentIter));
+// 		++m_nonZeroCohort;
+// 		if (m_maxCohorts < m_nonZeroCohort)
+// 			throw(Except_Population(m_maxCohorts, fileName));
+// 	}
+
+// 	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
+// 	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
+// 		m_cohortsVec.emplace_back(Cohort(sp, currentIter));
+	
+// 	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
+// 	if (m_s_inf < tallest_tree)
+// 		throw(Except_Population(m_s_inf, tallest_tree, fileName));
+
+// 	// Open ofstream m_compReprod_ofs, to close at the end of the simulation
+// 	if (std::filesystem::exists(compReprodFilename)) // Remove file if already exists
+// 		std::filesystem::remove(compReprodFilename);
+	
+// 	m_compReprod_ofs.open(compReprodFilename, std::ofstream::app);
+
+// 	if(!m_compReprod_ofs.is_open())
+// 	{
+// 		std::stringstream ss;
+// 		ss << "*** ERROR (from constructor Population): cannot open output file <" << compReprodFilename << ">";
+// 		throw (std::runtime_error (ss.str()));
+// 	}
+
+// 	this->sort(true); // true to sort by decreasing size
+// 	this->competition();
+// 	this->totalDensity_basalArea();
+	
+// 	m_compReprod_ofs << "time reproduction competition basalArea totalDensity" << std::endl;
+// 	m_compReprod_ofs << "0 0 " << m_s_star << " " << m_basalArea << " " << m_totalDensity << std::endl;
+
+// 	// Open ofstream m_popDyn_ofs, to close at the end of the simulation
+// 	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
+// 		std::filesystem::remove(popDynFilename);
+	
+// 	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
+
+// 	if(!m_popDyn_ofs.is_open())
+// 	{
+// 		std::stringstream ss;
+// 		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
+// 		throw (std::runtime_error (ss.str()));
+// 	}
+
+// 	m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
+// 	m_popDyn_ofs << *this;
+
+// 	// Telling the environment there is a population of species sp there
+// 	m_env->m_isPresent[m_species] = this;
+// 	m_env->m_test = this;
+
+// 	std::cout << "------------" << std::endl;
+	
+// 	std::cout << "Direct access: " << *m_env << std::endl;
+// 	std::cout << "Loop access: " << *(m_env->m_isPresent[m_species]->m_env) << std::endl;
+
+// 	std::cout << "------------" << std::endl;
+
+// }
+
+
+
+
+// ****************************************************************************************************************
 /********************************************/
 /******        Euler & dynamics        ******/
 /********************************************/
@@ -325,7 +268,7 @@ values. Indeed, c++ starts iterations from 0. So when writing
 	xxx != yyy.begin() + m_nonZeroCohort
 it goes from 0 to m_nonZeroCohort - 1
 */
-void Population::euler(double const t, double const delta_t)
+void Population::euler(double const t, double const delta_t, double const s_star, Environment const & env)
 {
 	cohort_it it;
 	cohort_it lim_it; // limit iterator
@@ -342,22 +285,16 @@ void Population::euler(double const t, double const delta_t)
 
 	// Integration within the size space Omega
 	for (it = m_cohortsVec.begin(); it != lim_it; ++it)
-		it->euler(t, delta_t, m_s_star, *m_env, &Cohort::ODE_II);
+		it->euler(t, delta_t, s_star, env, &Cohort::ODE_II);
 
 	// Dynamics at the boundary condition in size
-	this->reproduction();
-
-	// New cohort of species m_species, lambda = mu = 0 --> Should be treated separately
-	// it->euler(t, delta_t, m_s_star, *m_env, m_localProducedSeeds, &Cohort::ODE_V);
-	// if (it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
-	// 	m_nonZeroCohort += 1;
+	this->reproduction(s_star);
 
 	// Compute competition, basal area, and total density
-	this->competition();
 	this->totalDensity_basalArea();
 }
 
-void Population::recruitment(double const t, double const delta_t)
+void Population::recruitment(double const t, double const delta_t, double const s_star, Environment const & env)
 {
 	std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << std::endl;
 	cohort_it recruitment_it = m_cohortsVec.begin() + m_nonZeroCohort; // Position of recruitment (which becomes a new cohort if size > threshold)
@@ -366,7 +303,7 @@ void Population::recruitment(double const t, double const delta_t)
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort, t));
 
 	// New cohort of species m_species, lambda = mu = 0 --> Should be treated separately
-	recruitment_it->euler(t, delta_t, m_s_star, *m_env, m_localSeedBank, &Cohort::ODE_V);
+	recruitment_it->euler(t, delta_t, s_star, env, m_localSeedBank, &Cohort::ODE_V);
 	if (recruitment_it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
 		m_nonZeroCohort += 1;
 	
@@ -383,61 +320,21 @@ area (which is 0 for understorey trees). That is to say:
 The fecundity parameter is from table S4 Purves2008. It is a difficult parameter
 to estimate (check his Appendix2: Parameter estimation)
 */
-void Population::reproduction()
+double Population::reproduction(double const s_star)
 {
 	double popReprod = 0;
 	c_cohort_it cohort_it = m_cohortsVec.cbegin();
 
-	while (cohort_it->m_mu > m_s_star && cohort_it != m_cohortsVec.end()) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
+	while (cohort_it->m_mu > s_star && cohort_it != m_cohortsVec.end()) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
 	{
-		popReprod += cohort_it->crownArea(m_s_star) * cohort_it->m_lambda;
+		popReprod += cohort_it->crownArea(s_star) * cohort_it->m_lambda;
 		++cohort_it;
 	}
 
-	m_localProducedSeeds = popReprod * m_species->fecundity;
+	return popReprod * m_species->fecundity;
 }
 
-/* Competition calculation:
-To calculate the competition, I start from the biggest tree, and calculate the
-its crown area. As long as I have not found s* such that the sum of the crown
-areas of trees above s* equals the ground area, I decrement s* of delta_s. If
-such an s* cannot be found, I set s* = 0. It means there is a gap in the canopy.
-
-Remarks:
-1. This calculation is costly, and has to be done at each time step!
-2. In the case of the flat-top model, there is no need to integrate over s, we
-can directly jump from cohorts to cohorts as the crown area is a step function
-of size s in this particular case. The flat-top case is also discontinuous, and
-there is no guarantee of having a solution for summedArea == 1.
-*/
-void Population::competition()
-{
-	double summedArea = 0;
-	c_cohort_it it_cohort = m_cohortsVec.cbegin();
-	m_s_star = it_cohort->m_mu;
-
-	while ((m_s_star > 0) && (summedArea < 1)) // needs a plot_area later? Is it a density and thus 1?
-	{
-		// Reset the values
-		summedArea = 0;
-		it_cohort = m_cohortsVec.cbegin();
-		while ((it_cohort->m_mu >= m_s_star) && (it_cohort != m_cohortsVec.cend()))
-		{
-			// crown area evaluated at s* given cohort of size m_mu, multiplied by density m_lambda of the cohort
-			summedArea = it_cohort->crownArea(m_s_star)*it_cohort->m_lambda;
-			++it_cohort;
-		}
-		m_s_star = m_s_star - m_delta_s;
-	}
-	if (m_s_star < 0)
-		m_s_star = 0;
-}
-
-void Population::competition(double const t)
-{
-	m_s_star = std::sqrt(1 - 2*m_species->d(0, 0, 0, 0)*t) - 1; // death rate is constant, so no problem
-}
-
+// ****************************************************************************************************************
 /* To compute the basal area of the community and the 'number of individuals'
 The basal area is supposed to be in m²/ha (square meter per hectar). However, my
 plot surface unit is square meter, and my diameter unit is millimiter. I there-
@@ -469,9 +366,9 @@ void Population::totalDensity_basalArea()
 	m_totalDensity = currentDensity;
 }
 
-/************************************/
-/******        Overload        ******/
-/************************************/
+// /************************************/
+// /******        Overload        ******/
+// /************************************/
 std::ostream& operator<<(std::ostream& os, Population const &pop)
 {
 	for (c_cohort_it it = pop.m_cohortsVec.begin(); it != pop.m_cohortsVec.end(); ++it)
@@ -479,9 +376,9 @@ std::ostream& operator<<(std::ostream& os, Population const &pop)
 	return os;
 }
 
-/************************************************/
-/******        Sorting & organising        ******/
-/************************************************/
+// /************************************************/
+// /******        Sorting & organising        ******/
+// /************************************************/
 void Population::sort(bool const decreasingOrder)
 {
 	cohort_it first = m_cohortsVec.begin();
@@ -501,7 +398,6 @@ sary to release some space. There are two ways:
 */
 bool Population::mergeCohorts(double const thresholdSimilarity, double const thresholdDensity)
 {
-	// std::cout << "mergeCohorts called" << std::endl;
 	cohort_it it = m_cohortsVec.begin() + 1; // moving iterator
 	cohort_it first = m_cohortsVec.begin();
 	cohort_it ref_it; // reference iterator
@@ -520,35 +416,30 @@ bool Population::mergeCohorts(double const thresholdSimilarity, double const thr
 		mergedCohorts = true;
 		++it;
 	}
-	// std::cout << "Here 2 " << *it << std::endl;
-	// std::cout << *this << std::endl;
-	// std::cout << "-------------" << m_nonZeroCohort << std::endl;
 
 	ref_it = it;
+
 	// Second (if required), merge similar cohorts
 	while (ref_it != lim_it)
 	{
 		mu = 0;
 		lambda = 0;
 		it = ref_it + 1;
-		// abs val for float = fabs, useless in the next while loop because population is sorted
-		while ((it != lim_it) && (ref_it->m_mu - it->m_mu < thresholdSimilarity)) // BUG
+		// abs val for float = fabs, useless in the next while loop because population is sorted (decreasing order)
+		while ((it != lim_it) && (ref_it->m_mu - it->m_mu < thresholdSimilarity)) // BUG <--- TO CHECK, DID I FORGOT TO REMOVE IT
 		{
 			mu += it->m_lambda * it->m_mu;
 			lambda += it->m_lambda;
 			this->resetCohorts(it);
 			mergedCohorts = true;
 			++it;
-		} // END BUG
+		} // END BUG <--- TO CHECK, DID I FORGOT TO REMOVE IT
 		ref_it->m_mu = (ref_it->m_lambda * ref_it->m_mu + mu)/(ref_it->m_lambda + lambda);
 		ref_it->m_lambda += lambda;
 		ref_it = it;
 	}
-	// std::cout << "Here 3" << std::endl;
-	// std::cout << *this << std::endl;
-	// std::cout << "-------------" << m_nonZeroCohort << std::endl;
 
-	// Reseting cohorts considered negligeable
+	// Reseting cohorts considered negligible
 	for (it = m_cohortsVec.begin(); it != m_cohortsVec.end(); ++it)
 	{
 		if ((0 < it->m_lambda) && (it->m_lambda < thresholdDensity))
@@ -572,8 +463,12 @@ void Population::printNonZero() const
 {
 	c_cohort_it it = m_cohortsVec.cbegin();
 	c_cohort_it lim_it = m_cohortsVec.cbegin() + m_nonZeroCohort;
+	
+	std::cout << "Species: " << m_species->m_speciesName << std::endl;
 	for (; it != lim_it; ++it)
 		std::cout << *it << std::endl;
-	std::cout << "Canopy height s*: " << this->m_s_star << std::endl;
+	
 	std::cout << "Number of zeros and boundary cohorts: " << m_cohortsVec.size() - m_nonZeroCohort << std::endl;
 }
+
+#endif
