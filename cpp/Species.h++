@@ -60,6 +60,7 @@ class Species
 		double K(double const longitude1, double const latitude1, double const longitude2, double const latitude2) const;
 
 		// others
+		void printName(std::ostream& os) const;
 		// bool compareName(Species* species_1, Species* species_2) const;
 
 	private :

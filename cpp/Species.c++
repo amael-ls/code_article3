@@ -460,4 +460,9 @@ bool operator<(Species const& species1, Species const& species2)
 	return (species1.m_speciesName < species2.m_speciesName);
 }
 
+void Species::printName(std::ostream& os) const
+{
+	os << m_speciesName;
+}
+
 #endif
