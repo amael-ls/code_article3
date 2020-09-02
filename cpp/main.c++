@@ -6,9 +6,9 @@
 #include <chrono> // for high_resolution_clock
 #include <cmath>
 
-#include "Population.h++"
+// #include "Population.h++"
 // #include "Landscape.h++"
-// #include "Forest.h++"
+#include "Forest.h++"
 #include "Params.h++"
 
 // #include "integration.h" // You need to copy paste all the src files from ALGLIB and then compile. Example:
@@ -62,6 +62,12 @@ int main(int argc, char *argv[])
 	
 	Species* sp = new Species(species_filenames, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << *sp << std::endl;
+
+	std::vector<Species*> speciesList{sp};
+
+	Forest test(forestDataFile, speciesList, climate_file);
+
+	std::cout << test << std::endl;
 
 	// --- CRASH TEST ZONE TO REMOVE
 
