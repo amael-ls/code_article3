@@ -28,8 +28,6 @@ I list the functions here, but describe them in the associated c++ file:
 #include "Params.h++"
 
 // Forward declaration
-class Population;
-class Species;
 
 class Environment
 {
@@ -76,9 +74,6 @@ class Environment
 		double longitude;
 		double latitude;
 		std::string proj4string;
-
-		// Presence species
-		std::map<Species*, Population*> m_isPresent;
 };
 
 // External functions
