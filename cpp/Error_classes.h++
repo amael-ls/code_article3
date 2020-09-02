@@ -11,34 +11,46 @@
 /**********************************/
 /******        Forest        ******/
 /**********************************/
-// class Except_Forest : public std::exception
+class Except_Forest : public std::exception
+{
+	public:
+		Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated);
+		Except_Forest(unsigned int const patch_id, std::vector<std::string> const& speciesNames);
+		const char* what() const throw();
+
+	private:
+		std::string m_error_msg = "Error from Forest: ";
+		unsigned int m_freqSave;
+		unsigned int m_dimLandscape;
+		bool m_overPopulated;
+};
+
+/*********************************/
+/******        Patch        ******/
+/*********************************/
+// class Except_Patch : public std::exception
 // {
 // 	public:
-// 		Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated);
-// 		const char* what() const throw();
 
 // 	private:
-// 		std::string m_error_msg = "Error from Forest: ";
-// 		unsigned int const m_freqSave;
-// 		unsigned int const m_dimLandscape;
-// 		bool const m_overPopulated;
+// 		std::string m_error_msg = "Error from Forest when creating pa: ";
 // };
 
 /*************************************/
 /******        Landscape        ******/
 /*************************************/
-// class Except_Landscape : public std::exception
-// {
-// 	public:
-// 		Except_Landscape(int const dim);
-// 		Except_Landscape(int const dim, int const i);
-// 		Except_Landscape(int const dim, std::string const& filename);
-// 		const char* what() const throw();
+class Except_Landscape : public std::exception
+{
+	public:
+		Except_Landscape(int const dim);
+		Except_Landscape(int const dim, int const i);
+		Except_Landscape(int const dim, std::string const& filename);
+		const char* what() const throw();
 
-// 	private:
-// 		int m_dimLandscape;
-// 		std::string m_error_msg = "Error from Landscape: ";
-// };
+	private:
+		int m_dimLandscape;
+		std::string m_error_msg = "Error from Forest when creating the landscape: ";
+};
 
 /**************************************/
 /******        Population        ******/
