@@ -180,4 +180,10 @@ bool greaterThan(Environment* env1, Environment* env2)
 	return (*env1 > *env2);
 }
 
+
+void Environment::printId(std::ostream& os) const
+{
+	os << m_patchId;
+}
+
 #endif

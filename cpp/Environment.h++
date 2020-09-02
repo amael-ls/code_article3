@@ -51,6 +51,9 @@ class Environment
 		friend bool operator<(Environment const& env1, Environment const& env2);
 		friend bool operator>(Environment const& env1, Environment const& env2);
 
+		// Others
+		void printId(std::ostream& os) const;
+
 	private :
 		// File name
 		std::string m_fileName;
