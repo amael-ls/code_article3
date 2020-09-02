@@ -121,7 +121,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 				{
 					for (species_it = m_speciesList.cbegin(); species_it != m_speciesList.cend(); ++species_it)
 					{
-						initFile = m_initPath + (*species_it)->m_speciesName + m_initFilenamePattern +
+						initFile = m_initPath + (*species_it)->m_speciesName + "/" + m_initFilenamePattern +
 							std::to_string(env.m_patchId) + ".txt";
 						
 						if (std::filesystem::exists(initFile))
@@ -402,5 +402,16 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 // 	for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
 // 		pop_it->m_compReprod_ofs.close();
 // }
+
+// /************************************/
+// /******        Overload        ******/
+// /************************************/
+std::ostream& operator<<(std::ostream& os, Forest const &forest)
+{
+	std::vector<Patch>::const_iterator patch_it = forest.m_patchVec.cbegin();
+	for (; patch_it != forest.m_patchVec.cend(); ++patch_it)
+		os << *patch_it << std::endl;
+	return os;
+}
 
 #endif

@@ -27,6 +27,9 @@ class Forest
 
 	// // Manage
 		// void addSpecies();
+	
+	// Overloading
+		friend std::ostream& operator<<(std::ostream& os, Forest const &forest);
 
 	private :
 	// Forest parameters file
