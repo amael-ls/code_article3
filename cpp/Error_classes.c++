@@ -19,7 +19,7 @@ Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIt
 
 Except_Forest::Except_Forest(unsigned int const patch_id, std::vector<std::string> const& speciesNames)
 {
-	m_error_msg += "No population file found despite the patch " + std::to_string(patch_id) + "is initially populated.\n";
+	m_error_msg += "No population file found despite the patch " + std::to_string(patch_id) + " is initially populated.\n";
 	m_error_msg += "List of species provided:\n";
 	for (unsigned int i = 0; i < speciesNames.size(); ++i)
 		m_error_msg += "    - " + speciesNames[i] + "\n";
