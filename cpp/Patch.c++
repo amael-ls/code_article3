@@ -83,5 +83,20 @@ Patch::Patch(Environment const& env, Species* species, std::string const initFil
 // 	m_s_star = std::sqrt(1 - 2*m_species->d(0, 0, 0, 0)*t) - 1; // death rate is constant, so no problem
 // }
 
+// /************************************/
+// /******        Overload        ******/
+// /************************************/
+std::ostream& operator<<(std::ostream& os, Patch const &patch)
+{
+	c_population_it pop_it = patch.m_pop_map.cbegin();
+	pop_it->first->printName(os); os << std::endl;
+	for (; pop_it != patch.m_pop_map.cend(); ++pop_it)
+	{
+		(patch.m_env).printId(os); os << std::endl;
+		os << pop_it->second << std::endl;
+	}
+
+	return os;
+}
 
 #endif

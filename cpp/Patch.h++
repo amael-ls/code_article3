@@ -16,9 +16,13 @@
 class Patch
 {
 	public:
+	// Constructors
 		Patch(Environment const& env, std::vector<Species*> speciesList, unsigned int const maxCohorts);
 		Patch(Environment const& env, Species* species, unsigned int const maxCohorts);
 		Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts);
+
+	// Overloading
+		friend std::ostream& operator<<(std::ostream& os, Patch const &patch);
 
 	private:
 	// Utilities
