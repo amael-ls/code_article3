@@ -170,17 +170,6 @@ bool operator>(Environment const& env1, Environment const& env2)
 	return (env1.latitude < env2.latitude); // Opposite direction of the latitude order, cf remark above
 }
 
-bool lessThan(Environment* env1, Environment* env2)
-{
-	return (*env1 < *env2);
-}
-
-bool greaterThan(Environment* env1, Environment* env2)
-{
-	return (*env1 > *env2);
-}
-
-
 void Environment::printId(std::ostream& os) const
 {
 	os << m_patchId;

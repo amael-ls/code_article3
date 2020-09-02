@@ -31,8 +31,8 @@ I list the functions here, but describe them in the associated c++ file:
 
 class Environment
 {
-	friend class Population;
-	friend class Landscape;
+	// friend class Population;
+	// friend class Landscape;
 	friend class Forest;
 	// friend class Dispersal;
 	friend class Cohort;
@@ -81,7 +81,5 @@ class Environment
 
 // External functions
 double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2);
-bool lessThan(Environment* env1, Environment* env2);
-bool greaterThan(Environment* env1, Environment* env2);
 
 #endif
