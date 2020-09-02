@@ -43,7 +43,7 @@ I list the functions here, but describe them in the associated c++ file:
 
 class Population
 {
-	friend class Forest;
+	friend class Patch;
 
 	public :
 		// Constructors
