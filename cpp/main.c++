@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 
 	Forest test(forestDataFile, speciesList, climate_file);
 
-	std::cout << test << std::endl;
+	// std::cout << test << std::endl;
 
 	// --- CRASH TEST ZONE TO REMOVE
 

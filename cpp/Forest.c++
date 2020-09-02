@@ -157,6 +157,9 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 		// Sort forest
 		this->sort(m_rasterOrder_Rlang);
 
+		std::vector<Cohort *> test;
+		m_patchVec[34].getNonZeroCohorts(test);
+
 		// Compute competition for each patch
 
 		// Compute basal area and density for each species and within each patch
