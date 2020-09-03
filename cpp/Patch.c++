@@ -87,27 +87,44 @@ void Patch::getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const
 		std::cout << **it << std::endl;
 }
 
-void Patch::competition(double const tolHeight)
+void Patch::competition(double const tolHeight) // The best tolHeight is delta_s
 {
-	// double summedArea = 0;
-	// c_cohort_it it_cohort = m_cohortsVec.cbegin();
-	// m_s_star = it_cohort->m_mu;
+	// Get all non zero cohorts
+	std::vector<Cohort *> nonZeroCohorts;
 
-	// while ((m_s_star > 0) && (summedArea < 1)) // needs a plot_area later? Is it a density and thus 1?
-	// {
-	// 	// Reset the values
-	// 	summedArea = 0;
-	// 	it_cohort = m_cohortsVec.cbegin();
-	// 	while ((it_cohort->m_mu >= m_s_star) && (it_cohort != m_cohortsVec.cend()))
-	// 	{
-	// 		// crown area evaluated at s* given cohort of size m_mu, multiplied by density m_lambda of the cohort
-	// 		summedArea = it_cohort->crownArea(m_s_star)*it_cohort->m_lambda;
-	// 		++it_cohort;
-	// 	}
-	// 	m_s_star = m_s_star - m_delta_s;
-	// }
-	// if (m_s_star < 0)
-	// 	m_s_star = 0;
+	this->getAllNonZeroCohorts(nonZeroCohorts);
+
+	if (nonZeroCohorts.size() == 0)
+		m_height_star = 0;
+	else
+	{
+		double supBound = nonZeroCohorts[0]->m_height; // Vector sorted by decreasing height, so the max is at 0
+		double infBound = 0;
+		double sumArea = 0;
+
+		unsigned int index = 0;
+
+		while (supBound - infBound > tolHeight)
+		{
+			m_height_star = (supBound + infBound)/2;
+
+			while ((index < nonZeroCohorts.size()) && nonZeroCohorts[index]->m_height >= m_height_star)
+			{
+				sumArea += nonZeroCohorts[index]->crownArea(m_height_star) * nonZeroCohorts[index]->m_lambda;
+				++index;
+			}
+
+			if (sumArea < m_env.plotArea)
+				supBound = m_height_star;
+			if (sumArea >= m_env.plotArea)
+				infBound = m_height_star;
+
+			sumArea = 0;
+			index = 0;
+		}
+		if (index >= nonZeroCohorts.size())
+			m_height_star= 0;
+	}
 }
 
 // /************************************/
