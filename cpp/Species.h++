@@ -36,6 +36,7 @@ class Species
 	friend class Population;
 	friend class Forest;
 	friend class Cohort;
+	friend class Patch;
 
 	public :
 		// constructors
