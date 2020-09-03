@@ -84,12 +84,9 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 		bool folderCreated;
 
 		std::cout << "List of species:" << std::endl;
-		std::vector<std::string> speciesNames;
-
 		for (; species_it != m_speciesList.cend(); ++species_it)
 		{
 			std::cout << "    - " << (*species_it)->m_speciesName << std::endl;
-			speciesNames.emplace_back((*species_it)->m_speciesName);
 
 			path_compReprod = m_pathCompReprodFile + (*species_it)->m_speciesName + "/";
 			folderCreated = std::filesystem::create_directories(path_compReprod);
@@ -119,31 +116,9 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 
 				// Create environment
 				Environment env(climateFile, delimiter);
-				
-				if (env.m_initPopulated)
-				{
-					for (species_it = m_speciesList.cbegin(); species_it != m_speciesList.cend(); ++species_it)
-					{
-						initFile = m_initPath + (*species_it)->m_speciesName + "/" + m_initFilenamePattern +
-							std::to_string(env.m_patchId) + ".txt";
-						
-						if (std::filesystem::exists(initFile))
-						{
-							m_patchVec.emplace_back(Patch(env, *species_it, initFile,  m_maxCohorts));
-							foundAnInitFile = true;
-						}
-						else
-							m_patchVec.emplace_back(Patch(env, *species_it, m_maxCohorts));
-					}
-					if (!foundAnInitFile)
-						throw Except_Forest(env.m_patchId, speciesNames);
-					foundAnInitFile = false;
-				}
-				else
-				{
-					for (species_it = m_speciesList.cbegin(); species_it != m_speciesList.cend(); ++species_it)
-							m_patchVec.emplace_back(Patch(env, *species_it, m_maxCohorts));
-				}
+
+				// Create Patch which initialise the populations
+				m_patchVec.emplace_back(Patch(env, m_speciesList, m_initPath, m_initFilenamePattern, m_maxCohorts));
 				
 				++counterPatch;
 				if (counterPatch > m_dim_land)
@@ -158,7 +133,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 		this->sort(m_rasterOrder_Rlang);
 
 		std::vector<Cohort *> test;
-		m_patchVec[34].getNonZeroCohorts(test);
+		m_patchVec[34].getAllNonZeroCohorts(test);
 
 		// Compute competition for each patch
 
