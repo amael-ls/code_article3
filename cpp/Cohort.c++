@@ -41,13 +41,15 @@ Cohort::Cohort(Species const *sp, unsigned int birthIteration) :
 Cohort::Cohort(Cohort const& cohort, unsigned int birthIteration) :
 	m_lambda(cohort.m_lambda), m_mu(cohort.m_mu), m_species(cohort.m_species), m_birthIteration(birthIteration)
 {
-	m_height = 2;
+	// Convert dbh to height. If dbh is in mm, then height is in m. Trick: x^n = Exp[n Log[x]]
+	double height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
 }
 
 Cohort::Cohort(double const lambda, double const mu, Species const *sp, unsigned int birthIteration) :
 	m_lambda(lambda), m_mu(mu), m_species(sp), m_birthIteration(birthIteration)
 {
-	m_height = 2;
+	// Convert dbh to height. If dbh is in mm, then height is in m. Trick: x^n = Exp[n Log[x]]
+	double height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
 }
 
 /*******************************************/
@@ -94,17 +96,16 @@ double Cohort::crownArea(double const s_star) const
 	double Rp_max = R0 + (R40 - R0)*m_mu/400;
 
 	// Convert dbh to height. If dbh is in mm, then height is in m. Trick: x^n = Exp[n Log[x]]
-	double height = std::exp((a - b + b*std::log10(m_mu))*std::log(10));
 	double height_star = std::exp((a - b + b*std::log10(s_star))*std::log(10));
 
-	if (height == 0)
+	if (m_height == 0)
 		return 0;
 
 	// Calculate distance to the top
-	double distToTop = height - height_star;
+	double distToTop = m_height - height_star;
 
 	// Vector crown radius
-	double crownRadius = Rp_max * std::exp(B*std::log(std::min(distToTop, height*M) / (height*M))); // R_{i, y}^p
+	double crownRadius = Rp_max * std::exp(B*std::log(std::min(distToTop, m_height*M) / (m_height*M))); // R_{i, y}^p
 
 	return M_PI*crownRadius*crownRadius;
 
@@ -307,19 +308,19 @@ std::ostream &operator<<(std::ostream &os, Cohort const& cohort)
 	return os;
 }
 
-bool operator<(Cohort const& cohort1, Cohort const& cohort2)
+bool operator<(Cohort const& cohort1, Cohort const& cohort2) // Compare height, not dbh, which is required for the multi-species case
 {
-	return (cohort1.m_mu < cohort2.m_mu);
+	return (cohort1.m_height < cohort2.m_height);
 }
 
-bool operator>(Cohort const& cohort1, Cohort const& cohort2)
+bool operator>(Cohort const& cohort1, Cohort const& cohort2) // Compare height, not dbh, which is required for the multi-species case
 {
-	return (cohort1.m_mu > cohort2.m_mu);
+	return (cohort1.m_height > cohort2.m_height);
 }
 
-bool greaterCohortPtr(Cohort const* cohort1, Cohort const* cohort2)
+bool greaterCohortPtr(Cohort const* cohort1, Cohort const* cohort2) // Compare height, not dbh, which is required for the multi-species case
 {
-	return (cohort1->m_mu > cohort2->m_mu);
+	return (cohort1->m_height > cohort2->m_height);
 }
 
 #endif
