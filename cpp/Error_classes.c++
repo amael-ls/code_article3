@@ -17,14 +17,6 @@ Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIt
 		m_error_msg += "Landscape is overpopulated. Dimension = " + std::to_string(m_dimLandscape) + " cells.\n";
 }
 
-Except_Forest::Except_Forest(unsigned int const patch_id, std::vector<std::string> const& speciesNames)
-{
-	m_error_msg += "No population file found despite the patch " + std::to_string(patch_id) + " is initially populated.\n";
-	m_error_msg += "List of species provided:\n";
-	for (unsigned int i = 0; i < speciesNames.size(); ++i)
-		m_error_msg += "    - " + speciesNames[i] + "\n";
-}
-
 const char* Except_Forest::what() const throw()
 {
 	return (m_error_msg.c_str());
@@ -33,10 +25,13 @@ const char* Except_Forest::what() const throw()
 /*********************************/
 /******        Patch        ******/
 /*********************************/
-// Except_Patch::Except_Patch()
-// {
-
-// }
+Except_Patch::Except_Patch(unsigned int const patch_id, std::vector<std::string> const& speciesNames)
+{
+	m_error_msg += "No population file found despite the patch " + std::to_string(patch_id) + " is initially populated.\n";
+	m_error_msg += "List of species provided:\n";
+	for (unsigned int i = 0; i < speciesNames.size(); ++i)
+		m_error_msg += "    - " + speciesNames[i] + "\n";
+}
 
 /*************************************/
 /******        Landscape        ******/

@@ -15,7 +15,7 @@ class Except_Forest : public std::exception
 {
 	public:
 		Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated);
-		Except_Forest(unsigned int const patch_id, std::vector<std::string> const& speciesNames);
+		// Except_Forest(unsigned int const patch_id, std::vector<std::string> const& speciesNames);
 		const char* what() const throw();
 
 	private:
@@ -28,13 +28,14 @@ class Except_Forest : public std::exception
 /*********************************/
 /******        Patch        ******/
 /*********************************/
-// class Except_Patch : public std::exception
-// {
-// 	public:
+class Except_Patch : public std::exception
+{
+	public:
+		Except_Patch(unsigned int const patch_id, std::vector<std::string> const& speciesNames);
 
-// 	private:
-// 		std::string m_error_msg = "Error from Forest when creating pa: ";
-// };
+	private:
+		std::string m_error_msg = "Error from Patch: ";
+};
 
 /*************************************/
 /******        Landscape        ******/
