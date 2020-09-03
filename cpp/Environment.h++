@@ -31,11 +31,9 @@ I list the functions here, but describe them in the associated c++ file:
 
 class Environment
 {
-	// friend class Population;
-	// friend class Landscape;
 	friend class Forest;
-	// friend class Dispersal;
 	friend class Cohort;
+	friend class Patch;
 	
 	public :
 		// Constructors
