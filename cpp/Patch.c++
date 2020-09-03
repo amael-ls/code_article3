@@ -12,7 +12,7 @@ typedef std::map<Species*, Population>::const_iterator c_population_it;
 typedef std::map<Species*, std::string>::iterator filename_it;
 
 Patch::Patch(Environment const& env, std::vector<Species*> speciesList, unsigned int const maxCohorts):
-	m_maxCohorts(maxCohorts), m_env(env)
+	m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
 {
 	std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
 	for (; species_it != speciesList.cend(); ++species_it)
@@ -23,13 +23,13 @@ Patch::Patch(Environment const& env, std::vector<Species*> speciesList, unsigned
 }
 
 Patch::Patch(Environment const& env, Species* species, unsigned int const maxCohorts):
-	m_maxCohorts(maxCohorts), m_env(env)
+	m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
 {
 	m_pop_map.emplace(species, Population(maxCohorts, species));
 }
 
 Patch::Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts):
-	m_maxCohorts(maxCohorts), m_env(env)
+	m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
 {
 	m_pop_map.emplace(species, Population(maxCohorts, species, initFilename));
 }
@@ -55,15 +55,20 @@ can directly jump from cohorts to cohorts as the crown area is a step function
 of size s in this particular case. The flat-top case is also discontinuous, and
 there is no guarantee of having a solution for summedArea == 1.
 */
-void Patch::getNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts)
+void Patch::getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const
 {
-	population_it it_map = m_pop_map.begin();
-	std::vector<Cohort>::iterator it_cohort, lim_it;
+	c_population_it it_map = m_pop_map.cbegin();
+	std::vector<Cohort>::const_iterator it_cohort, lim_it;
 	Cohort* cohort_ptr;
 
-	for (; it_map != m_pop_map.end(); ++it_map)
+	for (; it_map != m_pop_map.cend(); ++it_map)
 	{
-		it_cohort = ((it_map->second).m_cohortsVec).begin();
+		it_cohort = ((it_map->second).m_cohortsVec).cbegin();
+		/*
+			Problems on lim_it:
+				- If there is no cohort?
+				- Am I going one step too far? Segmentation fault, random cohort assignation value
+		*/
 		lim_it = it_cohort + (it_map->second).m_nonZeroCohort; // To avoid taking the zeros
 		for (; it_cohort != lim_it; ++it_cohort)
 		{

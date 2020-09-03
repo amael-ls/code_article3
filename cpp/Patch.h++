@@ -23,7 +23,6 @@ class Patch
 		Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts);
 
 	// Dynamics
-		void getNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts);
 		void competition(double const tolHeight);
 
 	// Overloading
@@ -49,6 +48,9 @@ class Patch
 	// --- Reproduction
 		std::map <Species*, double> m_localSeedBank_map;
 		std::map <Species*, double> m_localSeedProduced_map;
+
+	// Private functions
+	void getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const;
 };
 
 #endif
