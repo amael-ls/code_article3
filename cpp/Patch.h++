@@ -17,10 +17,12 @@ class Patch
 {
 	friend class Forest;
 	public:
-	// Constructors
-		Patch(Environment const& env, std::vector<Species*> speciesList, unsigned int const maxCohorts);
-		Patch(Environment const& env, Species* species, unsigned int const maxCohorts);
-		Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts);
+	// Constructor
+		Patch(Environment const& env, std::vector<Species*> const speciesList, std::string const initPath,
+			std::string const initFilenamePattern, unsigned int const maxCohorts);
+
+	// Add population
+		void addPopulation();
 
 	// Dynamics
 		void competition(double const tolHeight);
@@ -34,6 +36,7 @@ class Patch
 	// Utilities
 		std::map <Species*, std::string> m_filenamePattern_map;
 		unsigned int m_maxCohorts;
+		double m_minDelta_s;
 
 	// Populations
 		std::map <Species*, Population> m_pop_map; // One population (vector of cohorts) of a species present in Environment

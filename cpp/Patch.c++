@@ -11,29 +11,50 @@ typedef std::map<Species*, Population>::const_iterator c_population_it;
 
 typedef std::map<Species*, std::string>::iterator filename_it;
 
-Patch::Patch(Environment const& env, std::vector<Species*> speciesList, unsigned int const maxCohorts):
-	m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
+Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, std::string const initPath,
+	std::string const initFilenamePattern, unsigned int const maxCohorts):
+		m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
 {
+	std::string initFile;
+	bool foundAnInitFile = false;
+	std::vector<std::string> speciesNames;
+
 	std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
+
 	for (; species_it != speciesList.cend(); ++species_it)
 	{
-		m_filenamePattern_map[*species_it] = "not initialised.txt";
-		m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it));
+		speciesNames.emplace_back((*species_it)->m_speciesName);
+		initFile = initPath + (*species_it)->m_speciesName + "/" + initFilenamePattern +
+		std::to_string(env.m_patchId) + ".txt";
+		
+		if (std::filesystem::exists(initFile))
+		{
+			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile));
+			m_filenamePattern_map[*species_it] = initFile;
+			foundAnInitFile = true;
+		}
+		else
+		{
+			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it));
+			m_filenamePattern_map[*species_it] = "not initialised.txt";
+		}
 	}
+
+	if (m_env.m_initPopulated && !foundAnInitFile)
+		throw Except_Patch(m_env.m_patchId, speciesNames);
+
+	// m_minDelta_s = m_pop_map[species].m_delta_s;
+	// this->competition(m_minDelta_s);
 }
 
-Patch::Patch(Environment const& env, Species* species, unsigned int const maxCohorts):
-	m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
+/* Add population
+The addition of a population can happen either when creating the object Forest,
+when the patch already exists, or when a patch is newly colonised
+*/
+void Patch::addPopulation()
 {
-	m_pop_map.emplace(species, Population(maxCohorts, species));
-}
 
-Patch::Patch(Environment const& env, Species* species, std::string const initFilename, unsigned int const maxCohorts):
-	m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
-{
-	m_pop_map.emplace(species, Population(maxCohorts, species, initFilename));
 }
-
 
 // population_it pop_it = m_pop_map.begin();
 // filename_it file_it = m_filenamePattern_map.begin();
@@ -43,10 +64,18 @@ Patch::Patch(Environment const& env, Species* species, std::string const initFil
 
 
 /* Competition calculation:
-To calculate the competition, I start from the biggest tree, and calculate its
-crown area. As long as I have not found s* such that the sum of the crown areas
-of trees above s* equals the ground area, I decrement s* of delta_s. If such an
-s* cannot be found, I set s* = 0. It means there is a gap in the canopy.
+To compute competition within a patch, it is necessary to first get all
+the cohorts (that have a non zeroheight), regardless species. Once the
+cohorts are all gathered, I use dichotomy:
+	- First set s* = maxHeight/2
+	- Compute the sum of the crown areas for such s*
+	- Change the boundaries of the interval in which looking for s*
+		(if sumArea is to high, then the lower boundary)
+	- Set s* halfway to the new boundaries
+
+If the interval becomes to narrow (i.e., the difference of its upper and
+lower boundaries is below heightTol), then I set s* = 0. It means there is
+a gap in the canopy.
 
 Remarks:
 1. This calculation is costly, and has to be done at each time step!
@@ -87,7 +116,7 @@ void Patch::getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const
 		std::cout << **it << std::endl;
 }
 
-void Patch::competition(double const tolHeight) // The best tolHeight is delta_s
+void Patch::competition(double const heightTol) // The best heightTol is delta_s
 {
 	// Get all non zero cohorts
 	std::vector<Cohort *> nonZeroCohorts;
@@ -104,7 +133,7 @@ void Patch::competition(double const tolHeight) // The best tolHeight is delta_s
 
 		unsigned int index = 0;
 
-		while (supBound - infBound > tolHeight)
+		while (supBound - infBound > heightTol)
 		{
 			m_height_star = (supBound + infBound)/2;
 
