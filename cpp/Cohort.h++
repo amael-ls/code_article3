@@ -31,6 +31,8 @@ does not need to be reevaluate at each size-step when searching for s*.
 class Cohort
 {
 	friend class Population;
+	friend class Patch;
+
 	public :
 		// Constructors
 		Cohort();
@@ -39,7 +41,7 @@ class Cohort
 		Cohort(double const lambda, double const mu, Species const *sp, unsigned int birthIteration);
 
 		// Others
-		double crownArea(double const s_star) const;
+		double crownArea(double const height_star) const;
 		double reproduction() const;
 
 		// Dynamics
