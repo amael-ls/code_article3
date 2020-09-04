@@ -21,13 +21,6 @@ class Patch
 		Patch(Environment const& env, std::vector<Species*> const speciesList, std::string const initPath,
 			std::string const initFilenamePattern, unsigned int const maxCohorts);
 
-	// Add population
-		void addPopulation();
-
-	// Dynamics
-		void populationDynamics(double const t, double const delta_t);
-		void competition(double const tolHeight);
-
 	// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Patch const &patch);
 		friend bool operator<(Patch const& patch1, Patch const& patch2);
@@ -50,9 +43,11 @@ class Patch
 	// --- Competition
 		double m_height_star; //The height at which the canopy is closed
 
-	// --- Reproduction
-		std::map <Species*, double> m_localSeedBank_map; // Might be useless, it is stored in each population anyway
-		std::map <Species*, double> m_localSeedProduced_map; // Might be useless, it is stored in each population anyway
+	// --- Functions
+		void populationDynamics(double const t, double const delta_t);
+		void dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePatch, Species* species);
+		void recruitment(std::vector<Patch>::iterator targetPatch, Species* species, double const t, double const delta_t);
+		void competition(double const tolHeight);
 
 	// Private functions
 	void getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const;

@@ -13,7 +13,7 @@ typedef std::map<Species*, std::string>::iterator filename_it;
 
 Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, std::string const initPath,
 	std::string const initFilenamePattern, unsigned int const maxCohorts):
-		m_maxCohorts(maxCohorts), m_env(env), m_height_star(0), m_isPopulated(false)
+		m_maxCohorts(maxCohorts), m_isPopulated(false), m_env(env), m_height_star(0)
 {
 	std::string initFile;
 	bool foundAnInitFile = false;
@@ -53,15 +53,6 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, st
 	this->competition(m_minDelta_s);
 }
 
-/* Add population
-The addition of a population can happen either when creating the object Forest,
-when the patch already exists, or when a patch is newly colonised
-*/
-void Patch::addPopulation()
-{
-
-}
-
 // population_it pop_it = m_pop_map.begin();
 // filename_it file_it = m_filenamePattern_map.begin();
 
@@ -75,6 +66,19 @@ void Patch::populationDynamics(double const t, double const delta_t) // Maybe m_
 	population_it pop_it = m_pop_map.begin();
 	for (; pop_it != m_pop_map.end(); ++pop_it) // Go over all the species
 		(pop_it->second).cohortDynamics(t, delta_t, m_height_star, m_env);
+}
+
+void Patch::dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePatch, Species* species)
+{
+	double withdrawnSeeds = ((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds; // times integral of K ...
+	((targetPatch->m_pop_map).find(species)->second).m_localSeedBank += withdrawnSeeds;
+	((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds -= withdrawnSeeds;
+}
+
+void Patch::recruitment(std::vector<Patch>::iterator targetPatch, Species* species, double const t, double const delta_t)
+{
+	double const dbh_star = std::exp(1/species->b*(std::log10(m_height_star) - species->a)*std::log(10));
+	((targetPatch->m_pop_map).find(species)->second).recruitment(t, delta_t, dbh_star, m_env);
 }
 
 /* Competition calculation:
