@@ -4,7 +4,7 @@ The class population represents an ensemble of cohorts of the same species at a
 given place. I organise it:
 	- A vector of cohorts sorted by decreasing diameter (or height)
 	- A species constant pointer
-	- A height threshold s* (s_star, not to be mistaken with a pointer of type s)
+	- A height threshold height_star (and dbh_star for demography parameterised for dbh only)
 
 It contains:
 	- maximal number of cohorts
@@ -50,21 +50,6 @@ class Population
 		Population(unsigned int const maxCohorts, Species const * const species);
 		Population(unsigned int const maxCohorts, Species const * const species, std::string const& filename);
 
-		// *********
-		// Population(unsigned int const maxCohorts, Species* const sp, std::vector<double> const & lambda, std::vector<double> const & mu,
-		// 	Environment* const env, unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
-		// Population(unsigned int const maxCohorts, Species* const sp, std::vector<Cohort> const & cohorts, Environment* const env,
-		// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
-		// Population(unsigned int const maxCohorts, Species* const sp, double const lambda, Environment* const env,
-		// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
-		// Population(unsigned int const maxCohorts, Species* const sp, std::string const& fileName, Environment* const env,
-		// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
-
-		// Dynamics
-		// void competition();
-		// void competition(double const t);
-		void totalDensity_basalArea();
-
 		// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Population const &pop);
 
@@ -87,9 +72,10 @@ class Population
 	// Dynamics
 	// --- Functions
 		void cohortDynamics(double const t, double const delta_t, double const height_star, Environment const & env); // Call euler and seedProduction
-		void euler(double const t, double const delta_t, double const s_star, Environment const & env);
+		void euler(double const t, double const delta_t, double const dbh_star, Environment const & env);
 		void seedProduction(double const height_star); // Compute the local seed production (private function)
-		void recruitment(double const t, double const delta_t, double const s_star, Environment const & env); // Compute recruitment (dispersal + euler)
+		void recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env); // Compute recruitment (dispersal + euler)
+		void totalDensity_basalArea();
 
 	// --- Reproduction
 		unsigned int m_nonZeroCohort; // Number of non empty cohorts
@@ -104,7 +90,6 @@ class Population
 		unsigned int m_currentIter;
 		
 	// *********
-		// Environment* const m_env; // The pointer is constant, as a population shall not change of location. However, the environment properties can change (only ptr is constant)
 	// Saving files
 		// std::ofstream m_compReprod_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
 		// std::ofstream m_popDyn_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
