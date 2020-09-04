@@ -77,6 +77,9 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 		std::string climateFilenamePattern = climateParams.get_val<std::string>("filenamePattern");
 		std::string isPopulated;
 
+		if (m_nRow_land < 1 || m_nCol_land < 1)
+			throw Except_Forest(m_nRow_land, m_nCol_land);
+
 		/**** Creating folders for saving dynamics ****/
 		// Checking and creating folder m_pathCompReprodFile if necessary
 		c_species_it species_it = m_speciesList.cbegin();
@@ -119,7 +122,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 
 				// Create Patch which initialise the populations
 				m_patchVec.emplace_back(Patch(env, m_speciesList, m_initPath, m_initFilenamePattern, m_maxCohorts));
-				
+
 				++counterPatch;
 				if (counterPatch > m_dim_land)
 					throw Except_Landscape(m_dim_land, climateFile);
@@ -130,14 +133,29 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 			throw Except_Landscape(m_dim_land, counterPatch);
 
 		// Sort forest
-		this->sort(m_rasterOrder_Rlang);
+		this->sort(true);
 
 		std::vector<Cohort *> test;
 		m_patchVec[34].getAllNonZeroCohorts(test);
 
-		// Compute competition for each patch
-
-		// Compute basal area and density for each species and within each patch
+		// Compute Δlongitude and Δlatitude. No need to compute max and min of lon and lat: landscape is sorted
+		// We assume the lattice is regular. Otherwise Δlongitude and Δlatitude should both be in Environment.
+		c_patch_it patch = m_patchVec.cbegin();
+		if (m_nCol_land == 1 && m_nRow_land == 1)
+		{
+			m_deltaLon = sqrt(patch->m_env.plotArea);
+			m_deltaLat = m_deltaLon;
+		}
+		else if (m_nCol_land == 1 && m_nRow_land > 1)
+		{
+			m_deltaLat = (patch->m_env).distance(std::next(patch)->m_env); // The next patch is also the next latitude
+			m_deltaLon = patch->m_env.plotArea/m_deltaLat;
+		}
+		else if (m_nCol_land > 1) // Whatever m_nRow
+		{
+			m_deltaLon = (patch->m_env).distance(std::next(patch)->m_env);
+			m_deltaLat = patch->m_env.plotArea/m_deltaLon;
+		}
 
 		// Compute basal area and density for each patch
 
@@ -149,210 +167,210 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 	}
 }
 
-// void Forest::spatialDynamics()
-// {
-// 	// Time variables
-// 	double t;
-// 	double delta_t = (m_tmax - m_t0)/(m_nIter - 1);
+void Forest::patchDynamics(double const t, double const delta_t)
+{
+	patch_it targetPatch;
+	for (targetPatch = m_patchVec.begin(); targetPatch != m_patchVec.end(); ++targetPatch)
+	{
+		if (targetPatch->m_isPopulated) // Do the following computation only when necessary
+			targetPatch->populationDynamics(t, delta_t); // Compute local seed bank, local competition, and age local population for each species
+	}
+}
 
-// 	// Iterators
-// 	std::vector<Population>::iterator pop_it;
-// 	std::vector<Environment*>::iterator targetEnv_it;
-// 	Environment* sourceEnv;
+void Forest::spatialDynamics()
+{
+	// Time variables
+	double t;
+	double delta_t = (m_tmax - m_t0)/(m_nIter - 1);
 
-// 	// Variables for neighbours and recruitment
-// 	std::vector<int> boundingBox;
-// 	double targetSeedBank, seedContribution;
+	// Iterators
+	patch_it targetPatch_it, neighbour_it;
 
-// 	// Others
-// 	std::string compReprodFilename;
-// 	std::string popDynFilename;
+	// Variables for neighbours and recruitment
+	std::vector<int> boundingBox;
+	double targetSeedBank, seedContribution;
 
-// 	// Compute the total seed production for each population (the 2nd sum in eq 27 -> l index), and apply growth and mortality to each cohort of the pop (eq 14)
-// 	if (!m_saveOnlyLast)
-// 	{
-// 		for (unsigned int i = 1; i < m_nIter; ++i) // time loop
-// 		{
-// 			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
-// 			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-// 			{
-// 				pop_it->reproduction(); // Compute local seed bank for each pop
-// 				pop_it->euler(t, delta_t);
-// 				(pop_it->m_currentIter)++;
+	// Others
+	std::string compReprodFilename;
+	std::string popDynFilename;
+
+	// // Compute the total seed production for each population (the 2nd sum in eq 27 -> l index), and apply growth and mortality to each cohort of the pop (eq 14)
+	// if (!m_saveOnlyLast)
+	// {
+	// 	for (unsigned int i = 1; i < m_nIter; ++i) // time loop
+	// 	{
+	// 		t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
+	// 		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+	// 		{
+	// 			pop_it->reproduction(); // Compute local seed bank for each pop
+	// 			pop_it->euler(t, delta_t);
+	// 			(pop_it->m_currentIter)++;
 				
-// 				if (i % m_freqSave == 0)
-// 				{
-// 					pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
-// 						<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
+	// 			if (i % m_freqSave == 0)
+	// 			{
+	// 				pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
+	// 					<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
 
-// 					pop_it->m_popDyn_ofs << *pop_it;
-// 				}
-// 			}
+	// 				pop_it->m_popDyn_ofs << *pop_it;
+	// 			}
+	// 		}
 
-// 			for (targetEnv_it = m_land->m_envVec.begin(); targetEnv_it != m_land->m_envVec.end(); ++targetEnv_it) // Starting reproduction prog
-// 			{
-// 				neighbours_indices((*targetEnv_it)->m_patchId, boundingBox); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
-// 				for (unsigned int row = boundingBox[0]; row < boundingBox[3]; ++row)
-// 				{
-// 					for (unsigned int col = boundingBox[1]; col < boundingBox[2]; ++col)
-// 					{
-// 						// index = row*m_nCol_land + col;
-// 						// std::cout << index << std::endl;
-// 					}
-// 				}
-// 			}
-// 		}
+	// 		for (targetEnv_it = m_land->m_envVec.begin(); targetEnv_it != m_land->m_envVec.end(); ++targetEnv_it) // Starting reproduction prog
+	// 		{
+	// 			neighbours_indices((*targetEnv_it)->m_patchId, boundingBox); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
+	// 			for (unsigned int row = boundingBox[0]; row < boundingBox[3]; ++row)
+	// 			{
+	// 				for (unsigned int col = boundingBox[1]; col < boundingBox[2]; ++col)
+	// 				{
+	// 					// index = row*m_nCol_land + col;
+	// 					// std::cout << index << std::endl;
+	// 				}
+	// 			}
+	// 		}
+	// 	}
 
-// 		// Save final time
-// 		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-// 		{
-// 			pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
-// 				<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
+	// 	// Save final time
+	// 	for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+	// 	{
+	// 		pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
+	// 			<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
 
-// 			pop_it->m_popDyn_ofs << *pop_it;
-// 		}
-// 	}
-// 	else
-// 	{
-// 		for (unsigned int i = 1; i < 2; ++i) // m_nIter; ++i) // time loop
-// 		{
-// 			t = m_t0 + (i - 1)*delta_t; // i starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
-// 			for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-// 			{
-// 				pop_it->reproduction(); // Compute local seed bank for each pop
-// 				pop_it->euler(t, delta_t);	
-// 				(pop_it->m_currentIter)++;
-// 			}
+	// 		pop_it->m_popDyn_ofs << *pop_it;
+	// 	}
+	// }
+	// else
+	{
+		for (unsigned int iter = 1; iter < m_nIter; ++iter) // time loop, starts at 1 because the initial condition is considered the 0th iteration
+		{
+			t = m_t0 + (iter - 1)*delta_t; // iter starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
+			this->patchDynamics(t, delta_t);
 
-// 			for (targetEnv_it = m_land->m_envVec.begin(); targetEnv_it != m_land->m_envVec.end(); ++targetEnv_it) // Starting reproduction prog
-// 			{
-// 				std::cout << "Bibibop: " << (*targetEnv_it)->m_patchId << std::endl;
-// 				if ((*targetEnv_it)->m_patchId == 34)
-// 					std::cout << "Bibibop2: " << (*targetEnv_it)->m_isPresent[m_sp]->m_env->m_patchId << std::endl;
+			for (targetPatch_it = m_patchVec.begin(); targetPatch_it != m_patchVec.end(); ++targetPatch_it) // Starting reproduction prog
+			{
+				// Reset local seed bank
+				targetSeedBank = 0;
 
-// 				// Reset local seed bank
-// 				targetSeedBank = 0;
+				// Get neighbours
+				neighbours_indices((targetPatch_it->m_env).m_patchId, boundingBox); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 
-// 				// Get neighbours
-// 				neighbours_indices((*targetEnv_it)->m_patchId, boundingBox); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
+				// Cover all the sources within neighbours to collect dispersed seeds
 
-// 				// Cover all the sources within neighbours to collect dispersed seeds
-// 				for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
-// 				{
-// 					for (unsigned int col = boundingBox[1]; col <= boundingBox[2]; ++col) // Important: less than or equal to (<=)
-// 					{
-// 						sourceEnv = m_land->m_envVec[row*m_nCol_land + col]; // index = row*m_nCol_land + col;
-// 						if ((sourceEnv->m_isPresent).find(m_sp) != (sourceEnv->m_isPresent).end()) // if species is present in source
-// 						{
-// 							std::cout << "Entered" << std::endl;
-// 							// Compute contribution from source to target seed bank
-// 							seedContribution = (sourceEnv->m_isPresent)[m_sp]->m_localProducedSeeds; // x integral(K)
+				for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
+				{
+					for (unsigned int col = boundingBox[1]; col <= boundingBox[2]; ++col) // Important: less than or equal to (<=)
+					{
+						sourceEnv = m_land->m_envVec[row*m_nCol_land + col]; // index = row*m_nCol_land + col;
+						if ((sourceEnv->m_isPresent).find(m_sp) != (sourceEnv->m_isPresent).end()) // if species is present in source
+						{
+							std::cout << "Entered" << std::endl;
+							// Compute contribution from source to target seed bank
+							seedContribution = (sourceEnv->m_isPresent)[m_sp]->m_localProducedSeeds; // x integral(K)
 							
-// 							// Update local seed bank used for target
-// 							targetSeedBank += seedContribution;
+							// Update local seed bank used for target
+							targetSeedBank += seedContribution;
 
-// 							// Update source seed bank
-// 							(sourceEnv->m_isPresent)[m_sp]->m_localProducedSeeds -= seedContribution;
-// 							std::cout << "Exited" << std::endl;
-// 						}
-// 					}
-// 				}
-// 				std::cout << "Target: " << (*targetEnv_it)->m_patchId << ", " << targetSeedBank << std::endl;
-// 				if ((*targetEnv_it)->m_isPresent.find(m_sp) != ((*targetEnv_it)->m_isPresent).end()) // if species is present in target
-// 				{
-// 					if ((*targetEnv_it)->m_patchId == 34)
-// 						targetSeedBank = 1;
+							// Update source seed bank
+							(sourceEnv->m_isPresent)[m_sp]->m_localProducedSeeds -= seedContribution;
+							std::cout << "Exited" << std::endl;
+						}
+					}
+				}
+				std::cout << "Target: " << (*targetEnv_it)->m_patchId << ", " << targetSeedBank << std::endl;
+				if ((*targetEnv_it)->m_isPresent.find(m_sp) != ((*targetEnv_it)->m_isPresent).end()) // if species is present in target
+				{
+					if ((*targetEnv_it)->m_patchId == 34)
+						targetSeedBank = 1;
 
-// 					if (targetSeedBank > 0)
-// 					{
-// 						std::cout << "Allo: " << (((*targetEnv_it)->m_isPresent)[m_sp]->m_env)->m_patchId << std::endl;
-// 						// Update the target local seed bank
-// 						((*targetEnv_it)->m_isPresent)[m_sp]->m_localSeedBank = targetSeedBank;
+					if (targetSeedBank > 0)
+					{
+						std::cout << "Allo: " << (((*targetEnv_it)->m_isPresent)[m_sp]->m_env)->m_patchId << std::endl;
+						// Update the target local seed bank
+						((*targetEnv_it)->m_isPresent)[m_sp]->m_localSeedBank = targetSeedBank;
 
-// 						// Apply recruitment to the population, which apply euler to the boundary cohort and reset the population seedBank to 0
-// 						((*targetEnv_it)->m_isPresent)[m_sp]->recruitment(t, delta_t);
-// 					}
-// 				}
-// 				else
-// 				{
-// 					if (targetSeedBank > 0)
-// 					{
-// 						// Create new Population with one cohort
-// 						// --- Outputs' filename
-// 						std::cout << "No pop in target" << std::endl;
-// 						compReprodFilename = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((*targetEnv_it)->m_patchId) + ".txt";
-// 						popDynFilename = m_pathPopDynFile + m_popDynFilePattern + std::to_string((*targetEnv_it)->m_patchId) + ".txt";
+						// Apply recruitment to the population, which apply euler to the boundary cohort and reset the population seedBank to 0
+						((*targetEnv_it)->m_isPresent)[m_sp]->recruitment(t, delta_t);
+					}
+				}
+				else
+				{
+					if (targetSeedBank > 0)
+					{
+						// Create new Population with one cohort
+						// --- Outputs' filename
+						std::cout << "No pop in target" << std::endl;
+						compReprodFilename = m_pathCompReprodFile + m_compReprodFilePattern + std::to_string((*targetEnv_it)->m_patchId) + ".txt";
+						popDynFilename = m_pathPopDynFile + m_popDynFilePattern + std::to_string((*targetEnv_it)->m_patchId) + ".txt";
 
-// 						// --- Add population to the forest
-// 						m_popVec.emplace_back(Population(m_maxCohorts, m_sp, targetSeedBank, *targetEnv_it, i, compReprodFilename, popDynFilename));
-// 						std::cout << "emplace_back done" << std::endl;
+						// --- Add population to the forest
+						m_popVec.emplace_back(Population(m_maxCohorts, m_sp, targetSeedBank, *targetEnv_it, i, compReprodFilename, popDynFilename));
+						std::cout << "emplace_back done" << std::endl;
 
-// 						// Update the forest
+						// Update the forest
 
-// 						// Sort the population vector in the same order than landscape
+						// Sort the population vector in the same order than landscape
 
-// 						// The presence of species sp in the target environment is already set via population constructor
-// 					}
-// 				}
+						// The presence of species sp in the target environment is already set via population constructor
+					}
+				}
 				
-// 			}
-// 		}
+			}
+		}
 
-// 		// Save final time
-// 		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-// 		{
-// 			pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
-// 				<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
-// 			pop_it->m_popDyn_ofs << *pop_it;
-// 		}
-// 	}
+		// Save final time
+		for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
+		{
+			pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
+				<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
+			pop_it->m_popDyn_ofs << *pop_it;
+		}
+	}
 	
-// 	// Close output files when simulation is done
-// 	this->close_ofs();
-// }
+	// Close output files when simulation is done
+	this->close_ofs();
+}
 
-// void Forest::neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const
-// {
-// 	int topLeft_r, topLeft_c, topRight_r, topRight_c, bottomLeft_r, bottomLeft_c, bottomRight_r, bottomRight_c;
+void Forest::neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const
+{
+	int topLeft_r, topLeft_c, topRight_r, topRight_c, bottomLeft_r, bottomLeft_c, bottomRight_r, bottomRight_c;
 
-// 	int nRow(m_land->m_nRow), nCol(m_land->m_nCol), dim(m_land->m_dim);
-// 	double const deltaX (m_land->m_deltaLon);
-// 	double const deltaY(m_land->m_deltaLat);
+	int nRow(m_nRow_land), nCol(m_nCol_land), dim(m_dim_land);
+	double const deltaX (m_patchVec[target].m_env.delta_lon);
+	double const deltaY(m_land->m_deltaLat);
 
-// 	double maxDispersalDist;
+	double maxDispersalDist;
 
-// 	if (m_sp->max_dispersalDist)
-// 		maxDispersalDist = m_sp->dispersalDistThreshold;
-// 	else if (m_sp->min_dispersalProba) // It is actually stupid to compute it everytime... sp should get a function to compute maxDispersalDist and run it at construction
-// 		maxDispersalDist = 100; // To compute, use a dichotomy... while (integral from d to + inf > minDispProba) {++d}
-// 	else
-// 		maxDispersalDist = 100; // default value
+	if (m_sp->max_dispersalDist)
+		maxDispersalDist = m_sp->dispersalDistThreshold;
+	else if (m_sp->min_dispersalProba) // It is actually stupid to compute it everytime... sp should get a function to compute maxDispersalDist and run it at construction
+		maxDispersalDist = 100; // To compute, use a dichotomy... while (integral from d to + inf > minDispProba) {++d}
+	else
+		maxDispersalDist = 100; // default value
 
-// 	int influenceRadius_x = std::ceil(maxDispersalDist/deltaX);
-// 	int influenceRadius_y = std::ceil(maxDispersalDist/deltaY);
+	int influenceRadius_x = std::ceil(maxDispersalDist/deltaX);
+	int influenceRadius_y = std::ceil(maxDispersalDist/deltaY);
 
-// 	int col_ind = target % nCol;
-// 	int row_ind = (int) (target - col_ind)/nCol;
+	int col_ind = target % nCol;
+	int row_ind = (int) (target - col_ind)/nCol;
 
-// 	// Default neighbour is itself
-// 	topLeft_c = col_ind;
-// 	topRight_c = col_ind;
-// 	topLeft_r = row_ind;
-// 	bottomLeft_r = row_ind;
+	// Default neighbour is itself
+	topLeft_c = col_ind;
+	topRight_c = col_ind;
+	topLeft_r = row_ind;
+	bottomLeft_r = row_ind;
 
-// 	if (influenceRadius_x >= deltaX) // If more than itself is covered in longitude direction
-// 	{
-// 		topLeft_c = std::max(col_ind - influenceRadius_x, 0);
-// 		topRight_c = std::min(col_ind + influenceRadius_x, nCol);
-// 	}
+	if (influenceRadius_x >= deltaX) // If more than itself is covered in longitude direction
+	{
+		topLeft_c = std::max(col_ind - influenceRadius_x, 0);
+		topRight_c = std::min(col_ind + influenceRadius_x, nCol);
+	}
 
-// 	if (influenceRadius_y >= deltaY) // If more than itself is covered in latitude direction
-// 	{
-// 		topLeft_r = std::max(row_ind - influenceRadius_y, 0);
-// 		bottomLeft_r = std::min(row_ind + influenceRadius_y, nRow);
-// 	}
-// 	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
-// }
+	if (influenceRadius_y >= deltaY) // If more than itself is covered in latitude direction
+	{
+		topLeft_r = std::max(row_ind - influenceRadius_y, 0);
+		bottomLeft_r = std::min(row_ind + influenceRadius_y, nRow);
+	}
+	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
+}
 
 // // Need to order Forest according to Spatial order
 // void Forest::sort(bool const rasterOrder_Rlang)
