@@ -61,11 +61,6 @@ class Population
 		// 	unsigned int currentIter, std::string const compReprodFilename, std::string const popDynFilename);
 
 		// Dynamics
-
-		// *********
-		void euler(double const t, double const delta_t, double const s_star, Environment const & env);
-		void recruitment(double const t, double const delta_t, double const s_star, Environment const & env);
-		double reproduction(double const s_star);
 		// void competition();
 		// void competition(double const t);
 		void totalDensity_basalArea();
@@ -90,8 +85,15 @@ class Population
 		Species const * const m_species; // The pointer is constant, as a population shall not change species
 
 	// Dynamics
+	// --- Functions
+		void cohortDynamics(double const t, double const delta_t, double const height_star, Environment const & env); // Call euler and seedProduction
+		void euler(double const t, double const delta_t, double const s_star, Environment const & env);
+		void seedProduction(double const height_star); // Compute the local seed production (private function)
+		void recruitment(double const t, double const delta_t, double const s_star, Environment const & env); // Compute recruitment (dispersal + euler)
+
 	// --- Reproduction
 		unsigned int m_nonZeroCohort; // Number of non empty cohorts
+		double m_localProducedSeeds; // Seeds produced in local patch (part of it are propagated)
 		double m_localSeedBank; // Seeds received from local source and from external source (dispersal)
 	
 	// --- Total population
@@ -100,10 +102,6 @@ class Population
 
 	// --- Others
 		unsigned int m_currentIter;
-		
-		// double m_localProducedSeeds; // Seeds produced in local patch (part of it are propagated)
-		// double m_s_star; // Competition, both used in dynamics and output variable
-	
 		
 	// *********
 		// Environment* const m_env; // The pointer is constant, as a population shall not change of location. However, the environment properties can change (only ptr is constant)
