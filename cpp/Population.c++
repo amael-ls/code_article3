@@ -267,8 +267,26 @@ Remarks:
 values. Indeed, c++ starts iterations from 0. So when writing
 	xxx != yyy.begin() + m_nonZeroCohort
 it goes from 0 to m_nonZeroCohort - 1
+
+2. See species.h++ for allometric functions and demographic functions
+
 */
-void Population::euler(double const t, double const delta_t, double const s_star, Environment const & env)
+void Population::cohortDynamics(double const t, double const delta_t, double const height_star, Environment const & env)
+{
+	// Convert height_star (h*) to species-specific dbh_star (demography is parameterised for dbh only)
+	double const dbh_star = std::exp(1/m_species->b*(std::log10(height_star) - m_species->a)*std::log(10));
+
+	// Compute local seed bank
+	this->seedProduction(height_star);
+
+	// Age cohort
+	this->euler(t, delta_t, dbh_star, env);
+
+	// Compute basal area, and total density
+	this->totalDensity_basalArea();
+}
+
+void Population::euler(double const t, double const delta_t, double const dbh_star, Environment const & env)
 {
 	cohort_it it;
 	cohort_it lim_it; // limit iterator
@@ -285,16 +303,10 @@ void Population::euler(double const t, double const delta_t, double const s_star
 
 	// Integration within the size space Omega
 	for (it = m_cohortsVec.begin(); it != lim_it; ++it)
-		it->euler(t, delta_t, s_star, env, &Cohort::ODE_II);
-
-	// Dynamics at the boundary condition in size
-	this->reproduction(s_star);
-
-	// Compute competition, basal area, and total density
-	this->totalDensity_basalArea();
+		it->euler(t, delta_t, dbh_star, env, &Cohort::ODE_II);
 }
 
-void Population::recruitment(double const t, double const delta_t, double const s_star, Environment const & env)
+void Population::recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env)
 {
 	std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << std::endl;
 	cohort_it recruitment_it = m_cohortsVec.begin() + m_nonZeroCohort; // Position of recruitment (which becomes a new cohort if size > threshold)
@@ -303,7 +315,7 @@ void Population::recruitment(double const t, double const delta_t, double const 
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort, t));
 
 	// New cohort of species m_species, lambda = mu = 0 --> Should be treated separately
-	recruitment_it->euler(t, delta_t, s_star, env, m_localSeedBank, &Cohort::ODE_V);
+	recruitment_it->euler(t, delta_t, dbh_star, env, m_localSeedBank, &Cohort::ODE_V);
 	if (recruitment_it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
 		m_nonZeroCohort += 1;
 	
@@ -311,27 +323,27 @@ void Population::recruitment(double const t, double const delta_t, double const 
 	m_localSeedBank = 0;
 }
 
-/* Reproduction:
+/* Seed production:
 Only canopy trees can reproduce, hence we stop at the last tree that can
 reproduce (i.e., the last tree taller than s*).
 In Purves2008, the reproduction is proportional to the total sun-exposed crown
 area (which is 0 for understorey trees). That is to say:
-	Reproduction = fecundity x crownArea(s, s*)
+	Seed production = fecundity x crownArea(s, s*)
 The fecundity parameter is from table S4 Purves2008. It is a difficult parameter
 to estimate (check his Appendix2: Parameter estimation)
 */
-double Population::reproduction(double const s_star)
+void Population::seedProduction(double const height_star)
 {
 	double popReprod = 0;
 	c_cohort_it cohort_it = m_cohortsVec.cbegin();
 
-	while (cohort_it->m_mu > s_star && cohort_it != m_cohortsVec.end()) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
+	while (cohort_it != m_cohortsVec.end() && cohort_it->m_height > height_star) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
 	{
-		popReprod += cohort_it->crownArea(s_star) * cohort_it->m_lambda;
+		popReprod += cohort_it->crownArea(height_star) * cohort_it->m_lambda;
 		++cohort_it;
 	}
 
-	return popReprod * m_species->fecundity;
+	m_localProducedSeeds = popReprod * m_species->fecundity;
 }
 
 // ****************************************************************************************************************
