@@ -25,6 +25,7 @@ class Patch
 		void addPopulation();
 
 	// Dynamics
+		void populationDynamics(double const t, double const delta_t);
 		void competition(double const tolHeight);
 
 	// Overloading
@@ -37,6 +38,7 @@ class Patch
 		std::map <Species*, std::string> m_filenamePattern_map;
 		unsigned int m_maxCohorts;
 		double m_minDelta_s;
+		bool m_isPopulated;
 
 	// Populations
 		std::map <Species*, Population> m_pop_map; // One population (vector of cohorts) of a species present in Environment
@@ -49,8 +51,8 @@ class Patch
 		double m_height_star; //The height at which the canopy is closed
 
 	// --- Reproduction
-		std::map <Species*, double> m_localSeedBank_map;
-		std::map <Species*, double> m_localSeedProduced_map;
+		std::map <Species*, double> m_localSeedBank_map; // Might be useless, it is stored in each population anyway
+		std::map <Species*, double> m_localSeedProduced_map; // Might be useless, it is stored in each population anyway
 
 	// Private functions
 	void getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const;

@@ -13,13 +13,15 @@ typedef std::map<Species*, std::string>::iterator filename_it;
 
 Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, std::string const initPath,
 	std::string const initFilenamePattern, unsigned int const maxCohorts):
-		m_maxCohorts(maxCohorts), m_env(env), m_height_star(0)
+		m_maxCohorts(maxCohorts), m_env(env), m_height_star(0), m_isPopulated(false)
 {
 	std::string initFile;
 	bool foundAnInitFile = false;
 	std::vector<std::string> speciesNames;
 
 	std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
+
+	m_minDelta_s = std::numeric_limits<double>::infinity();
 
 	for (; species_it != speciesList.cend(); ++species_it)
 	{
@@ -32,19 +34,23 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, st
 			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile));
 			m_filenamePattern_map[*species_it] = initFile;
 			foundAnInitFile = true;
+			m_isPopulated = true;
 		}
 		else
 		{
 			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it));
 			m_filenamePattern_map[*species_it] = "not initialised.txt";
 		}
+
+// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
+		if (((m_pop_map.find(*species_it))->second).m_delta_s < m_minDelta_s)  
+			m_minDelta_s = ((m_pop_map.find(*species_it))->second).m_delta_s;
 	}
 
 	if (m_env.m_initPopulated && !foundAnInitFile)
 		throw Except_Patch(m_env.m_patchId, speciesNames);
 
-	// m_minDelta_s = m_pop_map[species].m_delta_s;
-	// this->competition(m_minDelta_s);
+	this->competition(m_minDelta_s);
 }
 
 /* Add population
@@ -59,9 +65,17 @@ void Patch::addPopulation()
 // population_it pop_it = m_pop_map.begin();
 // filename_it file_it = m_filenamePattern_map.begin();
 
-
-
-
+/************************************/
+/******        dynamics        ******/
+/************************************/
+// The following function just call competition and Euler for all species (i.e. populations of one patch)
+void Patch::populationDynamics(double const t, double const delta_t) // Maybe m_minDelta_s will be an argument
+{
+	this->competition(m_minDelta_s); // Update m_height_star
+	population_it pop_it = m_pop_map.begin();
+	for (; pop_it != m_pop_map.end(); ++pop_it) // Go over all the species
+		(pop_it->second).cohortDynamics(t, delta_t, m_height_star, m_env);
+}
 
 /* Competition calculation:
 To compute competition within a patch, it is necessary to first get all
@@ -105,8 +119,6 @@ void Patch::getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const
 			nonZeroCohorts.emplace_back(cohort_ptr);
 		}
 	}
-
-	delete cohort_ptr;
 
 	// Sort vector
 	std::sort(nonZeroCohorts.begin(), nonZeroCohorts.end(), greaterCohortPtr);
