@@ -17,6 +17,14 @@ Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIt
 		m_error_msg += "Landscape is overpopulated. Dimension = " + std::to_string(m_dimLandscape) + " cells.\n";
 }
 
+Except_Forest::Except_Forest(unsigned int const nRow, unsigned int const nCol)
+{
+	if (nRow < 1)
+		m_error_msg += "Wrong number of rows (" + std::to_string(nRow) + "). Should be at least 1 for longitude";
+	if (nCol < 1)
+		m_error_msg += "Wrong number of columns (" + std::to_string(nCol) + "). Should be at least 1 for latitude";
+}
+
 const char* Except_Forest::what() const throw()
 {
 	return (m_error_msg.c_str());
