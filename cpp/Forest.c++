@@ -329,28 +329,23 @@ void Forest::spatialDynamics()
 	this->close_ofs();
 }
 
-void Forest::neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const
+void Forest::neighbours_indices(unsigned int const target, std::vector<int>& boundingBox, Species const* species) const
 {
 	int topLeft_r, topLeft_c, topRight_r, topRight_c, bottomLeft_r, bottomLeft_c, bottomRight_r, bottomRight_c;
-
-	int nRow(m_nRow_land), nCol(m_nCol_land), dim(m_dim_land);
-	double const deltaX (m_patchVec[target].m_env.delta_lon);
-	double const deltaY(m_land->m_deltaLat);
-
 	double maxDispersalDist;
 
-	if (m_sp->max_dispersalDist)
-		maxDispersalDist = m_sp->dispersalDistThreshold;
-	else if (m_sp->min_dispersalProba) // It is actually stupid to compute it everytime... sp should get a function to compute maxDispersalDist and run it at construction
+	if (species->max_dispersalDist)
+		maxDispersalDist = species->dispersalDistThreshold;
+	else if (species->min_dispersalProba) // It is actually stupid to compute it everytime... sp should get a function to compute maxDispersalDist and run it at construction
 		maxDispersalDist = 100; // To compute, use a dichotomy... while (integral from d to + inf > minDispProba) {++d}
 	else
 		maxDispersalDist = 100; // default value
 
-	int influenceRadius_x = std::ceil(maxDispersalDist/deltaX);
-	int influenceRadius_y = std::ceil(maxDispersalDist/deltaY);
+	unsigned int influenceRadius_x = std::ceil(maxDispersalDist/m_deltaLon);
+	unsigned int influenceRadius_y = std::ceil(maxDispersalDist/m_deltaLat);
 
-	int col_ind = target % nCol;
-	int row_ind = (int) (target - col_ind)/nCol;
+	unsigned int col_ind = target % m_nCol_land;
+	unsigned int row_ind = (int) (target - col_ind)/m_nCol_land;
 
 	// Default neighbour is itself
 	topLeft_c = col_ind;
@@ -358,16 +353,16 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<int>& bou
 	topLeft_r = row_ind;
 	bottomLeft_r = row_ind;
 
-	if (influenceRadius_x >= deltaX) // If more than itself is covered in longitude direction
+	if (influenceRadius_x >= m_deltaLon) // If more than itself is covered in longitude direction
 	{
-		topLeft_c = std::max(col_ind - influenceRadius_x, 0);
-		topRight_c = std::min(col_ind + influenceRadius_x, nCol);
+		topLeft_c = std::max(col_ind - influenceRadius_x, 0U); // 0U for unsigned int
+		topRight_c = std::min(col_ind + influenceRadius_x, m_nCol_land); // Casting required
 	}
 
-	if (influenceRadius_y >= deltaY) // If more than itself is covered in latitude direction
+	if (influenceRadius_y >= m_deltaLat) // If more than itself is covered in latitude direction
 	{
-		topLeft_r = std::max(row_ind - influenceRadius_y, 0);
-		bottomLeft_r = std::min(row_ind + influenceRadius_y, nRow);
+		topLeft_r = std::max(row_ind - influenceRadius_y, 0U);
+		bottomLeft_r = std::min(row_ind + influenceRadius_y, m_nRow_land); // Casting required
 	}
 	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 }

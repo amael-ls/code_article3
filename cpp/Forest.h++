@@ -18,7 +18,7 @@ class Forest
 		void spatialDynamics();
 
 	// Return pointers to the neighbour cells
-		void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const;
+		void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox, Species const* species) const;
 
 	// // Print function
 	// 	void print() const;
