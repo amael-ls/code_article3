@@ -42,14 +42,14 @@ Cohort::Cohort(Cohort const& cohort, unsigned int birthIteration) :
 	m_lambda(cohort.m_lambda), m_mu(cohort.m_mu), m_species(cohort.m_species), m_birthIteration(birthIteration)
 {
 	// Convert dbh to height. If dbh is in mm, then height is in m. Trick: x^n = Exp[n Log[x]]
-	double height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
+	m_height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
 }
 
 Cohort::Cohort(double const lambda, double const mu, Species const *sp, unsigned int birthIteration) :
 	m_lambda(lambda), m_mu(mu), m_species(sp), m_birthIteration(birthIteration)
 {
 	// Convert dbh to height. If dbh is in mm, then height is in m. Trick: x^n = Exp[n Log[x]]
-	double height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
+	m_height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
 }
 
 /*******************************************/
@@ -217,6 +217,9 @@ void Cohort::euler(double const t, double const delta_t, double const s_star, En
 	std::vector<double> fy = (this->*ode)(s_star, env);
 	m_lambda = m_lambda + delta_t * fy[0];
 	m_mu = m_mu + delta_t * fy[1];
+
+	// Update height
+	m_height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
 }
 
 // Euler method for ODE V
@@ -226,6 +229,9 @@ void Cohort::euler(double const t, double const delta_t, double const s_star, En
 	std::vector<double> fy = (this->*ode)(s_star, env, popReprod);
 	m_lambda = m_lambda + delta_t * fy[0];
 	m_mu = m_mu + delta_t * fy[1];
+
+	// Update height
+	m_height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(m_mu))*std::log(10));
 }
 
 // Runge-Kutta 4 method for ODE II. Note that this function is only for autonomous systems
