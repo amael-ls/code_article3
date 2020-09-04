@@ -15,45 +15,51 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, st
 	std::string const initFilenamePattern, unsigned int const maxCohorts):
 		m_maxCohorts(maxCohorts), m_isPopulated(false), m_env(env), m_height_star(0)
 {
-	std::string initFile;
-	bool foundAnInitFile = false;
-	std::vector<std::string> speciesNames;
-
-	std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
-
-	m_minDelta_s = std::numeric_limits<double>::infinity();
-
-	for (; species_it != speciesList.cend(); ++species_it)
+	try
 	{
-		speciesNames.emplace_back((*species_it)->m_speciesName);
-		initFile = initPath + (*species_it)->m_speciesName + "/" + initFilenamePattern +
-		std::to_string(env.m_patchId) + ".txt";
-		
-		if (std::filesystem::exists(initFile))
+		std::string initFile;
+		bool foundAnInitFile = false;
+		std::vector<std::string> speciesNames;
+
+		std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
+
+		m_minDelta_s = std::numeric_limits<double>::infinity();
+
+		for (; species_it != speciesList.cend(); ++species_it)
 		{
-			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile));
-			m_filenamePattern_map[*species_it] = initFile;
-			foundAnInitFile = true;
-			m_isPopulated = true;
-		}
-		else
-		{
-			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it));
-			m_filenamePattern_map[*species_it] = "not initialised.txt";
+			speciesNames.emplace_back((*species_it)->m_speciesName);
+			initFile = initPath + (*species_it)->m_speciesName + "/" + initFilenamePattern +
+			std::to_string(env.m_patchId) + ".txt";
+			
+			if (std::filesystem::exists(initFile))
+			{
+				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile));
+				m_filenamePattern_map[*species_it] = initFile;
+				foundAnInitFile = true;
+				m_isPopulated = true;
+			}
+			else
+			{
+				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it));
+				m_filenamePattern_map[*species_it] = "not initialised.txt";
+			}
+
+	// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
+			if (((m_pop_map.find(*species_it))->second).m_delta_s < m_minDelta_s)  
+				m_minDelta_s = ((m_pop_map.find(*species_it))->second).m_delta_s;
 		}
 
-// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
-		if (((m_pop_map.find(*species_it))->second).m_delta_s < m_minDelta_s)  
-			m_minDelta_s = ((m_pop_map.find(*species_it))->second).m_delta_s;
+		if (m_env.m_initPopulated && !foundAnInitFile)
+			throw Except_Patch(m_env.m_patchId, speciesNames);
+
+		this->competition(m_minDelta_s);
 	}
-
-	if (m_env.m_initPopulated && !foundAnInitFile)
-		throw Except_Patch(m_env.m_patchId, speciesNames);
-
-	this->competition(m_minDelta_s);
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 }
 
-// population_it pop_it = m_pop_map.begin();
 // filename_it file_it = m_filenamePattern_map.begin();
 
 /************************************/

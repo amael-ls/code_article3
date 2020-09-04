@@ -17,71 +17,85 @@ typedef std::vector<Cohort>::const_iterator c_cohort_it;
 Population::Population(unsigned int const maxCohorts, Species const * const species):
 	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species)
 {
-	m_nonZeroCohort = 0;
-	m_currentIter = 0;
+	try
+	{
+		m_nonZeroCohort = 0;
+		m_currentIter = 0;
 
-	// Assign vector of cohorts
-	for (unsigned int i = 0; i < m_maxCohorts; ++i)
-		m_cohortsVec.emplace_back(Cohort(species, 0));
+		// Assign vector of cohorts
+		for (unsigned int i = 0; i < m_maxCohorts; ++i)
+			m_cohortsVec.emplace_back(Cohort(species, 0));
 
-	// Sort and compute basal area and total density
-	this->sort(true); // true to sort by decreasing size
-	this->totalDensity_basalArea();
+		// Sort and compute basal area and total density
+		this->sort(true); // true to sort by decreasing size
+		this->totalDensity_basalArea();
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 }
 
 Population::Population(unsigned int const maxCohorts, Species const * const species, std::string const& filename):
 	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species)
 {
-	m_nonZeroCohort = 0;
-	m_currentIter = 0;
-
-	// Assign vector of cohorts
-	// --- Open input file
-	std::ifstream inputFile(filename);
-	if(!inputFile.is_open())
+	try
 	{
-		std::stringstream ss;
-		ss << "*** ERROR: cannot open file <" << filename << ">";
-		throw (std::runtime_error (ss.str()));
-	}
+		m_nonZeroCohort = 0;
+		m_currentIter = 0;
 
-	std::string line;
-	getline(inputFile, line);
-	if (line.find("density", 0) == std::string::npos || line.find("dbh", 0) == std::string::npos)
-	{
-		std::stringstream ss;
-		ss << "*** ERROR: file <" << filename << "> must have density and dbh headers";
-		throw (std::runtime_error (ss.str()));
-	}
-	
-	double density(0), dbh(0);
-	size_t afterNumVal; // This value is set by std::stod to position of the next character in str after the numerical value
+		// Assign vector of cohorts
+		// --- Open input file
+		std::ifstream inputFile(filename);
+		if(!inputFile.is_open())
+		{
+			std::stringstream ss;
+			ss << "*** ERROR: cannot open file <" << filename << ">";
+			throw (std::runtime_error (ss.str()));
+		}
 
-	while(inputFile.good())
-	{
+		std::string line;
 		getline(inputFile, line);
-		if (line.empty())
-			continue;
-		density = std::stod(line, &afterNumVal);
-		dbh = std::stod(line.substr(afterNumVal));
+		if (line.find("density", 0) == std::string::npos || line.find("dbh", 0) == std::string::npos)
+		{
+			std::stringstream ss;
+			ss << "*** ERROR: file <" << filename << "> must have density and dbh headers";
+			throw (std::runtime_error (ss.str()));
+		}
+		
+		double density(0), dbh(0);
+		size_t afterNumVal; // This value is set by std::stod to position of the next character in str after the numerical value
 
-		m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
-		++m_nonZeroCohort;
-		if (m_maxCohorts < m_nonZeroCohort)
-			throw(Except_Population(m_maxCohorts, filename));
+		while(inputFile.good())
+		{
+			getline(inputFile, line);
+			if (line.empty())
+				continue;
+			density = std::stod(line, &afterNumVal);
+			dbh = std::stod(line.substr(afterNumVal));
+
+			m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
+			++m_nonZeroCohort;
+			if (m_maxCohorts < m_nonZeroCohort)
+				throw(Except_Population(m_maxCohorts, filename));
+		}
+
+		// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
+		for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
+			m_cohortsVec.emplace_back(Cohort(species, 0));
+		
+		double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
+		if (m_s_inf < tallest_tree)
+			throw(Except_Population(m_s_inf, tallest_tree, filename));
+
+		// Sort and compute basal area and total density
+		this->sort(true); // true to sort by decreasing size
+		this->totalDensity_basalArea();
 	}
-
-	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
-	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
-		m_cohortsVec.emplace_back(Cohort(species, 0));
-	
-	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
-	if (m_s_inf < tallest_tree)
-		throw(Except_Population(m_s_inf, tallest_tree, filename));
-
-	// Sort and compute basal area and total density
-	this->sort(true); // true to sort by decreasing size
-	this->totalDensity_basalArea();
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 }
 
 
