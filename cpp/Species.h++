@@ -14,6 +14,21 @@ I list the functions here, but describe them in the associated c++ file:
 		* d (deat rate)
 		* dv_ds differentiate of v with respect to s (size variable)
 		* dd_ds differentiate of d with respect to s (size variable)
+
+Allometries:
+1. Calculate the height of a tree given its dbh:
+	- Parameters for 106 species, source table S3, Purves2007, a and b
+	- Function define at the end of the program, source appendix S2, end 1st page
+
+2. Calculate the radius of the crown at a distance y from the top, given dbh of a tree:
+	- Parameters for 106 species, source table S3, Purves2007, T
+	- Function define ate the end of the program, source appendix S1, eq S1.6, S1.7
+	
+3. Data C0-C1:
+	- Source = table S2 Purves2007
+
+4. Bibliography:
+		- Crown plasticity and competition for canopy space: a new spatially implicit model parameterized for 250 North American tree species
 */
 
 #ifndef SPECIES_H
