@@ -14,16 +14,14 @@ class Forest
 {
 	public :
 		Forest(std::string const forestParamsFilename, std::vector<Species*> const speciesList, std::string const climateFilename);
-	// 	void spatialDynamics();
+		void patchDynamics(double const t, double const delta_t);
+		void spatialDynamics();
 
-	// // Return pointers to the neighbour cells
-	// 	void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const;
+	// Return pointers to the neighbour cells
+		void neighbours_indices(unsigned int const target, std::vector<int>& boundingBox) const;
 
 	// // Print function
 	// 	void print() const;
-
-	// // Sorting function
-	// 	void sort(bool const rasterOrder_Rlang);
 
 	// // Managing
 		void sort(bool const rasterOrder_Rlang);
@@ -38,10 +36,14 @@ class Forest
 		std::string m_initFilenamePattern;
 		std::string m_initPath;
 
-	// Landscape dimensions
+	// Landscape
+	// --- Dimensions
 		unsigned int m_nRow_land, m_nCol_land, m_dim_land; // Landscape
+
+	// --- Discretisation
+		double m_deltaLon, m_deltaLat; // Correspond to Δx and Δy respectively
 	
-	// Landscape order; if true, then same order than a raster in R language
+	// --- Order; if true, then same order than a raster in R language
 		bool m_rasterOrder_Rlang;
 	
 	// Species and population
