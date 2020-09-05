@@ -22,155 +22,149 @@ typedef std::vector<Patch>::iterator patch_it;
 Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> const speciesList, std::string const climateFilename) :
 	m_forestParamsFilename(forestParamsFilename), m_speciesList(speciesList)
 {
-	try
+	/**** Read forest parameters from file forestParamsFilename ****/
+	// Load params
+	par::Params forestParams(forestParamsFilename.c_str(), " = ");
+
+	// Initial condition
+	m_initFilenamePattern = forestParams.get_val<std::string>("initFilenamePattern");
+	m_initPath = forestParams.get_val<std::string>("initPath");
+	checkPath(m_initPath, "initPath");
+
+	// Saving options
+	m_summaryFilePattern = forestParams.get_val<std::string>("summaryFilePattern");
+	m_summaryFilePath = forestParams.get_val<std::string>("summaryFilePath");
+	checkPath(m_summaryFilePath, "pathSummaryFile");
+
+	m_popDynFilePattern = forestParams.get_val<std::string>("popDynFilePattern");
+	m_popDynFilePath = forestParams.get_val<std::string>("popDynFilePath");
+	checkPath(m_popDynFilePath, "popDynFilePath");
+
+	m_freqSave = forestParams.get_val<unsigned int>("freqSave");
+
+	// Simulation parameters
+	m_t0 = forestParams.get_val<double>("t0");
+	m_tmax = forestParams.get_val<double>("tmax");
+	m_nIter = forestParams.get_val<unsigned int>("nIter");
+	m_maxCohorts = forestParams.get_val<unsigned int>("maxCohorts");
+
+	// get rasterOrder_Rlang parameter
+	std::string rasterOrder_Rlang = forestParams.get_val<std::string>("rasterOrder_Rlang");
+	std::transform(rasterOrder_Rlang.begin(), rasterOrder_Rlang.end(), rasterOrder_Rlang.begin(),
+		[](unsigned char c){ return std::tolower(c); });
+
+	if (rasterOrder_Rlang == "true")
+		m_rasterOrder_Rlang = true;
+
+	// Get saveOnlyLast parameter
+	std::string saveOnlyLast = forestParams.get_val<std::string>("saveOnlyLast");
+	std::transform(saveOnlyLast.begin(), saveOnlyLast.end(), saveOnlyLast.begin(),
+		[](unsigned char c){ return std::tolower(c); });
+
+	if (saveOnlyLast == "true")
 	{
-		/**** Read forest parameters from file forestParamsFilename ****/
-		// Load params
-		par::Params forestParams(forestParamsFilename.c_str(), " = ");
-
-		// Initial condition
-		m_initFilenamePattern = forestParams.get_val<std::string>("initFilenamePattern");
-		m_initPath = forestParams.get_val<std::string>("initPath");
-		checkPath(m_initPath, "initPath");
-
-		// Saving options
-		m_summaryFilePattern = forestParams.get_val<std::string>("summaryFilePattern");
-		m_pathSummaryFile = forestParams.get_val<std::string>("pathSummaryFile");
-		checkPath(m_pathSummaryFile, "pathSummaryFile");
-
-		m_popDynFilePattern = forestParams.get_val<std::string>("popDynFilePattern");
-		m_pathPopDynFile = forestParams.get_val<std::string>("pathPopDynFile");
-		checkPath(m_pathPopDynFile, "pathPopDynFile");
-
-		m_freqSave = forestParams.get_val<unsigned int>("freqSave");
-
-		// Simulation parameters
-		m_t0 = forestParams.get_val<double>("t0");
-		m_tmax = forestParams.get_val<double>("tmax");
-		m_nIter = forestParams.get_val<unsigned int>("nIter");
-		m_maxCohorts = forestParams.get_val<unsigned int>("maxCohorts");
-
-		// get rasterOrder_Rlang parameter
-		std::string rasterOrder_Rlang = forestParams.get_val<std::string>("rasterOrder_Rlang");
-		std::transform(rasterOrder_Rlang.begin(), rasterOrder_Rlang.end(), rasterOrder_Rlang.begin(),
-			[](unsigned char c){ return std::tolower(c); });
-
-		if (rasterOrder_Rlang == "true")
-			m_rasterOrder_Rlang = true;
-
-		// Get saveOnlyLast parameter
-		std::string saveOnlyLast = forestParams.get_val<std::string>("saveOnlyLast");
-		std::transform(saveOnlyLast.begin(), saveOnlyLast.end(), saveOnlyLast.begin(),
-			[](unsigned char c){ return std::tolower(c); });
-
-		if (saveOnlyLast == "true")
-		{
-			m_saveOnlyLast = true;
-			std::cout << "Only the last iteration will be saved, despite freqSave = " << m_freqSave << std::endl;
-		}
-
-		if (m_freqSave > m_tmax && !m_saveOnlyLast)
-			throw Except_Forest(m_freqSave, m_nIter, m_dim_land, false);
-
-		/**** Read landscape parameters from file climateFilename ****/
-		par::Params climateParams(climateFilename.c_str(), "=");
-		m_nRow_land = climateParams.get_val<unsigned int>("nRow");
-		m_nCol_land = climateParams.get_val<unsigned int>("nCol");
-		m_dim_land = m_nRow_land*m_nCol_land;
-		std::string pathLandscape = climateParams.get_val<std::string>("path");
-		checkPath(pathLandscape, "path (for landscape)");
-
-		std::string delimiter = climateParams.get_val<std::string>("delimiter");
-		std::string climateFilenamePattern = climateParams.get_val<std::string>("filenamePattern");
-		std::string isPopulated;
-
-		if (m_nRow_land < 1 || m_nCol_land < 1)
-			throw Except_Forest(m_nRow_land, m_nCol_land);
-
-		/**** Creating folders for saving dynamics ****/
-		// Checking and creating folder if necessary
-		c_species_it species_it = m_speciesList.cbegin();
-		std::string path_summary, path_popDyn;
-		bool folderCreated;
-
-		std::cout << "List of species:" << std::endl;
-		for (; species_it != m_speciesList.cend(); ++species_it)
-		{
-			std::cout << "    - " << (*species_it)->m_speciesName << std::endl;
-
-			path_summary = m_pathSummaryFile + (*species_it)->m_speciesName + "/";
-			folderCreated = std::filesystem::create_directories(path_summary);
-			if (folderCreated)
-				std::cout << "Directory <" << path_summary << "> successfully created" << std::endl;
-
-			// Checking and creating folder m_pathPopDynFile if necessary
-			path_popDyn = m_pathPopDynFile + (*species_it)->m_speciesName + "/";
-			folderCreated = std::filesystem::create_directories(path_popDyn);
-			if (folderCreated)
-				std::cout << "Directory <" << path_popDyn << "> successfully created" << std::endl;
-		}
-
-		/**** Creating forest of patches ****/
-		// Fill the environment
-		std::string climateFile;
-		std::string initFile;
-		unsigned int counterPatch = 0;
-
-		for(auto& p: std::filesystem::directory_iterator(pathLandscape))
-		{
-			climateFile = p.path().filename(); 
-			if (climateFile.find(climateFilenamePattern) != std::string::npos)
-			{
-				climateFile = pathLandscape + "/" + climateFile;
-
-				// Create environment
-				Environment env(climateFile, delimiter);
-
-				// Create Patch which initialise the populations
-				m_patchVec.emplace_back(Patch(env, m_speciesList, m_initPath, m_initFilenamePattern, m_maxCohorts));
-
-				++counterPatch;
-				if (counterPatch > m_dim_land)
-					throw Except_Landscape(m_dim_land, climateFile);
-			}
-		}
-
-		if (counterPatch != m_dim_land)
-			throw Except_Landscape(m_dim_land, counterPatch);
-
-		// Sort forest
-		this->sort(true);
-
-		std::vector<Cohort *> test;
-		m_patchVec[34].getAllNonZeroCohorts(test);
-
-		// Compute Δlongitude and Δlatitude. No need to compute max and min of lon and lat: landscape is sorted
-		// We assume the lattice is regular. Otherwise Δlongitude and Δlatitude should both be in Environment.
-		c_patch_it patch = m_patchVec.cbegin();
-		if (m_nCol_land == 1 && m_nRow_land == 1)
-		{
-			m_deltaLon = sqrt(patch->m_env.plotArea);
-			m_deltaLat = m_deltaLon;
-		}
-		else if (m_nCol_land == 1 && m_nRow_land > 1)
-		{
-			m_deltaLat = (patch->m_env).distance(std::next(patch)->m_env); // The next patch is also the next latitude
-			m_deltaLon = patch->m_env.plotArea/m_deltaLat;
-		}
-		else if (m_nCol_land > 1) // Whatever m_nRow
-		{
-			m_deltaLon = (patch->m_env).distance(std::next(patch)->m_env);
-			m_deltaLat = patch->m_env.plotArea/m_deltaLon;
-		}
-
-		// Compute basal area and density for each patch
-
-		std::cout << "Forest constructed with success, using file <" << m_forestParamsFilename << ">" << std::endl;
+		m_saveOnlyLast = true;
+		std::cout << "Only the last iteration will be saved, despite freqSave = " << m_freqSave << std::endl;
 	}
-	catch(const std::exception& e)
+
+	if (m_freqSave > m_nIter && !m_saveOnlyLast)
+		throw Except_Forest(m_freqSave, m_nIter, m_dim_land, false);
+
+	/**** Read landscape parameters from file climateFilename ****/
+	par::Params climateParams(climateFilename.c_str(), "=");
+	m_nRow_land = climateParams.get_val<unsigned int>("nRow");
+	m_nCol_land = climateParams.get_val<unsigned int>("nCol");
+	m_dim_land = m_nRow_land*m_nCol_land;
+	std::string pathLandscape = climateParams.get_val<std::string>("path");
+	checkPath(pathLandscape, "path (for landscape)");
+
+	std::string delimiter = climateParams.get_val<std::string>("delimiter");
+	std::string climateFilenamePattern = climateParams.get_val<std::string>("filenamePattern");
+	std::string isPopulated;
+
+	if (m_nRow_land < 1 || m_nCol_land < 1)
+		throw Except_Forest(m_nRow_land, m_nCol_land);
+
+	/**** Creating folders for saving dynamics ****/
+	// Checking and creating folder if necessary
+	c_species_it species_it = m_speciesList.cbegin();
+	std::string path_summary, path_popDyn;
+	bool folderCreated;
+
+	std::cout << "List of species:" << std::endl;
+	for (; species_it != m_speciesList.cend(); ++species_it)
 	{
-		std::cerr << e.what() << '\n';
+		std::cout << "    - " << (*species_it)->m_speciesName << std::endl;
+
+		path_summary = m_summaryFilePath + (*species_it)->m_speciesName + "/";
+		folderCreated = std::filesystem::create_directories(path_summary);
+		if (folderCreated)
+			std::cout << "Directory <" << path_summary << "> successfully created" << std::endl;
+
+		// Checking and creating folder m_popDynFilePath if necessary
+		path_popDyn = m_popDynFilePath + (*species_it)->m_speciesName + "/";
+		folderCreated = std::filesystem::create_directories(path_popDyn);
+		if (folderCreated)
+			std::cout << "Directory <" << path_popDyn << "> successfully created" << std::endl;
 	}
+
+	/**** Creating forest of patches ****/
+	// Fill the environment
+	std::string climateFile;
+	std::string initFile;
+	unsigned int counterPatch = 0;
+
+	for(auto& p: std::filesystem::directory_iterator(pathLandscape))
+	{
+		climateFile = p.path().filename(); 
+		if (climateFile.find(climateFilenamePattern) != std::string::npos)
+		{
+			climateFile = pathLandscape + climateFile;
+
+			// Create environment
+			Environment env(climateFile, delimiter);
+
+			// Create Patch which initialise the populations
+			m_patchVec.emplace_back(Patch(env, m_speciesList, m_initPath, m_initFilenamePattern, m_summaryFilePath, m_summaryFilePattern,
+				m_popDynFilePath, m_popDynFilePattern, m_maxCohorts));
+
+			++counterPatch;
+			if (counterPatch > m_dim_land)
+				throw Except_Landscape(m_dim_land, climateFile);
+		}
+	}
+
+	if (counterPatch != m_dim_land)
+		throw Except_Landscape(m_dim_land, counterPatch);
+
+	// Sort forest
+	this->sort(true);
+
+	// std::vector<Cohort *> test;
+	// m_patchVec[34].getAllNonZeroCohorts(test);
+
+	// Compute Δlongitude and Δlatitude. No need to compute max and min of lon and lat: landscape is sorted
+	// We assume the lattice is regular. Otherwise Δlongitude and Δlatitude should both be in Environment.
+	c_patch_it patch = m_patchVec.cbegin();
+	if (m_nCol_land == 1 && m_nRow_land == 1)
+	{
+		m_deltaLon = sqrt(patch->m_env.plotArea);
+		m_deltaLat = m_deltaLon;
+	}
+	else if (m_nCol_land == 1 && m_nRow_land > 1)
+	{
+		m_deltaLat = (patch->m_env).distance(std::next(patch)->m_env); // The next patch is also the next latitude
+		m_deltaLon = patch->m_env.plotArea/m_deltaLat;
+	}
+	else if (m_nCol_land > 1) // Whatever m_nRow
+	{
+		m_deltaLon = (patch->m_env).distance(std::next(patch)->m_env);
+		m_deltaLat = patch->m_env.plotArea/m_deltaLon;
+	}
+
+	// Compute basal area and density for each patch
+
+	std::cout << "Forest constructed with success, using file <" << m_forestParamsFilename << ">" << std::endl;
 }
 
 void Forest::patchDynamics(double const t, double const delta_t)
@@ -233,7 +227,12 @@ void Forest::dynamics()
 			t = m_t0 + (iter - 1)*delta_t; // iter starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			this->patchDynamics(t, delta_t);
 			this->recruitment(t, delta_t);
+
+			if (iter % m_freqSave == 0)
+				this->saveResults();
 		}
+		if (!m_lastIncludedInFreq)
+			this->saveResults();
 	}
 	else
 	{
@@ -243,17 +242,11 @@ void Forest::dynamics()
 			this->patchDynamics(t, delta_t);
 			this->recruitment(t, delta_t);
 		}
+		this->saveResults();
 	}
-	
-	// // Save final time
-	// for (pop_it = m_popVec.begin(); pop_it != m_popVec.end(); ++pop_it)
-	// {
-	// 	pop_it->m_compReprod_ofs << t + delta_t << " " << pop_it->m_localProducedSeeds << " "
-	// 		<< pop_it->m_s_star << " " << pop_it->m_basalArea << " " << pop_it->m_totalDensity << std::endl;
-	// 	pop_it->m_popDyn_ofs << *pop_it;
-	// }
-	// Close output files when simulation is done
-	// this->close_ofs();
+	this->closeOutputFiles();
+
+	std::cout << "Simulation done. Files saved in folders: <" << m_summaryFilePath << "*> and <" << m_popDynFilePath << "*>" << std::endl;
 }
 
 void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned int>& boundingBox, Species const* species) const
@@ -297,9 +290,18 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned 
 /***********************************/
 /******        Writing        ******/
 /***********************************/
-void Forest::saveResults() const
+void Forest::saveResults()
 {
+	patch_it patch = m_patchVec.begin();
+	for (; patch != m_patchVec.end(); ++patch)
+		patch->saveResults();
+}
 
+void Forest::closeOutputFiles()
+{
+	patch_it patch = m_patchVec.begin();
+	for (; patch != m_patchVec.end(); ++patch)
+		patch->closeOutputFiles();
 }
 
 /************************************************/

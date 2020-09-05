@@ -298,9 +298,9 @@ void Population::totalDensity_basalArea()
 	m_totalDensity = currentDensity;
 }
 
-// /************************************/
-// /******        Overload        ******/
-// /************************************/
+/************************************/
+/******        Overload        ******/
+/************************************/
 std::ostream& operator<<(std::ostream& os, Population const &pop)
 {
 	for (c_cohort_it it = pop.m_cohortsVec.begin(); it != pop.m_cohortsVec.end(); ++it)
@@ -308,9 +308,9 @@ std::ostream& operator<<(std::ostream& os, Population const &pop)
 	return os;
 }
 
-// /************************************************/
-// /******        Sorting & organising        ******/
-// /************************************************/
+/************************************************/
+/******        Sorting & organising        ******/
+/************************************************/
 void Population::sort(bool const decreasingOrder)
 {
 	cohort_it first = m_cohortsVec.begin();
@@ -405,10 +405,16 @@ void Population::printNonZero() const
 
 void Population::saveResults()
 {
-		m_summary_ofs << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
-			m_basalArea << " " << m_totalDensity << std::endl;
+	m_summary_ofs << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
+		m_basalArea << " " << m_totalDensity << std::endl;
 
-		m_popDyn_ofs << *this;
+	m_popDyn_ofs << *this;
+}
+
+void Population::closeOutputFiles()
+{
+	m_summary_ofs.close();
+	m_popDyn_ofs.close();
 }
 
 #endif

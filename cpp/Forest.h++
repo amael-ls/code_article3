@@ -58,14 +58,16 @@ class Forest
 	// Saving options
 	// --- Variables
 		std::string m_summaryFilePattern;
-		std::string m_pathSummaryFile;
+		std::string m_summaryFilePath;
 		std::string m_popDynFilePattern;
-		std::string m_pathPopDynFile;
+		std::string m_popDynFilePath;
 		bool m_saveOnlyLast;
 		unsigned int m_freqSave;
+		bool m_lastIncludedInFreq;
 
 	// --- Functions
-		void saveResults() const; // To write results
+		void saveResults();
+		void closeOutputFiles();
 
 	// // Private functions
 	// 	void createOutputFiles() const;

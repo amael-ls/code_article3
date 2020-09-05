@@ -54,6 +54,7 @@ class Patch
 
 	// Output writing function
 		void saveResults();
+		void closeOutputFiles();
 
 	// Private functions
 	void getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const;
