@@ -70,6 +70,9 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 	if (m_freqSave > m_nIter && !m_saveOnlyLast)
 		throw Except_Forest(m_freqSave, m_nIter, m_dim_land, false);
 
+	// Check if last iteration is included when saving with a frequency
+	m_lastIncludedInFreq = (((m_nIter - 1) % m_freqSave) == 0); // -1 because it goes from 0 to nIter - 1
+
 	/**** Read landscape parameters from file climateFilename ****/
 	par::Params climateParams(climateFilename.c_str(), "=");
 	m_nRow_land = climateParams.get_val<unsigned int>("nRow");
@@ -222,7 +225,7 @@ void Forest::dynamics()
 	// Time loop
 	if (!m_saveOnlyLast)
 	{
-		for (unsigned int iter = 1; iter < m_nIter; ++iter) // time loop, starts at 1 because the initial condition is considered the 0th iteration
+		for (unsigned int iter = 1; iter < 2; ++iter) // time loop, starts at 1 because the initial condition is considered the 0th iteration
 		{
 			t = m_t0 + (iter - 1)*delta_t; // iter starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			this->patchDynamics(t, delta_t);
