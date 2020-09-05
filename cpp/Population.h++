@@ -47,8 +47,9 @@ class Population
 
 	public :
 		// Constructors
-		Population(unsigned int const maxCohorts, Species const * const species);
-		Population(unsigned int const maxCohorts, Species const * const species, std::string const& filename);
+		Population(unsigned int const maxCohorts, Species const * const species, std::string const summaryFilename, std::string const popDynFilename);
+		Population(unsigned int const maxCohorts, Species const * const species, std::string const& initFilename,
+			std::string const summaryFilename, std::string const popDynFilename);
 
 		// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Population const &pop);
@@ -89,10 +90,9 @@ class Population
 	// --- Others
 		unsigned int m_currentIter;
 		
-	// *********
 	// Saving files
-		// std::ofstream m_compReprod_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
-		// std::ofstream m_popDyn_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
+		std::ofstream m_summary_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
+		std::ofstream m_popDyn_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
 		
 };
 
