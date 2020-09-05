@@ -309,8 +309,8 @@ void Cohort::rk4(double const t, double const delta_t, double const s_star, Envi
 std::ostream &operator<<(std::ostream &os, Cohort const& cohort)
 {
 	// os << std::setw(10);
-	// os << std::setprecision(5);
-	os << cohort.m_birthIteration << " " << cohort.m_lambda << " " << cohort.m_mu;
+	// os << std::setprecision(5); 
+	os << cohort.m_birthIteration << " " << cohort.m_lambda << " " << cohort.m_mu << " " << cohort.m_height;
 	return os;
 }
 
