@@ -11,18 +11,28 @@ typedef std::map<Species*, Population>::const_iterator c_population_it;
 
 typedef std::map<Species*, std::string>::iterator filename_it;
 
-Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, std::string const initPath,
-	std::string const initFilenamePattern, unsigned int const maxCohorts):
+Patch::Patch(Environment const& env, std::vector<Species*> const speciesList,
+	std::string const initPath, std::string const initFilenamePattern,
+	std::string const summaryPath, std::string const summaryFilenamePattern, 
+	std::string const popDynPath, std::string const popDynFilenamePattern,
+	unsigned int const maxCohorts):
 		m_maxCohorts(maxCohorts), m_isPopulated(false), m_env(env), m_height_star(0)
 {
 	try
 	{
+		// Initialisation data
 		std::string initFile;
 		bool foundAnInitFile = false;
-		std::vector<std::string> speciesNames;
 
+		// Species
+		std::vector<std::string> speciesNames;
 		std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
 
+		// Output data
+		std::string summaryFile;
+		std::string popDynFile;
+
+		// Others
 		m_minDelta_s = std::numeric_limits<double>::infinity();
 
 		for (; species_it != speciesList.cend(); ++species_it)
@@ -30,18 +40,24 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList, st
 			speciesNames.emplace_back((*species_it)->m_speciesName);
 			initFile = initPath + (*species_it)->m_speciesName + "/" + initFilenamePattern +
 			std::to_string(env.m_patchId) + ".txt";
+
+			summaryFile = summaryPath + (*species_it)->m_speciesName + "/" + summaryFilenamePattern +
+			std::to_string(env.m_patchId) + ".txt";
+
+			popDynFile = popDynPath + (*species_it)->m_speciesName + "/" + popDynFilenamePattern +
+			std::to_string(env.m_patchId) + ".txt";
 			
 			if (std::filesystem::exists(initFile))
 			{
-				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile));
+				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile, summaryFile, popDynFile));
 				m_filenamePattern_map[*species_it] = initFile;
 				foundAnInitFile = true;
 				m_isPopulated = true;
 			}
 			else
 			{
-				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it));
-				m_filenamePattern_map[*species_it] = "not initialised.txt";
+				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, summaryFile, popDynFile));
+				m_filenamePattern_map[*species_it] = "not initialised";
 			}
 
 	// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
@@ -178,9 +194,19 @@ void Patch::competition(double const heightTol) // The best heightTol is delta_s
 	}
 }
 
-// /************************************/
-// /******        Overload        ******/
-// /************************************/
+/**************************************/
+/******        Organising        ******/
+/**************************************/
+void Patch::saveResults()
+{
+	population_it pop = m_pop_map.begin();
+	for (; pop != m_pop_map.end(); ++ pop)
+		(pop->second).saveResults();
+}
+
+/************************************/
+/******        Overload        ******/
+/************************************/
 std::ostream& operator<<(std::ostream& os, Patch const &patch)
 {
 	c_population_it pop_it = patch.m_pop_map.cbegin();

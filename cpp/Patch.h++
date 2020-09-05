@@ -18,8 +18,11 @@ class Patch
 	friend class Forest;
 	public:
 	// Constructor
-		Patch(Environment const& env, std::vector<Species*> const speciesList, std::string const initPath,
-			std::string const initFilenamePattern, unsigned int const maxCohorts);
+		Patch(Environment const& env, std::vector<Species*> const speciesList,
+			std::string const initPath, std::string const initFilenamePattern,
+			std::string const summaryPath, std::string const summaryFilenamePattern, 
+			std::string const popDynPath, std::string const popDynFilenamePattern,
+			unsigned int const maxCohorts);
 
 	// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Patch const &patch);
@@ -48,6 +51,9 @@ class Patch
 		void dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePatch, Species* species);
 		void recruitment(std::vector<Patch>::iterator targetPatch, Species* species, double const t, double const delta_t);
 		void competition(double const tolHeight);
+
+	// Output writing function
+		void saveResults();
 
 	// Private functions
 	void getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const;
