@@ -18,54 +18,47 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species),
 	m_nonZeroCohort(0), m_localProducedSeeds(0), m_localSeedBank(0), m_currentIter(0)
 {
-	try
+	// Assign vector of cohorts
+	for (unsigned int i = 0; i < m_maxCohorts; ++i)
+		m_cohortsVec.emplace_back(Cohort(species, 0));
+
+	// Sort and compute basal area and total density
+	this->sort(true); // true to sort by decreasing size
+	this->totalDensity_basalArea();
+
+	/***** Open ofstreams for saving results. To close at the end of the simulation using the Forest::close_ofs() function *****/
+	// Open ofstreams m_summary_ofs
+	if (std::filesystem::exists(summaryFilename)) // Remove file if already exists
+		std::filesystem::remove(summaryFilename);
+	
+	m_summary_ofs.open(summaryFilename, std::ofstream::app);
+
+	if(!m_summary_ofs.is_open())
 	{
-		// Assign vector of cohorts
-		for (unsigned int i = 0; i < m_maxCohorts; ++i)
-			m_cohortsVec.emplace_back(Cohort(species, 0));
-
-		// Sort and compute basal area and total density
-		this->sort(true); // true to sort by decreasing size
-		this->totalDensity_basalArea();
-
-		/***** Open ofstreams for saving results. To close at the end of the simulation using the Forest::close_ofs() function *****/
-		// Open ofstreams m_summary_ofs
-		if (std::filesystem::exists(summaryFilename)) // Remove file if already exists
-			std::filesystem::remove(summaryFilename);
-		
-		m_summary_ofs.open(summaryFilename, std::ofstream::app);
-
-		if(!m_summary_ofs.is_open())
-		{
-			std::stringstream ss;
-			ss << "*** ERROR (from constructor Population): cannot open output file <" << summaryFilename << ">";
-			throw (std::runtime_error (ss.str()));
-		}
-		
-		m_summary_ofs << "iteration localSeedProduced localSeedBank basalArea totalDensity" << std::endl;
-		m_summary_ofs << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
-			m_basalArea << " " << m_totalDensity << std::endl;
-
-		// Open ofstream m_popDyn_ofs
-		if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
-			std::filesystem::remove(popDynFilename);
-		
-		m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
-
-		if(!m_popDyn_ofs.is_open())
-		{
-			std::stringstream ss;
-			ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
-			throw (std::runtime_error (ss.str()));
-		}
-
-		m_popDyn_ofs << "iteration iterationBirth density dbh height" << std::endl;
-		m_popDyn_ofs << *this;
+		std::stringstream ss;
+		ss << "*** ERROR (from constructor Population): cannot open output file <" << summaryFilename << ">";
+		throw (std::runtime_error (ss.str()));
 	}
-	catch(const std::exception& e)
+	
+	m_summary_ofs << "iteration localSeedProduced localSeedBank basalArea totalDensity" << std::endl;
+	m_summary_ofs << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
+		m_basalArea << " " << m_totalDensity << std::endl;
+
+	// Open ofstream m_popDyn_ofs
+	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
+		std::filesystem::remove(popDynFilename);
+	
+	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
+
+	if(!m_popDyn_ofs.is_open())
 	{
-		std::cerr << e.what() << '\n';
+		std::stringstream ss;
+		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
+		throw (std::runtime_error (ss.str()));
 	}
+
+	m_popDyn_ofs << "iteration iterationBirth density dbh height" << std::endl;
+	m_popDyn_ofs << *this;
 }
 
 Population::Population(unsigned int const maxCohorts, Species const * const species, std::string const& initFilename,
@@ -73,94 +66,87 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species),
 	m_nonZeroCohort(0), m_localProducedSeeds(0), m_localSeedBank(0), m_currentIter(0)
 {
-	try
+	// Assign vector of cohorts
+	// --- Open input file
+	std::ifstream inputFile(initFilename);
+	if(!inputFile.is_open())
 	{
-		// Assign vector of cohorts
-		// --- Open input file
-		std::ifstream inputFile(initFilename);
-		if(!inputFile.is_open())
-		{
-			std::stringstream ss;
-			ss << "*** ERROR: cannot open file <" << initFilename << ">";
-			throw (std::runtime_error (ss.str()));
-		}
+		std::stringstream ss;
+		ss << "*** ERROR: cannot open file <" << initFilename << ">";
+		throw (std::runtime_error (ss.str()));
+	}
 
-		std::string line;
+	std::string line;
+	getline(inputFile, line);
+	if (line.find("density", 0) == std::string::npos || line.find("dbh", 0) == std::string::npos)
+	{
+		std::stringstream ss;
+		ss << "*** ERROR: file <" << initFilename << "> must have density and dbh headers";
+		throw (std::runtime_error (ss.str()));
+	}
+	
+	double density(0), dbh(0);
+	size_t afterNumVal; // This value is set by std::stod to position of the next character in str after the numerical value
+
+	while(inputFile.good())
+	{
 		getline(inputFile, line);
-		if (line.find("density", 0) == std::string::npos || line.find("dbh", 0) == std::string::npos)
-		{
-			std::stringstream ss;
-			ss << "*** ERROR: file <" << initFilename << "> must have density and dbh headers";
-			throw (std::runtime_error (ss.str()));
-		}
-		
-		double density(0), dbh(0);
-		size_t afterNumVal; // This value is set by std::stod to position of the next character in str after the numerical value
+		if (line.empty())
+			continue;
+		density = std::stod(line, &afterNumVal);
+		dbh = std::stod(line.substr(afterNumVal));
 
-		while(inputFile.good())
-		{
-			getline(inputFile, line);
-			if (line.empty())
-				continue;
-			density = std::stod(line, &afterNumVal);
-			dbh = std::stod(line.substr(afterNumVal));
-
-			m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
-			++m_nonZeroCohort;
-			if (m_maxCohorts < m_nonZeroCohort)
-				throw(Except_Population(m_maxCohorts, initFilename));
-		}
-
-		// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
-		for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
-			m_cohortsVec.emplace_back(Cohort(species, 0));
-		
-		double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
-		if (m_s_inf < tallest_tree)
-			throw(Except_Population(m_s_inf, tallest_tree, initFilename));
-
-		// Sort and compute basal area and total density
-		this->sort(true); // true to sort by decreasing size
-		this->totalDensity_basalArea();
-
-		/***** Open ofstreams for saving results. To close at the end of the simulation using the Forest::close_ofs() function *****/
-		// Open ofstreams m_summary_ofs
-		if (std::filesystem::exists(summaryFilename)) // Remove file if already exists
-			std::filesystem::remove(summaryFilename);
-		
-		m_summary_ofs.open(summaryFilename, std::ofstream::app);
-
-		if(!m_summary_ofs.is_open())
-		{
-			std::stringstream ss;
-			ss << "*** ERROR (from constructor Population): cannot open output file <" << summaryFilename << ">";
-			throw (std::runtime_error (ss.str()));
-		}
-		
-		m_summary_ofs << "iteration localSeedProduced localSeedBank basalArea totalDensity" << std::endl;
-		m_summary_ofs << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
-			m_basalArea << " " << m_totalDensity << std::endl;
-
-		// Open ofstream m_popDyn_ofs
-		if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
-			std::filesystem::remove(popDynFilename);
-		
-		m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
-
-		if(!m_popDyn_ofs.is_open())
-		{
-			std::stringstream ss;
-			ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
-			throw (std::runtime_error (ss.str()));
-		}
-
-		m_popDyn_ofs << "iteration iterationBirth density dbh height" << std::endl;
-		m_popDyn_ofs << *this;
+		m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
+		++m_nonZeroCohort;
+		if (m_maxCohorts < m_nonZeroCohort)
+			throw(Except_Population(m_maxCohorts, initFilename));
 	}
-	catch(const std::exception& e)
+
+	// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
+	for (int count = m_nonZeroCohort; count < m_maxCohorts; ++count)
+		m_cohortsVec.emplace_back(Cohort(species, 0));
+	
+	double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
+	if (m_s_inf < tallest_tree)
+		throw(Except_Population(m_s_inf, tallest_tree, initFilename));
+
+	// Sort and compute basal area and total density
+	this->sort(true); // true to sort by decreasing size
+	this->totalDensity_basalArea();
+
+	/***** Open ofstreams for saving results. To close at the end of the simulation using the Forest::close_ofs() function *****/
+	// Open ofstreams m_summary_ofs
+	if (std::filesystem::exists(summaryFilename)) // Remove file if already exists
+		std::filesystem::remove(summaryFilename);
+	
+	m_summary_ofs.open(summaryFilename, std::ofstream::app);
+
+	if(!m_summary_ofs.is_open())
 	{
-		std::cerr << e.what() << '\n';
+		std::stringstream ss;
+		ss << "*** ERROR (from constructor Population): cannot open output file <" << summaryFilename << ">";
+		throw (std::runtime_error (ss.str()));
 	}
+	
+	m_summary_ofs << "iteration localSeedProduced localSeedBank basalArea totalDensity" << std::endl;
+	m_summary_ofs << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
+		m_basalArea << " " << m_totalDensity << std::endl;
+
+	// Open ofstream m_popDyn_ofs
+	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
+		std::filesystem::remove(popDynFilename);
+	
+	m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
+
+	if(!m_popDyn_ofs.is_open())
+	{
+		std::stringstream ss;
+		ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
+		throw (std::runtime_error (ss.str()));
+	}
+
+	m_popDyn_ofs << "iteration iterationBirth density dbh height" << std::endl;
+	m_popDyn_ofs << *this;
 }
 
 /********************************************/
@@ -228,7 +214,7 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 
 void Population::recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env)
 {
-	std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << std::endl;
+	// std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << std::endl;
 	cohort_it recruitment_it = m_cohortsVec.begin() + m_nonZeroCohort; // Position of recruitment (which becomes a new cohort if size > threshold)
 
 	if (recruitment_it >= m_cohortsVec.end())
@@ -241,6 +227,9 @@ void Population::recruitment(double const t, double const delta_t, double const 
 	
 	// Reset local seed bank to 0 (they have been used by euler)
 	m_localSeedBank = 0;
+
+	// Update iteration (recruitment is the last thing done)
+	++m_currentIter;
 }
 
 /* Seed production:

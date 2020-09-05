@@ -65,7 +65,15 @@ int main(int argc, char *argv[])
 
 	std::vector<Species*> speciesList{sp};
 
-	Forest test(forestDataFile, speciesList, climate_file);
+	try
+	{
+		Forest test(forestDataFile, speciesList, climate_file);
+		test.dynamics();
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << e.what() << '\n';
+	}
 
 	// std::cout << test << std::endl;
 

@@ -18,62 +18,55 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList,
 	unsigned int const maxCohorts):
 		m_maxCohorts(maxCohorts), m_isPopulated(false), m_env(env), m_height_star(0)
 {
-	try
+	// Initialisation data
+	std::string initFile;
+	bool foundAnInitFile = false;
+
+	// Species
+	std::vector<std::string> speciesNames;
+	std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
+
+	// Output data
+	std::string summaryFile;
+	std::string popDynFile;
+
+	// Others
+	m_minDelta_s = std::numeric_limits<double>::infinity();
+
+	for (; species_it != speciesList.cend(); ++species_it)
 	{
-		// Initialisation data
-		std::string initFile;
-		bool foundAnInitFile = false;
+		speciesNames.emplace_back((*species_it)->m_speciesName);
+		initFile = initPath + (*species_it)->m_speciesName + "/" + initFilenamePattern +
+		std::to_string(env.m_patchId) + ".txt";
 
-		// Species
-		std::vector<std::string> speciesNames;
-		std::vector<Species*>::const_iterator species_it = speciesList.cbegin();
+		summaryFile = summaryPath + (*species_it)->m_speciesName + "/" + summaryFilenamePattern +
+		std::to_string(env.m_patchId) + ".txt";
 
-		// Output data
-		std::string summaryFile;
-		std::string popDynFile;
-
-		// Others
-		m_minDelta_s = std::numeric_limits<double>::infinity();
-
-		for (; species_it != speciesList.cend(); ++species_it)
+		popDynFile = popDynPath + (*species_it)->m_speciesName + "/" + popDynFilenamePattern +
+		std::to_string(env.m_patchId) + ".txt";
+		
+		if (std::filesystem::exists(initFile))
 		{
-			speciesNames.emplace_back((*species_it)->m_speciesName);
-			initFile = initPath + (*species_it)->m_speciesName + "/" + initFilenamePattern +
-			std::to_string(env.m_patchId) + ".txt";
-
-			summaryFile = summaryPath + (*species_it)->m_speciesName + "/" + summaryFilenamePattern +
-			std::to_string(env.m_patchId) + ".txt";
-
-			popDynFile = popDynPath + (*species_it)->m_speciesName + "/" + popDynFilenamePattern +
-			std::to_string(env.m_patchId) + ".txt";
-			
-			if (std::filesystem::exists(initFile))
-			{
-				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile, summaryFile, popDynFile));
-				m_filenamePattern_map[*species_it] = initFile;
-				foundAnInitFile = true;
-				m_isPopulated = true;
-			}
-			else
-			{
-				m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, summaryFile, popDynFile));
-				m_filenamePattern_map[*species_it] = "not initialised";
-			}
-
-	// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
-			if (((m_pop_map.find(*species_it))->second).m_delta_s < m_minDelta_s)  
-				m_minDelta_s = ((m_pop_map.find(*species_it))->second).m_delta_s;
+			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, initFile, summaryFile, popDynFile));
+			m_filenamePattern_map[*species_it] = initFile;
+			foundAnInitFile = true;
+			m_isPopulated = true;
+		}
+		else
+		{
+			m_pop_map.emplace(*species_it, Population(maxCohorts, *species_it, summaryFile, popDynFile));
+			m_filenamePattern_map[*species_it] = "not initialised";
 		}
 
-		if (m_env.m_initPopulated && !foundAnInitFile)
-			throw Except_Patch(m_env.m_patchId, speciesNames);
+// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
+		if (((m_pop_map.find(*species_it))->second).m_delta_s < m_minDelta_s)  
+			m_minDelta_s = ((m_pop_map.find(*species_it))->second).m_delta_s;
+	}
 
-		this->competition(m_minDelta_s);
-	}
-	catch(const std::exception& e)
-	{
-		std::cerr << e.what() << '\n';
-	}
+	if (m_env.m_initPopulated && !foundAnInitFile)
+		throw Except_Patch(m_env.m_patchId, speciesNames);
+
+	this->competition(m_minDelta_s);
 }
 
 // filename_it file_it = m_filenamePattern_map.begin();
@@ -149,9 +142,9 @@ void Patch::getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const
 	// Sort vector
 	std::sort(nonZeroCohorts.begin(), nonZeroCohorts.end(), greaterCohortPtr);
 
-	std::vector<Cohort *>::iterator it = nonZeroCohorts.begin();
-	for (; it != nonZeroCohorts.end(); ++it)
-		std::cout << **it << std::endl;
+// 	std::vector<Cohort *>::iterator it = nonZeroCohorts.begin();
+// 	for (; it != nonZeroCohorts.end(); ++it)
+// 		std::cout << **it << std::endl;
 }
 
 void Patch::competition(double const heightTol) // The best heightTol is delta_s

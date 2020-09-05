@@ -53,11 +53,6 @@ class Population
 
 		// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Population const &pop);
-
-		// Sorting and organising
-		void sort(bool const decreasingOrder);
-		bool mergeCohorts(double const thresholdSimilarity, double const thresholdDensity);
-		void resetCohorts(std::vector<Cohort>::iterator const it);
 		void printNonZero() const;
 
 	private :
@@ -77,6 +72,11 @@ class Population
 		void seedProduction(double const height_star); // Compute the local seed production (private function)
 		void recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env); // Compute recruitment (dispersal + euler)
 		void totalDensity_basalArea();
+	
+	// --- Sorting and organising
+		void sort(bool const decreasingOrder);
+		bool mergeCohorts(double const thresholdSimilarity, double const thresholdDensity);
+		void resetCohorts(std::vector<Cohort>::iterator const it);
 
 	// --- Reproduction
 		unsigned int m_nonZeroCohort; // Number of non empty cohorts
