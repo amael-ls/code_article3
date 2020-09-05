@@ -91,8 +91,12 @@ class Population
 		unsigned int m_currentIter;
 		
 	// Saving files
+	// --- Ofstreams
 		std::ofstream m_summary_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
 		std::ofstream m_popDyn_ofs; // ofstream that will be open at creation of Population. The non destruction of Pop can be a problem
+
+	// --- Function
+		void saveResults();
 		
 };
 
