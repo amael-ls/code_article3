@@ -16,6 +16,7 @@ class Except_Forest : public std::exception
 	public:
 		Except_Forest(unsigned int const freqSave, unsigned int const nIter, unsigned int const dimLandscape, bool const overPopulated);
 		Except_Forest(unsigned int const nRow, unsigned int const nCol);
+		Except_Forest(std::string const& path, std::string const& key);
 		const char* what() const throw();
 
 	private:

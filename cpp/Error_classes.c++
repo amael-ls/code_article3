@@ -17,12 +17,22 @@ Except_Forest::Except_Forest(unsigned int const freqSave, unsigned int const nIt
 		m_error_msg += "Landscape is overpopulated. Dimension = " + std::to_string(m_dimLandscape) + " cells.\n";
 }
 
-Except_Forest::Except_Forest(unsigned int const nRow, unsigned int const nCol)
+Except_Forest::Except_Forest(unsigned int const nRow, unsigned int const nCol):
+	m_freqSave(0), m_dimLandscape(0), m_overPopulated(0)
 {
 	if (nRow < 1)
 		m_error_msg += "Wrong number of rows (" + std::to_string(nRow) + "). Should be at least 1 for longitude";
 	if (nCol < 1)
 		m_error_msg += "Wrong number of columns (" + std::to_string(nCol) + "). Should be at least 1 for latitude";
+}
+
+Except_Forest::Except_Forest(std::string const& path, std::string const& key):
+	m_freqSave(0), m_dimLandscape(0), m_overPopulated(0)
+{
+	if (path.empty())
+		m_error_msg += "The path corresponding to the key <" + key + "> is empty";
+	else
+		m_error_msg += "The path <" + path + "> correspinding to the key <" + key + "> should end by a slash";
 }
 
 const char* Except_Forest::what() const throw()
