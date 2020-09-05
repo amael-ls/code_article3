@@ -14,8 +14,9 @@ typedef std::vector<Cohort>::const_iterator c_cohort_it;
 /****************************************/
 /******        Constructors        ******/
 /****************************************/
-Population::Population(unsigned int const maxCohorts, Species const * const species):
-	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species)
+Population::Population(unsigned int const maxCohorts, Species const * const species, std::string const summaryFilename, std::string const popDynFilename):
+	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
+	m_species(species), m_localProducedSeeds(0), m_localSeedBank(0)
 {
 	try
 	{
@@ -36,8 +37,10 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 	}
 }
 
-Population::Population(unsigned int const maxCohorts, Species const * const species, std::string const& filename):
-	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts), m_species(species)
+Population::Population(unsigned int const maxCohorts, Species const * const species, std::string const& initFilename,
+	std::string const summaryFilename, std::string const popDynFilename):
+	m_maxCohorts(maxCohorts), m_s_inf(species->maxDiameter), m_delta_s(m_s_inf/maxCohorts),
+	m_species(species), m_localProducedSeeds(0), m_localSeedBank(0)
 {
 	try
 	{
@@ -46,11 +49,11 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 
 		// Assign vector of cohorts
 		// --- Open input file
-		std::ifstream inputFile(filename);
+		std::ifstream inputFile(initFilename);
 		if(!inputFile.is_open())
 		{
 			std::stringstream ss;
-			ss << "*** ERROR: cannot open file <" << filename << ">";
+			ss << "*** ERROR: cannot open file <" << initFilename << ">";
 			throw (std::runtime_error (ss.str()));
 		}
 
@@ -59,7 +62,7 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		if (line.find("density", 0) == std::string::npos || line.find("dbh", 0) == std::string::npos)
 		{
 			std::stringstream ss;
-			ss << "*** ERROR: file <" << filename << "> must have density and dbh headers";
+			ss << "*** ERROR: file <" << initFilename << "> must have density and dbh headers";
 			throw (std::runtime_error (ss.str()));
 		}
 		
@@ -77,7 +80,7 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 			m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
 			++m_nonZeroCohort;
 			if (m_maxCohorts < m_nonZeroCohort)
-				throw(Except_Population(m_maxCohorts, filename));
+				throw(Except_Population(m_maxCohorts, initFilename));
 		}
 
 		// Fill with zero cohorts up to m_maxCohorts. No problem if m_cohortsVec full
@@ -86,11 +89,43 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		
 		double tallest_tree = std::max_element(m_cohortsVec.cbegin(), m_cohortsVec.cend())->m_mu;
 		if (m_s_inf < tallest_tree)
-			throw(Except_Population(m_s_inf, tallest_tree, filename));
+			throw(Except_Population(m_s_inf, tallest_tree, initFilename));
 
 		// Sort and compute basal area and total density
 		this->sort(true); // true to sort by decreasing size
 		this->totalDensity_basalArea();
+
+		// Open ofstreams m_summary_ofs and m_popDyn_ofs To close at the end of the simulation
+		if (std::filesystem::exists(summaryFilename)) // Remove file if already exists
+			std::filesystem::remove(summaryFilename);
+		
+		m_summary_ofs.open(summaryFilename, std::ofstream::app);
+
+		if(!m_summary_ofs.is_open())
+		{
+			std::stringstream ss;
+			ss << "*** ERROR (from constructor Population): cannot open output file <" << summaryFilename << ">";
+			throw (std::runtime_error (ss.str()));
+		}
+		
+		m_summary_ofs << "time localSeedProduced localSeedBank basalArea totalDensity" << std::endl;
+		m_summary_ofs << "0 0 0 " << m_basalArea << " " << m_totalDensity << std::endl;
+
+		// Open ofstream m_popDyn_ofs, to close at the end of the simulation
+		if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
+			std::filesystem::remove(popDynFilename);
+		
+		m_popDyn_ofs.open(popDynFilename, std::ofstream::app);
+
+		if(!m_popDyn_ofs.is_open())
+		{
+			std::stringstream ss;
+			ss << "*** ERROR (from constructor Population): cannot open output file <" << popDynFilename << ">";
+			throw (std::runtime_error (ss.str()));
+		}
+
+		m_popDyn_ofs << "iteration iterationBirth density dbh" << std::endl;
+		m_popDyn_ofs << *this;
 	}
 	catch(const std::exception& e)
 	{
