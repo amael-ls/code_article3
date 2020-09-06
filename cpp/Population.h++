@@ -70,7 +70,7 @@ class Population
 		void cohortDynamics(double const t, double const delta_t, double const height_star, Environment const & env); // Call euler and seedProduction
 		void euler(double const t, double const delta_t, double const dbh_star, Environment const & env);
 		void seedProduction(double const height_star); // Compute the local seed production (private function)
-		void recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env); // Compute recruitment (dispersal + euler)
+		void recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env, bool& isPopulated); // Compute recruitment (dispersal + euler)
 		void totalDensity_basalArea();
 	
 	// --- Sorting and organising
