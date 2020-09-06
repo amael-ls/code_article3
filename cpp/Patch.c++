@@ -93,7 +93,7 @@ void Patch::dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePat
 void Patch::recruitment(std::vector<Patch>::iterator targetPatch, Species* species, double const t, double const delta_t)
 {
 	double const dbh_star = std::exp(1/species->b*(std::log10(m_height_star) - species->a)*std::log(10));
-	((targetPatch->m_pop_map).find(species)->second).recruitment(t, delta_t, dbh_star, m_env);
+	((targetPatch->m_pop_map).find(species)->second).recruitment(t, delta_t, dbh_star, m_env, m_isPopulated);
 }
 
 /* Competition calculation:
