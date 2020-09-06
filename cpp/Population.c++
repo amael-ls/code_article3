@@ -96,8 +96,12 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		density = std::stod(line, &afterNumVal);
 		dbh = std::stod(line.substr(afterNumVal));
 
-		m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
-		++m_nonZeroCohort;
+		if (density != 0)
+		{
+			m_cohortsVec.emplace_back(Cohort(density, dbh, species, 0));
+			++m_nonZeroCohort;
+		}
+
 		if (m_maxCohorts < m_nonZeroCohort)
 			throw(Except_Population(m_maxCohorts, initFilename));
 	}
@@ -212,24 +216,49 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 		it->euler(t, delta_t, dbh_star, env, &Cohort::ODE_II);
 }
 
-void Population::recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env)
+void Population::recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env, bool& isPopulated)
 {
-	// std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << std::endl;
 	cohort_it recruitment_it = m_cohortsVec.begin() + m_nonZeroCohort; // Position of recruitment (which becomes a new cohort if size > threshold)
+	
+	// Update iteration (recruitment is the last thing done)
+	++m_currentIter;
+
+	// Crash test zone
+	if (isPopulated) // Seems ok, as the previous cohorts are populated
+	{
+		// std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << "   local seed bank " << m_localSeedBank << std::endl;
+		std::cout << "Before " << *recruitment_it << std::endl;
+		// m_localSeedBank = 100;
+		// std::cout << *std::prev(std::prev(recruitment_it)) << std::endl;
+	}
+	// End crash test zone
 
 	if (recruitment_it >= m_cohortsVec.end())
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort, t));
 
 	// New cohort of species m_species, lambda = mu = 0 --> Should be treated separately
+	// Crash test zone
 	recruitment_it->euler(t, delta_t, dbh_star, env, m_localSeedBank, &Cohort::ODE_V);
-	if (recruitment_it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
-		m_nonZeroCohort += 1;
-	
-	// Reset local seed bank to 0 (they have been used by euler)
-	m_localSeedBank = 0;
+	if (isPopulated)
+		std::cout << "After: " << *recruitment_it << std::endl;
+	// End crash test zone
 
-	// Update iteration (recruitment is the last thing done)
-	++m_currentIter;
+	if (recruitment_it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
+	{
+		++m_nonZeroCohort;
+		recruitment_it->m_birthIteration = m_currentIter;
+		if (!isPopulated) // If isPopulated is originally false, change it to true due to the newly created cohort
+			isPopulated = true;
+		
+		// Reset local seed bank to 0 (they have been transferred to the newly released cohort)
+		m_localSeedBank = 0;
+
+		// Crash test zone
+		std::cout << "Hey: " << t << std::endl;
+	}
+	if (isPopulated)
+		std::cout << "--------------" << std::endl;
+	// End crash test zone (except '}')
 }
 
 /* Seed production:
