@@ -78,6 +78,8 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 	m_nRow_land = climateParams.get_val<unsigned int>("nRow");
 	m_nCol_land = climateParams.get_val<unsigned int>("nCol");
 	m_dim_land = m_nRow_land*m_nCol_land;
+	m_deltaLon = climateParams.get_val<unsigned int>("deltaLon");
+	m_deltaLat = climateParams.get_val<unsigned int>("deltaLat");
 	std::string pathLandscape = climateParams.get_val<std::string>("path");
 	checkPath(pathLandscape, "path (for landscape)");
 
@@ -126,6 +128,8 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 
 			// Create environment
 			Environment env(climateFile, delimiter);
+			if (env.plotArea != m_deltaLon*m_deltaLat)
+				throw Except_Landscape(env.plotArea, m_deltaLon, m_deltaLat, climateFile);
 
 			// Create Patch which initialise the populations
 			m_patchVec.emplace_back(Patch(env, m_speciesList, m_initPath, m_initFilenamePattern, m_summaryFilePath, m_summaryFilePattern,
@@ -142,28 +146,6 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 
 	// Sort forest
 	this->sort(true);
-
-	// std::vector<Cohort *> test;
-	// m_patchVec[34].getAllNonZeroCohorts(test);
-
-	// Compute Δlongitude and Δlatitude. No need to compute max and min of lon and lat: landscape is sorted
-	// We assume the lattice is regular. Otherwise Δlongitude and Δlatitude should both be in Environment.
-	c_patch_it patch = m_patchVec.cbegin();
-	if (m_nCol_land == 1 && m_nRow_land == 1)
-	{
-		m_deltaLon = sqrt(patch->m_env.plotArea);
-		m_deltaLat = m_deltaLon;
-	}
-	else if (m_nCol_land == 1 && m_nRow_land > 1)
-	{
-		m_deltaLat = (patch->m_env).distance(std::next(patch)->m_env); // The next patch is also the next latitude
-		m_deltaLon = patch->m_env.plotArea/m_deltaLat;
-	}
-	else if (m_nCol_land > 1) // Whatever m_nRow
-	{
-		m_deltaLon = (patch->m_env).distance(std::next(patch)->m_env);
-		m_deltaLat = patch->m_env.plotArea/m_deltaLon;
-	}
 
 	// Compute basal area and density for each patch
 
