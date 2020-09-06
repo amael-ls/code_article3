@@ -44,13 +44,12 @@ class Except_Patch : public std::exception
 class Except_Landscape : public std::exception
 {
 	public:
-		Except_Landscape(int const dim);
 		Except_Landscape(int const dim, int const i);
 		Except_Landscape(int const dim, std::string const& filename);
+		Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile);
 		const char* what() const throw();
 
 	private:
-		int m_dimLandscape;
 		std::string m_error_msg = "Error from Forest when creating the landscape: ";
 };
 

@@ -54,21 +54,25 @@ Except_Patch::Except_Patch(unsigned int const patch_id, std::vector<std::string>
 /*************************************/
 /******        Landscape        ******/
 /*************************************/
-Except_Landscape::Except_Landscape(int const dim, int const i):
-	m_dimLandscape(dim)
+Except_Landscape::Except_Landscape(int const dim, int const i)
 {
 	if (i < dim)
-		m_error_msg += "not enough files provided. Length = " + std::to_string(m_dimLandscape) + " and number of read files = " + std::to_string(i) + "\n";
+		m_error_msg += "not enough files provided. Length = " + std::to_string(dim) + " and number of read files = " + std::to_string(i) + "\n";
 	
 	if (i > dim)
-		m_error_msg += "Length = " + std::to_string(m_dimLandscape) + " and index = " + std::to_string(i) + "\n";
+		m_error_msg += "Length = " + std::to_string(dim) + " and index = " + std::to_string(i) + "\n";
 }
 
-Except_Landscape::Except_Landscape(int const dim, std::string const& filename):
-	m_dimLandscape(dim)
+Except_Landscape::Except_Landscape(int const dim, std::string const& filename)
 {
-	m_error_msg = "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(m_dimLandscape) + ". ";
+	m_error_msg = "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(dim) + ". ";
 	m_error_msg = "Last file provided: " + filename + "\n";
+}
+
+Except_Landscape::Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile)
+{
+	m_error_msg += "plot area (" + std::to_string(plotArea) + " mismatch with delta longitude (" + std::to_string(deltaLon) +
+		") and delta latitude("  + std::to_string(deltaLat) + ") for file <" + climateFile + ">\n";
 }
 
 const char* Except_Landscape::what() const throw()
