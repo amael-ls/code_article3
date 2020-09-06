@@ -207,7 +207,7 @@ void Forest::dynamics()
 	// Time loop
 	if (!m_saveOnlyLast)
 	{
-		for (unsigned int iter = 1; iter < 2; ++iter) // time loop, starts at 1 because the initial condition is considered the 0th iteration
+		for (unsigned int iter = 1; iter < m_nIter; ++iter) // time loop, starts at 1 because the initial condition is considered the 0th iteration
 		{
 			t = m_t0 + (iter - 1)*delta_t; // iter starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			this->patchDynamics(t, delta_t);
