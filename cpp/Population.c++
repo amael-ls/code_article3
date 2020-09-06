@@ -223,42 +223,23 @@ void Population::recruitment(double const t, double const delta_t, double const 
 	// Update iteration (recruitment is the last thing done)
 	++m_currentIter;
 
-	// Crash test zone
-	if (isPopulated) // Seems ok, as the previous cohorts are populated
-	{
-		// std::cout << "m_nonZeroCohort: " <<  m_nonZeroCohort << "   local seed bank " << m_localSeedBank << std::endl;
-		std::cout << "Before " << *recruitment_it << std::endl;
-		// m_localSeedBank = 100;
-		// std::cout << *std::prev(std::prev(recruitment_it)) << std::endl;
-	}
-	// End crash test zone
-
 	if (recruitment_it >= m_cohortsVec.end())
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort, t));
 
-	// New cohort of species m_species, lambda = mu = 0 --> Should be treated separately
-	// Crash test zone
+	// Aging boundary cohort
 	recruitment_it->euler(t, delta_t, dbh_star, env, m_localSeedBank, &Cohort::ODE_V);
-	if (isPopulated)
-		std::cout << "After: " << *recruitment_it << std::endl;
-	// End crash test zone
 
-	if (recruitment_it->m_mu > m_delta_s) // If it reach the threshold, it becomes a cohort within Omega
+	// If it reaches the threshold, the boundary cohort is released within Omega
+	if (recruitment_it->m_mu > m_delta_s)
 	{
 		++m_nonZeroCohort;
 		recruitment_it->m_birthIteration = m_currentIter;
 		if (!isPopulated) // If isPopulated is originally false, change it to true due to the newly created cohort
 			isPopulated = true;
-		
-		// Reset local seed bank to 0 (they have been transferred to the newly released cohort)
-		m_localSeedBank = 0;
-
-		// Crash test zone
-		std::cout << "Hey: " << t << std::endl;
 	}
-	if (isPopulated)
-		std::cout << "--------------" << std::endl;
-	// End crash test zone (except '}')
+
+	// Reset local seed bank to 0 (they have been transferred to the boundary condition by euler and ODE_V)
+	m_localSeedBank = 0;
 }
 
 /* Seed production:
@@ -321,7 +302,8 @@ void Population::totalDensity_basalArea()
 /************************************/
 std::ostream& operator<<(std::ostream& os, Population const &pop)
 {
-	for (c_cohort_it it = pop.m_cohortsVec.begin(); it != pop.m_cohortsVec.end(); ++it)
+	c_cohort_it lim_it = pop.m_cohortsVec.cbegin() + pop.m_nonZeroCohort;
+	for (c_cohort_it it = pop.m_cohortsVec.cbegin(); it != lim_it; ++it)
 		os << pop.m_currentIter << " " << *it << std::endl;
 	return os;
 }
@@ -376,14 +358,14 @@ bool Population::mergeCohorts(double const thresholdSimilarity, double const thr
 		lambda = 0;
 		it = ref_it + 1;
 		// abs val for float = fabs, useless in the next while loop because population is sorted (decreasing order)
-		while ((it != lim_it) && (ref_it->m_mu - it->m_mu < thresholdSimilarity)) // BUG <--- TO CHECK, DID I FORGOT TO REMOVE IT
+		while ((it != lim_it) && (ref_it->m_mu - it->m_mu < thresholdSimilarity)) // BUG <--- TO CHECK, DID I FORGET TO REMOVE IT
 		{
 			mu += it->m_lambda * it->m_mu;
 			lambda += it->m_lambda;
 			this->resetCohorts(it);
 			mergedCohorts = true;
 			++it;
-		} // END BUG <--- TO CHECK, DID I FORGOT TO REMOVE IT
+		} // END BUG <--- TO CHECK, DID I FORGET TO REMOVE IT
 		ref_it->m_mu = (ref_it->m_lambda * ref_it->m_mu + mu)/(ref_it->m_lambda + lambda);
 		ref_it->m_lambda += lambda;
 		ref_it = it;
