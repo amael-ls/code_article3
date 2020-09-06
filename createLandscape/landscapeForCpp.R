@@ -23,24 +23,24 @@ graphics.off()
 
 #### Tool functions
 ## Write climate values for C++ program, with cppNames for the C++ names
-writeCppClimate = function(climate, cppNames, id, crs, sep = " = ", rm = FALSE)
-{
-	outfileName = paste0("./climate_", id, ".txt")
-	if (rm & file.exists(outfileName))
-		file.remove(outfileName)
+# writeCppClimate = function(climate, cppNames, id, crs, deltaX, deltaY, sep = " = ", rm = FALSE)
+# {
+# 	outfileName = paste0("./climate_", id, ".txt")
+# 	if (rm & file.exists(outfileName))
+# 		file.remove(outfileName)
 
-	sink(file = outfileName, append = TRUE)
-	for (i in 1:length(cppNames))
-		cat(paste0(cppNames[i], sep, climate[, cppNames[i], with = FALSE][[1]]), sep = "\n")
+# 	sink(file = outfileName, append = TRUE)
+# 	for (i in 1:length(cppNames))
+# 		cat(paste0(cppNames[i], sep, climate[, cppNames[i], with = FALSE][[1]]), sep = "\n")
 
-	cat(paste0("plotArea", sep, 400), sep = "\n") # To modify!!!
-	cat(paste0("proj4string", sep, crs), sep = "\n") # To modify!!!
+# 	cat(paste0("plotArea", sep, deltaX*deltaY), sep = "\n")
+# 	cat(paste0("proj4string", sep, crs), sep = "\n")
 
-	sink(file = NULL)
-}
+# 	sink(file = NULL)
+# }
 
 ## Tu use multi threading from data.table
-writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, sep = " = ", rm = FALSE)
+writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, deltaY, sep = " = ", rm = FALSE)
 {
 	outfileName = paste0("./climate_", id, ".txt")
 	if (rm & file.exists(outfileName))
@@ -50,8 +50,8 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, sep = " = "
 	for (i in 1:length(cppNames))
 		cat(paste0(cppNames[i], sep, climateNamedVector[cppNames[i]]), sep = "\n")
 
-	cat(paste0("plotArea", sep, 400), sep = "\n") # To modify!!!
-	cat(paste0("proj4string", sep, crs), sep = "\n") # To modify!!!
+	cat(paste0("plotArea", sep, deltaX*deltaY), sep = "\n")
+	cat(paste0("proj4string", sep, crs), sep = "\n")
 
 	sink(file = NULL)
 }
@@ -85,6 +85,9 @@ croppedClimate = crop(climate_rs[[c("bio60_01", "bio60_06", "bio60_12", "bio60_1
 names(croppedClimate) = c("annual_mean_temperature", "min_temperature_of_coldest_month",
 	"annual_precipitation", "precipitation_of_driest_quarter")
 
+deltaX = xres(croppedClimate) # 1060
+deltaY = yres(croppedClimate) # 1830
+
 ## Change resolution to a 20 x 20 m
 # downScale_factors = floor(res(croppedClimate)/20)
 # croppedClimate_downscale = disaggregate(x = croppedClimate, fact = downScale_factors)
@@ -112,7 +115,7 @@ vals[dist == min(dist), isPopulated := "true"]
 
 #### Save files
 ## Environment files for C++ prog
-vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, sep = " = ", rm = TRUE), by = rowNumber]
+vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, deltaX, deltaY, sep = " = ", rm = TRUE), by = rowNumber]
 
 ## Id files of populated patches (to create the Initial Condition in createIC folder)
 saveRDS(vals[ifelse(isPopulated == "true", TRUE, FALSE), patch_id], "./populatedPatches.rds")
