@@ -46,22 +46,12 @@ class Cohort
 
 		// Dynamics
 		std::vector<double> ODE_II(double const s_star, Environment const& env);
-		std::vector<double> ODE_II(double const lambda, double const mu, double const s_star, Environment const& env);
 		std::vector<double> ODE_V(double const s_star, Environment const& env, double const popReprod);
-		std::vector<double> ODE_V(double const lambda, double const mu, double const s_star, Environment const& env, double const popReprod);
 
 		void euler(double const t, double const delta_t, double const s_star, Environment const& env,
 			std::vector<double> (Cohort::*ode)(double, Environment const&));
 		void euler(double const t, double const delta_t, double const s_star, Environment const& env,
 			double const popReprod, std::vector<double> (Cohort::*ode)(double, Environment const&, double));
-		double rk45(double const t, double const delta_t, double const s_star, Environment const& env,
-			std::vector<double> (Cohort::*ode)(double, double, double, Environment const&)); // double because at this level it returns the optimal delta_t
-		void rk45(double const t, double const delta_t, double const s_star, Environment const& env,
-			double const popReprod, std::vector<double> (Cohort::*ode)(double, Environment const&, double));
-		void rk4(double const t, double const delta_t, double const s_star, Environment const& env,
-			std::vector<double> (Cohort::*ode)(double, double, double, Environment const&));
-		void rk4(double const t, double const delta_t, double const s_star, Environment const& env,
-			double const popReprod, std::vector<double> (Cohort::*ode)(double, double, double, Environment const&, double));
 
 		// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Cohort const &cohort);
