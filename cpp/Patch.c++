@@ -197,13 +197,6 @@ void Patch::saveResults()
 		(pop->second).saveResults();
 }
 
-void Patch::closeOutputFiles()
-{
-	population_it pop = m_pop_map.begin();
-	for (; pop != m_pop_map.end(); ++ pop)
-		(pop->second).closeOutputFiles();
-}
-
 /************************************/
 /******        Overload        ******/
 /************************************/
