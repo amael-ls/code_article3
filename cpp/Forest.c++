@@ -121,7 +121,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 
 	for(auto& p: std::filesystem::directory_iterator(pathLandscape))
 	{
-		climateFile = p.path().filename(); 
+		climateFile = p.path().filename();
 		if (climateFile.find(climateFilenamePattern) != std::string::npos)
 		{
 			climateFile = pathLandscape + climateFile;
@@ -132,8 +132,16 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 				throw Except_Landscape(env.plotArea, m_deltaLon, m_deltaLat, climateFile);
 
 			// Create Patch which initialise the populations
-			m_patchVec.emplace_back(Patch(env, m_speciesList, m_initPath, m_initFilenamePattern, m_summaryFilePath, m_summaryFilePattern,
-				m_popDynFilePath, m_popDynFilePattern, m_maxCohorts));
+			try
+			{
+				m_patchVec.emplace_back(Patch(env, m_speciesList, m_initPath, m_initFilenamePattern, m_summaryFilePath, m_summaryFilePattern,
+					m_popDynFilePath, m_popDynFilePattern, m_maxCohorts));
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << e.what() << '\n';
+				exit(EXIT_FAILURE);
+			}
 
 			++counterPatch;
 			if (counterPatch > m_dim_land)
