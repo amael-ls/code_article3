@@ -237,7 +237,6 @@ void Forest::dynamics()
 		}
 		this->saveResults();
 	}
-	this->closeOutputFiles();
 
 	std::cout << "Simulation done. Files saved in folders: <" << m_summaryFilePath << "*> and <" << m_popDynFilePath << "*>" << std::endl;
 }
@@ -288,13 +287,6 @@ void Forest::saveResults()
 	patch_it patch = m_patchVec.begin();
 	for (; patch != m_patchVec.end(); ++patch)
 		patch->saveResults();
-}
-
-void Forest::closeOutputFiles()
-{
-	patch_it patch = m_patchVec.begin();
-	for (; patch != m_patchVec.end(); ++patch)
-		patch->closeOutputFiles();
 }
 
 /************************************************/

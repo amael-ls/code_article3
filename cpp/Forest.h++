@@ -67,11 +67,6 @@ class Forest
 
 	// --- Functions
 		void saveResults();
-		void closeOutputFiles();
-
-	// // Private functions
-	// 	void createOutputFiles() const;
-	// 	void close_ofs();
 };
 
 // External functions
