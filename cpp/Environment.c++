@@ -43,7 +43,7 @@ Environment::Environment(std::string const filename, const std::string& delim):
 	annual_mean_temperature = envParams.get_val<double>("annual_mean_temperature");
 	annual_precipitation = envParams.get_val<double>("annual_precipitation");
 
-	// Mortality cliPate variables
+	// Mortality climate variables
 	min_temperature_of_coldest_month = envParams.get_val<double>("min_temperature_of_coldest_month");
 	precipitation_of_driest_quarter = envParams.get_val<double>("precipitation_of_driest_quarter");
 
