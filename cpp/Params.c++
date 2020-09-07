@@ -24,7 +24,7 @@ void par::Params::read_file()
 	if(!inputFile.is_open())
 	{
 		std::stringstream ss;
-		ss << "*** ERROR: reading problem from file <" << source << ">";
+		ss << "*** ERROR: could not open file <" << source << ">";
 		throw (std::runtime_error (ss.str()));
 	}
 	get_lines(inputFile);

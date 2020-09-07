@@ -88,6 +88,8 @@ template<> inline
 std::vector<std::string> par::Params::get_val(const std::string &key) const
 {
 	const std::vector<std::string> vals = data.at(key);
+	if (vals[0].find(", ") == std::string::npos)
+		return vals;
 	std::vector<std::string> lineData = split(vals[0], ", ");
 	return lineData;
 }
