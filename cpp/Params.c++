@@ -140,8 +140,7 @@ std::ostream &operator<<(std::ostream &os, par::Params const& params)
 
 
 
-// // ========== CRASH TEST ZONE
-// template <>
+// ========== CRASH TEST ZONE
 // std::vector<std::string> par::Params::get_val(const std::string &key) const
 // {
 // 	std::vector<std::string> result;

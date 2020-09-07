@@ -38,6 +38,14 @@ namespace par {
 		return s;
 	}
 
+	template<> inline
+	std::vector<std::string> str_convert(const std::string &s)
+	{
+		std::vector<std::string> results;
+		results.push_back(s);
+		return results;
+	}
+
 	class Params
 	{
 		std::map<std::string, std::vector<std::string> > data;
@@ -56,33 +64,33 @@ namespace par {
 		void printParams(std::ostream &os) const;
 
 		template<typename T>
-		T get_val(const std::string &key) const;
+		T get_val(const std::string &key) const
+		{
+			T result;
+			try {
+				const std::vector<std::string> vals = data.at(key);
+				result = str_convert<T>(vals[0]);
+			}
 
-		// // Specialising the template (not to be mistaken with overload)
-		// template <>
-		// std::vector<std::string> get_val(const std::string &key) const;
-	};
+			catch(const std::out_of_range& ex) {
+				std::stringstream ss;
+				ss << "Warning: parameter parser tried to access unknown parameter <" << key << ">\t" << ex.what();
+				throw (std::runtime_error (ss.str()));
+			}
 
-
-	// TEMPLATE FUNCTIONS
-	template<typename T>
-	T Params::get_val(const std::string &key) const
-	{
-		T result;
-		try {
-			const std::vector<std::string> vals = data.at(key);
-			result = str_convert<T>(vals[0]);
+			return result;
 		}
-
-		catch(const std::out_of_range& ex) {
-			std::stringstream ss;
-			ss << "Warning: parameter parser tried to access unknown parameter <" << key << ">\t" << ex.what();
-			throw (std::runtime_error (ss.str()));
-		}
-
-		return result;
-	}
+	};	
 } // end namespace par
+
+// Specialising the template, the second separator is necessarily a comma followed by a space
+template<> inline
+std::vector<std::string> par::Params::get_val(const std::string &key) const
+{
+	const std::vector<std::string> vals = data.at(key);
+	std::vector<std::string> lineData = split(vals[0], ", ");
+	return lineData;
+}
 
 std::ostream &operator<<(std::ostream &os, par::Params const& params);
 
