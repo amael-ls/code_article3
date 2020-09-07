@@ -51,6 +51,11 @@ Except_Patch::Except_Patch(unsigned int const patch_id, std::vector<std::string>
 		m_error_msg += "    - " + speciesNames[i] + "\n";
 }
 
+const char* Except_Patch::what() const throw()
+{
+	return (m_error_msg.c_str());
+}
+
 /*************************************/
 /******        Landscape        ******/
 /*************************************/

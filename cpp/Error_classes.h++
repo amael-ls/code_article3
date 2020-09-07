@@ -33,6 +33,7 @@ class Except_Patch : public std::exception
 {
 	public:
 		Except_Patch(unsigned int const patch_id, std::vector<std::string> const& speciesNames);
+		const char* what() const throw();
 
 	private:
 		std::string m_error_msg = "Error from Patch: ";
