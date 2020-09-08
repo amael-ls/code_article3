@@ -70,8 +70,8 @@ Except_Landscape::Except_Landscape(int const dim, int const i)
 
 Except_Landscape::Except_Landscape(int const dim, std::string const& filename)
 {
-	m_error_msg = "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(dim) + ". ";
-	m_error_msg = "Last file provided: " + filename + "\n";
+	m_error_msg += "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(dim) + ". ";
+	m_error_msg += "Last file provided: " + filename + "\n";
 }
 
 Except_Landscape::Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile)
