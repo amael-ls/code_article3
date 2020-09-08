@@ -1,12 +1,26 @@
 
 /* Description of the class
-The class Dispersal represents the set of patches accessible from a population at a
-given place. I organise it:
-	- A vector of unsigned integers storing the indices of patches reachable by the population
-	- A vector of doubles computing the proportion seeds dispersed 
+The class Dispersal computes the integral of K for a given distance and saves it in a map. It contains:
+	- A species
+	- Landscape dimensions
+	- A map <distance, integral(K)>, recording all possible distances in a landscape and associating the
+		the surface integral of the dispersal kernel
+	- Functions to compute the 2D-integral
 
-I list the functions here, but describe them in the associated c++ file:
-	- A constructor
+Remark:
+In order to integrate the Kernel K, I had to define a global variable and a wrapper function
+to do a callback using alglib::autogkintegrate
+
+If I could have modified the signature of the function, I would have done a safer wrapper,
+but alglib::autogkintegrate accepts only on type of function which is:
+	void (*func)(double x, double xminusa, double bminusx, double &y, void *ptr)
+	
+Here is the signature of alglib::autogkintegrate
+	void autogkintegrate(autogkstate &state,
+		void (*func)(double x, double xminusa, double bminusx, double &y, void *ptr),
+		void *ptr = NULL, const xparams _xparams = alglib::xdefault);
+
+The 2D-integral has been checked on Matlab
 */
 
 #ifndef DISPERSAL_H
@@ -14,41 +28,43 @@ I list the functions here, but describe them in the associated c++ file:
 
 // Official headers
 #include <vector>
+#include <string>
+#include <map>
+
+// ALGLIB headers
+#include "integration.h"
 
 // My headers
-#include "Landscape.h++"
 #include "Species.h++"
 
-/*
-	In order to integrate the Kernel K, I had other choice to define a global variable and
-	a wrapper function to do a callback using alglib::autogkintegrate
-	If I could have modified the signature of the function, I would have done a safer wrapper,
-	but alglib::autogkintegrate accepts only on type of function which is:
-		void (*func)(double x, double xminusa, double bminusx, double &y, void *ptr)
-	
-	Here is the signature of alglib::autogkintegrate
-		void autogkintegrate(autogkstate &state,
-    		void (*func)(double x, double xminusa, double bminusx, double &y, void *ptr),
-    		void *ptr = NULL, const xparams _xparams = alglib::xdefault);
-*/
 extern void* pt2Object; // global variable which points to an arbitrary Dispersal object for kernel integration
 
 class Dispersal
 {
 	public :
-		// Constructors
-		Dispersal(Species const* const sp, Landscape const* const land, Environment const* const popEnv);
+	// Constructors
+		Dispersal(Species const* const sp, std::string const climateFilename);
 
-		// Wrapper for Kernel integral computation (which are private functions)
+	// Wrapper for Kernel integral computation (which are private functions)
 		static void wrapper_To_Call_Kintegral(double x, double xminusa, double bminusx, double &y, void *ptr);
 		static void wrapper_To_Call_Kintegral_lon(double x, double xminusa, double bminusx, double &y, void *ptr);
 
+	// Overloading
+		friend std::ostream& operator<<(std::ostream& os, Dispersal const &dispersal);
+
 	private :
-	Species const* const m_species;
-	Landscape const* const m_landscape;
-	Environment const* const m_popEnv;
-	std::vector<unsigned int> m_indices;
-	std::vector<double> m_proportions;
+	// Species-specific data
+		Species const* const m_species;
+
+	// Landscape
+	// --- Dimensions
+		unsigned int m_nRow_land, m_nCol_land, m_dim_land; // Landscape
+
+	// --- Discretisation
+		double m_deltaLon, m_deltaLat; // Correspond to Δx and Δy respectively
+
+	// Integration data
+		std::map<double, double> m_distance_integral; // map<distance, integral(K)>, for each distance, compute the integral of K
 
 	// private functions to compute integral
 	void Kintegrand_lon(double x, double xminusa, double bminusx, double &y, void *ptr) const;

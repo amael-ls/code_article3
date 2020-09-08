@@ -1,11 +1,6 @@
 
-#ifndef SPECIES_C
-#define SPECIES_C
-
-// Official headers
-
-// ALGLIB headers
-#include "integration.h"
+#ifndef DISPERSAL_C
+#define DISPERSAL_C
 
 // My headers
 #include "Dispersal.h++"
@@ -13,33 +8,22 @@
 /****************************************/
 /******        Constructors        ******/
 /****************************************/
-Dispersal::Dispersal(Species const* const sp, Landscape const* const land, Environment const* const popEnv):
-	m_species(sp), m_landscape(land), m_popEnv(popEnv)
+Dispersal::Dispersal(Species const* const sp, std::string const climateFilename):
+	m_species(sp)
 {
-	// If the species has a maximum dispersal distance, compute all distances from source
-	// and keep only the patches within maximal distance
-	double proportion = 0;
-	if (sp->max_dispersalDist)
-	{
-		double distanceSourceReceiver = 0;
-		unsigned int i = 0;
-		for (; i < land->m_envVec.size(); ++i)
-		{
-			distanceSourceReceiver = popEnv->distance(*(land->m_envVec[i]));
-			if (distanceSourceReceiver < sp->dispersalDistThreshold)
-			{
-				m_indices.push_back(i);
-				proportion = 0;
-				m_proportions.push_back(2);
-			}
-		}
-	}
-	if (sp->min_dispersalProba)
-	{
-		std::vector<double> distanceSourceReceiver;
-	}
-}
+	/**** Read landscape parameters from file climateFilename ****/
+	par::Params climateParams(climateFilename.c_str(), "=");
 
+	m_nRow_land = climateParams.get_val<unsigned int>("nRow");
+	m_nCol_land = climateParams.get_val<unsigned int>("nCol");
+	m_dim_land = m_nRow_land*m_nCol_land;
+
+	m_deltaLon = climateParams.get_val<unsigned int>("deltaLon");
+	m_deltaLat = climateParams.get_val<unsigned int>("deltaLat");
+
+	/**** Compute the integral for all possible distances in landscape ****/
+	
+}
 /*************************************************/
 /******        Dispersal integration        ******/
 /*************************************************/
@@ -84,6 +68,30 @@ void Dispersal::wrapper_To_Call_Kintegral_lon(double x, double xminusa, double b
 
 	// call member
 	mySelf->Kintegrand_lon(x, xminusa, bminusx, y, ptr);
+}
+
+/************************************/
+/******        Overload        ******/
+/************************************/
+std::ostream& operator<<(std::ostream& os, Dispersal const &dispersal)
+{
+	// Species
+	dispersal.m_species->printName(os);
+
+	// Landscape
+	os << "Dimensions (row x col): " << dispersal.m_nRow_land << " x " << dispersal.m_nCol_land << std::endl;
+	os << "Resolution (lon x lat): " << dispersal.m_deltaLon << " x " << dispersal.m_deltaLat << std::endl;
+
+	// Sum integrals
+	std::map<double, double>::const_iterator map_it = (dispersal.m_distance_integral).cbegin();
+	double totIntegral = 0;
+	for (; map_it != (dispersal.m_distance_integral).cend(); ++map_it)
+		totIntegral += map_it->second;
+	
+	os << "Integral on Γ: " << totIntegral << std::endl;
+
+	os << "Dimension of the map: " << (dispersal.m_distance_integral).size();
+	return os;
 }
 
 #endif
