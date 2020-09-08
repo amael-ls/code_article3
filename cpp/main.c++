@@ -46,25 +46,24 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 	
-	par::Params simulationParameters(argv[1], ": "); // Be extremely careful with the delimiter, especially white spaces
+	/***** Read simulation parameters and build species *****/
+	par::Params simulationParameters(argv[1], " = "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << simulationParameters << std::endl;
 	
-	// unsigned int maxCohorts = simulationParameters.get_val<unsigned int>("maxCohorts");
-	// double n_t = simulationParameters.get_val<double>("n_t");
-	// double t0 = simulationParameters.get_val<double>("t0");
-	// double t_max = simulationParameters.get_val<double>("t_max");
 	std::string climate_file = simulationParameters.get_val<std::string>("climate_file");
-	std::string species_filenames = simulationParameters.get_val<std::string>("species_filenames");
 	std::string species_path = simulationParameters.get_val<std::string>("species_path");
-	// std::string init_filenamePattern = simulationParameters.get_val<std::string>("init_filenamePattern");
-	// std::string init_path = simulationParameters.get_val<std::string>("init_path");
 	std::string forestDataFile = simulationParameters.get_val<std::string>("forestDataFile");
 	
-	Species* sp = new Species(species_filenames, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
-	// std::cout << *sp << std::endl;
+	std::vector<std::string> species = simulationParameters.get_val<std::vector<std::string> >("species_filenames");
+	std::vector<std::string>::const_iterator species_filenames_it = species.cbegin();
+	std::vector<Species*> speciesList;
+	for (; species_filenames_it != species.cend(); ++species_filenames_it)
+	{
+		Species* sp = new Species(*species_filenames_it, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
+		speciesList.emplace_back(sp);
+	}
 
-	std::vector<Species*> speciesList{sp};
-
+	/***** Build forest and run simulation *****/
 	try
 	{
 		Forest test(forestDataFile, speciesList, climate_file);

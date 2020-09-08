@@ -49,20 +49,18 @@ class Species
 {
 	// Friendship
 	friend class Population;
+	friend class Dispersal;
 	friend class Forest;
 	friend class Cohort;
 	friend class Patch;
 
 	public :
 		// constructors
-		// Species();
 		Species(std::string const& species_filename, std::string const& species_path, const std::string& delim);
 
 		// friend functions and overload
-		// Species& operator=(const Species& species);
 		friend std::ostream& operator<<(std::ostream& os, const Species& species);
 		friend bool operator<(Species const& species1, Species const& species2);
-		// void printSpecies(std::ostream &os) const;
 
 		// Demographic functions
 		double v(double s, double const s_star, double temp, double precip) const;
@@ -77,7 +75,6 @@ class Species
 
 		// others
 		void printName(std::ostream& os) const;
-		// bool compareName(Species* species_1, Species* species_2) const;
 
 	private :
 		// Species' name
