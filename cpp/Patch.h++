@@ -3,15 +3,17 @@
 	This class handles ...
 */
 
+#ifndef PATCH_H
+#define PATCH_H
+
+// Official headers
 #include <vector>
 #include <string>
 #include <map>
 
+// My headers
 #include "Population.h++"
 #include "Species.h++"
-
-#ifndef PATCH_H
-#define PATCH_H
 
 class Patch
 {

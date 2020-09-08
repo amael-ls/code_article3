@@ -2,17 +2,8 @@
 #ifndef FOREST_C
 #define FOREST_C
 
-// Official headers
-#include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
-#include <algorithm> // std::sort
-#include <fstream>
-#include <string>
-#include <cmath>
-
 // My headers
-#include "Error_classes.h++"
 #include "Forest.h++"
-#include "Params.h++"
 
 // Define typedef shortcuts
 typedef std::vector<Species*>::const_iterator c_species_it;

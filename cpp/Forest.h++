@@ -3,11 +3,18 @@
 #define FOREST_H
 
 // Official headers
+// Official headers
+#include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
+#include <algorithm> // std::sort
 #include <vector>
+#include <fstream>
+#include <string>
+#include <cmath>
 
 // My headers
-// #include "Landscape.h++"
+#include "Error_classes.h++"
 #include "Species.h++"
+#include "Params.h++"
 #include "Patch.h++"
 
 class Forest

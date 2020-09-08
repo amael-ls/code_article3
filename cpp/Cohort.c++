@@ -8,14 +8,7 @@
 #ifndef COHORT_C
 #define COHORT_C
 
-// Official headers
-#include <functional> // std::multiplies
-#include <algorithm> // std::transform
-#include <iomanip> // std::setw, std::left
-#include <cmath> // for log, M_PI
-
 // My headers
-#include "Species.h++"
 #include "Cohort.h++"
 
 /****************************************/

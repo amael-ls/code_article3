@@ -22,7 +22,12 @@ does not need to be reevaluate at each size-step when searching for s*.
 #define COHORT_H
 
 // Official headers
+// Official headers
+#include <functional> // std::multiplies
+#include <algorithm> // std::transform
+#include <iomanip> // std::setw, std::left
 #include <vector>
+#include <cmath> // for log, M_PI
 
 // My headers
 #include "Environment.h++"
