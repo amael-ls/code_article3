@@ -51,6 +51,7 @@ extern void* pt2Object; // global variable which points to an arbitrary Dispersa
 
 class Dispersal
 {
+	friend class Forest;
 	public :
 	// Constructors
 		Dispersal(Species const* const sp, std::string const climateFilename);
