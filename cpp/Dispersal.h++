@@ -7,7 +7,8 @@ The class Dispersal computes the integral of K for a given distance and saves it
 		the surface integral of the dispersal kernel
 	- Functions to compute the 2D-integral
 
-Remark:
+Remarks:
+* --- 1
 In order to integrate the Kernel K, I had to define a global variable and a wrapper function
 to do a callback using alglib::autogkintegrate
 
@@ -20,7 +21,16 @@ Here is the signature of alglib::autogkintegrate
 		void (*func)(double x, double xminusa, double bminusx, double &y, void *ptr),
 		void *ptr = NULL, const xparams _xparams = alglib::xdefault);
 
-The 2D-integral has been checked on Matlab
+The 2D-integral has been checked on Matlab with the function:
+	f(x, y) = x^2 * cos(sqrt(x - 3)) + 2 - cos(y) * sin(y) + exp(-0.5 * y^2);
+
+Answer Matlab: -17.2171...
+Answer C++   : -17.2171
+
+* --- 2
+Because the kernel K is only function of the distance, we can assume the targeted patch is located
+in (0, 0), and the other patches are (0 + m * Δx, 0 + n * Δy), where m, n are integers between 0 and
+m_nRow_land, m_nCol_land respectively
 */
 
 #ifndef DISPERSAL_H
@@ -48,13 +58,19 @@ class Dispersal
 	// Wrapper for Kernel integral computation (which are private functions)
 		static void wrapper_To_Call_Kintegral(double x, double xminusa, double bminusx, double &y, void *ptr);
 		static void wrapper_To_Call_Kintegral_lon(double x, double xminusa, double bminusx, double &y, void *ptr);
+		friend void landscapeIntegrals(Dispersal& disp);
 
 	// Overloading
 		friend std::ostream& operator<<(std::ostream& os, Dispersal const &dispersal);
 
 	private :
-	// Species-specific data
+	// Species-specific data (cf Species.h++ for their definitions)
 		Species const* const m_species;
+
+		double const m_dispersalProbaThreshold;
+		bool const m_min_dispersalProba;
+		double const m_dispersalDistThreshold;
+		bool const m_max_dispersalDist;
 
 	// Landscape
 	// --- Dimensions
@@ -64,11 +80,13 @@ class Dispersal
 		double m_deltaLon, m_deltaLat; // Correspond to Δx and Δy respectively
 
 	// Integration data
-		std::map<double, double> m_distance_integral; // map<distance, integral(K)>, for each distance, compute the integral of K
+		std::map<double, double> m_map_distance_integral; // map<distance, integral(K)>, for each distance, compute the integral of K
 
 	// private functions to compute integral
-	void Kintegrand_lon(double x, double xminusa, double bminusx, double &y, void *ptr) const;
+	void kernel(double x, double xminusa, double bminusx, double &y, void *ptr) const; // This function calls the species-specific kernel
 	void Kintegral_lon(double z, double xminusa, double bminusx, double &y, void *ptr) const;
 };
+
+void landscapeIntegrals(Dispersal& disp);
 
 #endif
