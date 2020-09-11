@@ -81,7 +81,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 	if (m_nRow_land < 1 || m_nCol_land < 1)
 		throw Except_Forest(m_nRow_land, m_nCol_land);
 
-	/**** Creating folders for saving dynamics ****/
+	/**** Creating species-specific folders (for output) and dispersal objects ****/
 	// Checking and creating folder if necessary
 	c_species_it species_it = m_speciesList.cbegin();
 	std::string path_summary, path_popDyn;
@@ -92,16 +92,35 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 	{
 		std::cout << "    - " << (*species_it)->m_speciesName << std::endl;
 
+		// Checking summary's path and creating folder summary if necessary
 		path_summary = m_summaryFilePath + (*species_it)->m_speciesName + "/";
 		folderCreated = std::filesystem::create_directories(path_summary);
 		if (folderCreated)
 			std::cout << "Directory <" << path_summary << "> successfully created" << std::endl;
 
-		// Checking and creating folder m_popDynFilePath if necessary
+		// Checking popDyn's path and creating folder popDyn if necessary
 		path_popDyn = m_popDynFilePath + (*species_it)->m_speciesName + "/";
 		folderCreated = std::filesystem::create_directories(path_popDyn);
 		if (folderCreated)
 			std::cout << "Directory <" << path_popDyn << "> successfully created" << std::endl;
+
+		// Creating dispersal object
+		try
+		{
+			m_map_dispersal.emplace(*species_it, Dispersal(*species_it, climateFilename));
+
+			if (m_map_dispersal.find(*species_it) != m_map_dispersal.end())
+			{
+				landscapeIntegrals(m_map_dispersal.find(*species_it)->second);
+				std::cout << m_map_dispersal.find(*species_it)->second << std::endl;
+				std::cout << "------------------" << std::endl;
+			}
+		}
+		catch(const std::exception& e)
+		{
+			std::cerr << e.what() << std::endl;
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	/**** Creating forest of patches ****/
