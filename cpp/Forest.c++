@@ -204,7 +204,8 @@ void Forest::recruitment(double const t, double const delta_t)
 				for (unsigned int col = boundingBox[1]; col <= boundingBox[2]; ++col) // Important: less than or equal to (<=)
 				{
 					sourcePatch = &m_patchVec[row*m_nCol_land + col];
-					targetPatch_it->dispersal(targetPatch_it, sourcePatch, *sp_it); // Compute dispersal from source to target, and update the seed banks
+					// Compute dispersal from source to target, and update the seed banks:
+					targetPatch_it->dispersal(targetPatch_it, sourcePatch, *sp_it, (m_map_dispersal.find(*sp_it)->second).m_map_distance_integral);
 				}
 			}
 			targetPatch_it->recruitment(targetPatch_it, *sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
