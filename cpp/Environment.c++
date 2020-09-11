@@ -14,7 +14,7 @@
 /******        Constructors        ******/
 /****************************************/
 Environment::Environment():
-	m_fileName(""), m_initPopulated(false)
+	m_fileName(""), m_initPopulated(false), m_distance("")
 {
 	// Growth climate variables
 	annual_mean_temperature = std::numeric_limits<double>::infinity();
@@ -33,8 +33,8 @@ Environment::Environment():
 	proj4string = "";
 }
 
-Environment::Environment(std::string const filename, const std::string& delim):
-	m_fileName(filename)
+Environment::Environment(std::string const filename, const std::string& delim, std::string const distance):
+	m_fileName(filename), m_distance(distance)
 {
 	// Load parameters from files
 	par::Params envParams(m_fileName.c_str(), delim, true);
@@ -70,37 +70,49 @@ Environment::Environment(std::string const filename, const std::string& delim):
 /*************************************/
 /******        Geography        ******/
 /*************************************/
-double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2)
+double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2, std::string const distanceType)
 {
 	/*
 		It is assumed the longitudes and latitudes are in decimal degrees
 	*/
+	if (distanceType == "euclidean")
+	{
+		return std::sqrt((longitude2 - longitude1)*(longitude2 - longitude1) + (latitude2 - latitude1)*(latitude2 - latitude1));
+	}
 
-	// Convert longitudes and latitudes to radians
-	longitude1 *= M_PI/180;
-	longitude2 *= M_PI/180;
-	latitude1 *= M_PI/180;
-	latitude2 *= M_PI/180;
+	if (distanceType == "orthodromic")
+	{
+		// Convert longitudes and latitudes to radians
+		longitude1 *= M_PI/180;
+		longitude2 *= M_PI/180;
+		latitude1 *= M_PI/180;
+		latitude2 *= M_PI/180;
 
-	// Differences of lon
-	double delta_lon = longitude2 - longitude1;
-	double delta_lat = latitude2 - latitude1;
+		// Differences of lon
+		double delta_lon = longitude2 - longitude1;
+		double delta_lat = latitude2 - latitude1;
 
-	// Compute dist in kilometers
-	double radiusEarth = 6371;
+		// Compute dist in kilometers
+		double radiusEarth = 6371;
 
-	double haversine = sin(delta_lat/2)*sin(delta_lat/2) + cos(latitude1)*cos(latitude2)*sin(delta_lon/2)*sin(delta_lon/2);
-	double angle = 2*atan2(sqrt(haversine), sqrt(1 - haversine));
+		double haversine = sin(delta_lat/2)*sin(delta_lat/2) + cos(latitude1)*cos(latitude2)*sin(delta_lon/2)*sin(delta_lon/2);
+		double angle = 2*atan2(sqrt(haversine), sqrt(1 - haversine));
 
-	double dist = radiusEarth * angle;
-	
-	return dist;
+		return radiusEarth * angle;
+	}
+
+	return (-1);
 }
 
 double Environment::distance(Environment const Env2) const
 {
-	double dist = distancePoints(this->longitude, this->latitude, Env2.longitude, Env2.latitude);
+	double dist = distancePoints(longitude, latitude, Env2.longitude, Env2.latitude, m_distance);
 	return dist;
+}
+
+double distance(Environment const& env1, Environment const& env2)
+{
+	return distancePoints(env1.longitude, env1.latitude, env2.longitude, env2.latitude, env1.m_distance);
 }
 
 std::ostream& Environment::printCoordinates(std::ostream& os) const
