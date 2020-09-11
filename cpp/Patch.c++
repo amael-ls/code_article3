@@ -85,11 +85,17 @@ void Patch::populationDynamics(double const t, double const delta_t) // Maybe m_
 
 void Patch::dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePatch, Species* species, std::map<double, double> const& distToIntegral)
 {
-	/*
-	double dist = distance(target, source);
-	withdrawnSeeds *= ((dispersal.dispMap).find(species)->second).find(dist)->second;
-	*/
-	double withdrawnSeeds = ((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds; // times integral of K ...
+	
+	double dist = distance(targetPatch->m_env, sourcePatch->m_env);
+	if (distToIntegral.find(dist) == distToIntegral.end())
+	{
+		throw Except_Patch(dist, species->m_speciesName);
+		exit(EXIT_FAILURE);
+	}
+	
+	// withdrawn seeds from source = local production of source times amount dispersed by K
+	double withdrawnSeeds = ((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds * distToIntegral.find(dist)->second;
+	
 	((targetPatch->m_pop_map).find(species)->second).m_localSeedBank += withdrawnSeeds;
 	((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds -= withdrawnSeeds;
 }
