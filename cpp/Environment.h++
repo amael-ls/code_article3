@@ -38,10 +38,11 @@ class Environment
 	public :
 		// Constructors
 		Environment();
-		Environment(std::string const filename, const std::string& delim);
+		Environment(std::string const filename, const std::string& delim, std::string const distance);
 
 		// Geography
 		double distance(Environment const Env2) const;
+		friend double distance(Environment const& env1, Environment const& env2);
 		std::ostream& printCoordinates(std::ostream& os) const;
 
 		// Overloading
@@ -75,9 +76,11 @@ class Environment
 		double longitude;
 		double latitude;
 		std::string proj4string;
+		std::string m_distance;
 };
 
 // External functions
-double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2);
+double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2, std::string distanceType);
+double distance(Environment const* const env1, Environment const* const env2);
 
 #endif
