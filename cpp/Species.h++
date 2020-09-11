@@ -75,6 +75,7 @@ class Species
 
 		// others
 		void printName(std::ostream& os) const;
+		std::string getName() const;
 
 	private :
 		// Species' name
@@ -112,14 +113,21 @@ class Species
 		double scaling_temp_mu_M, scaling_temp_sd_M, scaling_precip_mu_M, scaling_precip_sd_M;
 
 		// Dispersal parameters, not necessarily all provided by the user
+		// --- General parameters
 		std::string keysToRead;
 		double dispersalProbaThreshold; // Value between 0 and 1. Threshold from which probability K(x, y) is considered 0
 		bool min_dispersalProba; // True if dispersalProbaThreshold is defined
 		std::string refKernel_doi; // The DOI from which the kernel is from
-		double propLDD; // Fraction of fecundity going to long-distance dispersal ---> p in Moorcroft, 0.1
-		double relLDDtoSDD; // Average long-distance dispersal relative to short-distance dispersal ---> 1/beta_l = 10 => beta_l = 0.1
 		double dispersalDistThreshold; // Threshold distance from which probability K(x, y) is considered 0 (i.e., max dist)
 		bool max_dispersalDist; // True if dispersalDistThreshold is defined
+
+		// --- Moorcroft 2006
+		double relLDDtoSDD; // Average long-distance dispersal relative to short-distance dispersal ---> 1/beta_l = 10 => beta_l = 0.1
+		double propLDD; // Fraction of fecundity going to long-distance dispersal ---> p in Moorcroft, 0.1
+
+		// Clark 1999, cf Boisvert-Marsh 2020 for some values
+		double twoDt_a;
+		double twoDt_b;
 
 		// Others
 		double maxDiameter;

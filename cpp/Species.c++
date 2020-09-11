@@ -132,7 +132,7 @@ Species::Species(std::string const& species_filename, std::string const& species
 	}
 
 	if (keysToRead.find("refKernel_doi") != std::string::npos)
-		refKernel_doi = speciesParams_dispersal.get_val<double>("refKernel_doi");
+		refKernel_doi = speciesParams_dispersal.get_val<std::string>("refKernel_doi");
 
 	if (keysToRead.find("propLDD") != std::string::npos)
 		propLDD = speciesParams_dispersal.get_val<double>("propLDD");
@@ -145,6 +145,12 @@ Species::Species(std::string const& species_filename, std::string const& species
 		dispersalDistThreshold = speciesParams_dispersal.get_val<double>("dispersalDistThreshold");
 		max_dispersalDist = true;
 	}
+
+	if (keysToRead.find("twoDT_a") != std::string::npos)
+		twoDt_a = speciesParams_dispersal.get_val<double>("twoDt_a");
+
+	if (keysToRead.find("twoDT_b") != std::string::npos)
+		twoDt_b = speciesParams_dispersal.get_val<double>("twoDt_b");
 
 	// Others
 	maxDiameter = speciesParams.get_val<double>("maxDiameter");
@@ -234,8 +240,8 @@ double Species::dv_ds(double s, double const s_star, double temp, double precip)
 		However, I guess I can also work in [0, s*[ and ]s*, +Inf[, and set a continuity condition at s*.
 		This was done in the paper of Adams et al. 2007:
 		Understanding height-structured competition in forests: is there an R* for light?
-		the total rate at which cohorts ‘arrive’ at size s* as canopy trees must equal the rate at which they
-		‘leave’ s* as understory trees.
+		the total rate at which cohorts 'arrive' at size s* as canopy trees must equal the rate at which they
+		'leave' s* as understory trees.
 	*/
 
 	bool cs = s_star < s; // ? false : true;
@@ -281,8 +287,8 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 		However, I guess I can also work in [0, s*[ and ]s*, +Inf[, and set a continuity condition at s*.
 		This was done in the paper of Adams et al. 2007:
 		Understanding height-structured competition in forests: is there an R* for light?
-		the total rate at which cohorts ‘arrive’ at size s* as canopy trees must equal the rate at which they
-		‘leave’ s* as understory trees.
+		the total rate at which cohorts 'arrive' at size s* as canopy trees must equal the rate at which they
+		'leave' s* as understory trees.
 	*/
 
 	bool cs = s_star < s; // ? false : true;
@@ -321,6 +327,12 @@ double Species::K(double const distance) const
 	double proba = 0;
 	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
 		proba = (1.0 - propLDD)/2.0*exp(-abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
+
+	if (refKernel_doi == "laplacian") // Laplacian with parameter = 100 (for testing)
+		proba = 1.0/(2*M_PI*100*100) * std::exp(- distance/100);
+
+	if (refKernel_doi == "10.2307/176541") // Clark1999, Boisvert-Marsh2020 (might be 2021)
+		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
 	
 	return proba;
 }
@@ -332,6 +344,12 @@ double Species::K(double delta_lon, double delta_lat) const
 	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
 		proba = (1.0 - propLDD)/2.0*exp(-abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
 	
+	if (refKernel_doi == "laplacian") // Laplacian with parameter = 100 (for testing)
+		proba = 1.0/(2*M_PI*100*100) * std::exp(- distance/100);
+
+	if (refKernel_doi == "10.2307/176541") // Clark1999, Boisvert-Marsh2020 (might be 2021)
+		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
+
 	return proba;
 }
 
@@ -463,6 +481,12 @@ bool operator<(Species const& species1, Species const& species2)
 void Species::printName(std::ostream& os) const
 {
 	os << m_speciesName;
+}
+
+// Getter
+std::string Species::getName() const
+{
+	return m_speciesName;
 }
 
 #endif
