@@ -73,6 +73,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 	m_deltaLat = climateParams.get_val<unsigned int>("deltaLat");
 	std::string pathLandscape = climateParams.get_val<std::string>("path");
 	checkPath(pathLandscape, "path (for landscape)");
+	std::string distanceType = climateParams.get_val<std::string>("distance");
 
 	std::string delimiter = climateParams.get_val<std::string>("delimiter");
 	std::string climateFilenamePattern = climateParams.get_val<std::string>("filenamePattern");
@@ -137,7 +138,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 			climateFile = pathLandscape + climateFile;
 
 			// Create environment
-			Environment env(climateFile, delimiter);
+			Environment env(climateFile, delimiter, distanceType);
 			if (env.plotArea != m_deltaLon*m_deltaLat)
 				throw Except_Landscape(env.plotArea, m_deltaLon, m_deltaLat, climateFile);
 
