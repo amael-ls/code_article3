@@ -56,35 +56,6 @@ const char* Except_Patch::what() const throw()
 	return (m_error_msg.c_str());
 }
 
-/*************************************/
-/******        Landscape        ******/
-/*************************************/
-Except_Landscape::Except_Landscape(int const dim, int const i)
-{
-	if (i < dim)
-		m_error_msg += "not enough files provided. Length = " + std::to_string(dim) + " and number of read files = " + std::to_string(i) + "\n";
-	
-	if (i > dim)
-		m_error_msg += "Length = " + std::to_string(dim) + " and index = " + std::to_string(i) + "\n";
-}
-
-Except_Landscape::Except_Landscape(int const dim, std::string const& filename)
-{
-	m_error_msg += "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(dim) + ". ";
-	m_error_msg += "Last file provided: " + filename + "\n";
-}
-
-Except_Landscape::Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile)
-{
-	m_error_msg += "plot area (" + std::to_string(plotArea) + " mismatch with delta longitude (" + std::to_string(deltaLon) +
-		") and delta latitude("  + std::to_string(deltaLat) + ") for file <" + climateFile + ">\n";
-}
-
-const char* Except_Landscape::what() const throw()
-{
-	return (m_error_msg.c_str());
-}
-
 /**************************************/
 /******        Population        ******/
 /**************************************/
@@ -118,4 +89,57 @@ const char* Except_Population::what() const throw()
 	return (m_error_msg.c_str());
 }
 
+/*************************************/
+/******        Landscape        ******/
+/*************************************/
+Except_Landscape::Except_Landscape(int const dim, int const i)
+{
+	if (i < dim)
+		m_error_msg += "not enough files provided. Length = " + std::to_string(dim) + " and number of read files = " + std::to_string(i) + "\n";
+	
+	if (i > dim)
+		m_error_msg += "Length = " + std::to_string(dim) + " and index = " + std::to_string(i) + "\n";
+}
+
+Except_Landscape::Except_Landscape(int const dim, std::string const& filename)
+{
+	m_error_msg += "Error from Landscape: more files provided than dimension of the vector. Currently dim = " + std::to_string(dim) + ". ";
+	m_error_msg += "Last file provided: " + filename + "\n";
+}
+
+Except_Landscape::Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile)
+{
+	m_error_msg += "plot area (" + std::to_string(plotArea) + " mismatch with delta longitude (" + std::to_string(deltaLon) +
+		") and delta latitude("  + std::to_string(deltaLat) + ") for file <" + climateFile + ">\n";
+}
+
+const char* Except_Landscape::what() const throw()
+{
+	return (m_error_msg.c_str());
+}
+
+/*************************************/
+/******        Dispersal        ******/
+/*************************************/
+Except_Dispersal::Except_Dispersal(double const totalIntegral, std::string const species)
+{
+	if (totalIntegral > 1)
+	{
+		m_error_msg += "The sum of the probabilities of dispersion over landscape Γ (Gamma) should be 1 maximum. ";
+		m_error_msg += "Currently it is " + std::to_string(totalIntegral) + " for species " + species + "\n";
+		m_error_msg += "Check the dispersal kernel and dispersal parameters\n";
+	}
+
+	if (totalIntegral < 0)
+	{
+		m_error_msg += "The sum of the probabilities of dispersion over landscape Γ (Gamma) should be positive. ";
+		m_error_msg += "Currently it is " + std::to_string(totalIntegral) + " for species " + species + "\n";
+		m_error_msg += "Check the dispersal kernel and dispersal parameters\n";
+	}
+}
+
+const char* Except_Dispersal::what() const throw()
+{
+	return (m_error_msg.c_str());
+}
 #endif

@@ -39,21 +39,6 @@ class Except_Patch : public std::exception
 		std::string m_error_msg = "Error from Patch: ";
 };
 
-/*************************************/
-/******        Landscape        ******/
-/*************************************/
-class Except_Landscape : public std::exception
-{
-	public:
-		Except_Landscape(int const dim, int const i);
-		Except_Landscape(int const dim, std::string const& filename);
-		Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile);
-		const char* what() const throw();
-
-	private:
-		std::string m_error_msg = "Error from Forest when creating the landscape: ";
-};
-
 /**************************************/
 /******        Population        ******/
 /**************************************/
@@ -70,6 +55,34 @@ class Except_Population : public std::exception
 		int m_maxCohorts;
 		int m_s_inf;
 		std::string m_error_msg = "Error from Population: ";
+};
+
+/*************************************/
+/******        Landscape        ******/
+/*************************************/
+class Except_Landscape : public std::exception
+{
+	public:
+		Except_Landscape(int const dim, int const i);
+		Except_Landscape(int const dim, std::string const& filename);
+		Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile);
+		const char* what() const throw();
+
+	private:
+		std::string m_error_msg = "Error from Forest when creating the landscape: ";
+};
+
+/*************************************/
+/******        Dispersal        ******/
+/*************************************/
+class Except_Dispersal : public std::exception
+{
+	public:
+		Except_Dispersal(double const totalIntegral, std::string const species);
+		const char* what() const throw();
+
+	private:
+		std::string m_error_msg = "Error from Dispersal: ";
 };
 
 #endif
