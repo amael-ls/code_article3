@@ -45,6 +45,7 @@ m_nRow_land, m_nCol_land respectively
 #include "integration.h"
 
 // My headers
+#include "Error_classes.h++"
 #include "Species.h++"
 
 extern void* pt2Object; // global variable which points to an arbitrary Dispersal object for kernel integration
@@ -82,6 +83,7 @@ class Dispersal
 
 	// Integration data
 		std::map<double, double> m_map_distance_integral; // map<distance, integral(K)>, for each distance, compute the integral of K
+		double m_totalIntegral;
 
 	// private functions to compute integral
 	void kernel(double x, double xminusa, double bminusx, double &y, void *ptr) const; // This function calls the species-specific kernel

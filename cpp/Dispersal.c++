@@ -10,7 +10,7 @@
 /****************************************/
 Dispersal::Dispersal(Species const* const sp, std::string const climateFilename):
 	m_species(sp), m_dispersalProbaThreshold(sp->dispersalProbaThreshold), m_min_dispersalProba(sp->min_dispersalProba),
-	m_dispersalDistThreshold(sp->dispersalDistThreshold), m_max_dispersalDist(sp->max_dispersalDist)
+	m_dispersalDistThreshold(sp->dispersalDistThreshold), m_max_dispersalDist(sp->max_dispersalDist), m_totalIntegral(0)
 {
 	/**** Read landscape parameters from file climateFilename ****/
 	par::Params climateParams(climateFilename.c_str(), "=");
@@ -22,6 +22,7 @@ Dispersal::Dispersal(Species const* const sp, std::string const climateFilename)
 	m_deltaLon = climateParams.get_val<unsigned int>("deltaLon");
 	m_deltaLat = climateParams.get_val<unsigned int>("deltaLat");
 }
+
 /*************************************************/
 /******        Dispersal integration        ******/
 /*************************************************/
@@ -81,12 +82,15 @@ void landscapeIntegrals(Dispersal& disp)
 
 	double value2d = 0;
 
+	disp.m_totalIntegral = 0;
+
 	/**** Compute the integral for all possible distances in landscape ****/
 	// cf Remark 2 in the header file for comments (especially why distance to 0 only).
 	for (unsigned int row = 0; row < disp.m_nRow_land; ++row) // latitude direction
 	{
 		for (unsigned int col = 0; col < disp.m_nCol_land; ++col) // longitude direction
 		{
+			std::cout << row << "    " << col << std::endl;
 			currentLongitude = col*deltaLon;
 			currentLatitude = row*deltaLat;
 			distanceToZero = std::sqrt(currentLongitude*currentLongitude + currentLatitude*currentLatitude);
@@ -100,23 +104,28 @@ void landscapeIntegrals(Dispersal& disp)
 			alglib::autogkintegrate(ss, Dispersal::wrapper_To_Call_Kintegral, params);
 			alglib::autogkresults(ss, value2d, reprep);
 
-			// if (distanceToZero < 20000)
-				// std::cout << distanceToZero << std::endl;
-
 			if ((disp.m_dispersalProbaThreshold) &&(value2d > disp.m_min_dispersalProba)) // If using proba threshold
 			{
 				if (disp.m_map_distance_integral.find(distanceToZero) == disp.m_map_distance_integral.end())
+				{
 					disp.m_map_distance_integral[distanceToZero] = value2d;
+					disp.m_totalIntegral += value2d;
+				}
 			}
 
 			if ((disp.m_dispersalDistThreshold) && (distanceToZero < disp.m_dispersalDistThreshold)) // If using distance threshold
 			{
-				// std::cout << distanceToZero << "    " << disp.m_max_dispersalDist << std::endl;
 				if (disp.m_map_distance_integral.find(distanceToZero) == disp.m_map_distance_integral.end())
+				{
 					disp.m_map_distance_integral[distanceToZero] = value2d;
+					disp.m_totalIntegral += value2d;
+				}
 			}
 		}
 	}
+
+	if ((disp.m_totalIntegral > 1) || (disp.m_totalIntegral < 0))
+		throw Except_Dispersal(disp.m_totalIntegral, disp.m_species->getName());
 }
 
 /************************************/
@@ -124,9 +133,6 @@ void landscapeIntegrals(Dispersal& disp)
 /************************************/
 std::ostream& operator<<(std::ostream& os, Dispersal const &dispersal)
 {
-	// Species
-	dispersal.m_species->printName(os);
-
 	// Landscape
 	os << std::endl << "Dimensions (row x col): " << dispersal.m_nRow_land << " x " << dispersal.m_nCol_land << std::endl;
 	os << "Resolution (lon x lat): " << dispersal.m_deltaLon << " x " << dispersal.m_deltaLat << std::endl;
@@ -139,7 +145,7 @@ std::ostream& operator<<(std::ostream& os, Dispersal const &dispersal)
 	
 	os << "Integral on Γ: " << totIntegral << std::endl;
 
-	os << "Dimension of the map: " << (dispersal.m_map_distance_integral).size();
+	os << "Dimension of the dispersal map: " << (dispersal.m_map_distance_integral).size();
 	return os;
 }
 
