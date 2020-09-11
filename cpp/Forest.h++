@@ -6,13 +6,15 @@
 // Official headers
 #include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
 #include <algorithm> // std::sort
-#include <vector>
 #include <fstream>
+#include <vector>
 #include <string>
 #include <cmath>
+#include <map>
 
 // My headers
 #include "Error_classes.h++"
+#include "Dispersal.h++"
 #include "Species.h++"
 #include "Params.h++"
 #include "Patch.h++"
@@ -47,6 +49,9 @@ class Forest
 		unsigned int m_maxCohorts;
 
 		std::vector<Species*> m_speciesList;
+
+	// Dispersal
+		std::map<Species *, Dispersal> m_map_dispersal;
 
 	// Parameters related to dynamics
 		double  m_t0, m_tmax;
