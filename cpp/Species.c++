@@ -146,10 +146,10 @@ Species::Species(std::string const& species_filename, std::string const& species
 		max_dispersalDist = true;
 	}
 
-	if (keysToRead.find("twoDT_a") != std::string::npos)
+	if (keysToRead.find("twoDt_a") != std::string::npos)
 		twoDt_a = speciesParams_dispersal.get_val<double>("twoDt_a");
 
-	if (keysToRead.find("twoDT_b") != std::string::npos)
+	if (keysToRead.find("twoDt_b") != std::string::npos)
 		twoDt_b = speciesParams_dispersal.get_val<double>("twoDt_b");
 
 	// Others
