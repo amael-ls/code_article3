@@ -58,8 +58,8 @@ class Dispersal
 		Dispersal(Species const* const sp, std::string const climateFilename);
 
 	// Wrapper for Kernel integral computation (which are private functions)
-		static void wrapper_To_Call_Kintegral(double x, double xminusa, double bminusx, double &y, void *ptr);
-		static void wrapper_To_Call_Kintegral_lon(double x, double xminusa, double bminusx, double &y, void *ptr);
+		static void wrapper_r_integral(double x, double xminusa, double bminusx, double &y, void *ptr);
+		static void wrapper_theta_integral(double x, double xminusa, double bminusx, double &y, void *ptr);
 		friend void landscapeIntegrals(Dispersal& disp);
 
 	// Overloading
@@ -87,7 +87,8 @@ class Dispersal
 
 	// private functions to compute integral
 	void kernel(double x, double xminusa, double bminusx, double &y, void *ptr) const; // This function calls the species-specific kernel
-	void Kintegral_lon(double z, double xminusa, double bminusx, double &y, void *ptr) const;
+	void theta_integral(double x, double xminusa, double bminusx, double &y, void *ptr);
+	void r_integral(double x, double xminusa, double bminusx, double &y, void *ptr);
 };
 
 void landscapeIntegrals(Dispersal& disp);
