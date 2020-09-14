@@ -19,8 +19,12 @@
 #
 # See https://reference.wolfram.com/language/ref/DirichletDistribution.html for more explanation on this distribtion
 #
-## Remark
-# If "id_plots" is requiered, then it is necessary to first create the landscape (see ../createLandscape/)
+## Remarks
+# 1/. If "id_plots" is requiered, then it is necessary to first create the landscape (see ../createLandscape/)
+# 2/. To give you an idea at different scales:
+# 		- 1 km^2 might contain more than 60,000 trees (https://www.reddit.com/r/MapPorn/comments/47f9s5/trees_per_square_km_in_europe_1200x1000/)
+#		- 1 ha might contain up to 2,500 trees (plantation), between 620-1,500 (regeneration) or 15-150 (old-growth forest)
+# 			source: https://naldc.nal.usda.gov/download/34466/PDF
 #
 
 #### Load library and clear memory
@@ -75,28 +79,30 @@ set.seed(1969-08-18) # Woodstock seed
 
 alphaShape = abs(rnorm(nbCohorts, 0.5, 0.5))
 BA = 25 # m^2/ha
+areaPlot = 1060*1830 # 1ha = 100 x 100 m^2
+targetedArea = areaPlot*BA/10000
 
 ## Generate beta numbers (read comments at the beginning)
-betas = BA*rdirichlet(nbPlots, alphaShape)
+betas = targetedArea*rdirichlet(nbPlots, alphaShape)
 
-## Generate dbh (in cm)
+## Generate dbh (in mm)
 dbh = sample(x = minDiameter:maxDiameter, size = nbCohorts, replace = TRUE)
 
-dbh_meters = dbh/100
+dbh_meters = dbh/1000
 
 ## Deduce densities N
 densities = matrix(data = 0, nrow = nrow(betas), ncol = ncol(betas))
 for (i in 1:nbPlots)
 	for(j in 1:nbCohorts)
-		densities[i, j] = betas[i, j]*4*10^4/(pi*dbh_meters[j]^2)
+		densities[i, j] = betas[i, j]*4/(pi*dbh_meters[j]^2)
 
 ## Check cohorts basal area
 for (i in 1:nbPlots)
-	if (!all.equal((dbh_meters^2 %*% t(densities)[,i]*pi/(4*10^4))[1,1], BA))
+	if (!all.equal((10^4*dbh_meters^2 %*% t(densities)[,i]*pi/(4*areaPlot))[1,1], BA))
 		print(paste0("Check row ", i, ". The basal area of this plot might not be the value expected"))
 
 ## Number of trees per patch
-data.table(id_plots, density_ha = rowSums(densities))
+data.table(id_plots, density_patch = rowSums(densities))
 
 #### Write files initial condition
 ## Create folder
