@@ -22,38 +22,23 @@ rm(list = ls())
 graphics.off()
 
 #### Tool functions
-## Write climate values for C++ program, with cppNames for the C++ names
-# writeCppClimate = function(climate, cppNames, id, crs, deltaX, deltaY, sep = " = ", rm = FALSE)
-# {
-# 	outfileName = paste0("./climate_", id, ".txt")
-# 	if (rm & file.exists(outfileName))
-# 		file.remove(outfileName)
-
-# 	sink(file = outfileName, append = TRUE)
-# 	for (i in 1:length(cppNames))
-# 		cat(paste0(cppNames[i], sep, climate[, cppNames[i], with = FALSE][[1]]), sep = "\n")
-
-# 	cat(paste0("plotArea", sep, deltaX*deltaY), sep = "\n")
-# 	cat(paste0("proj4string", sep, crs), sep = "\n")
-
-# 	sink(file = NULL)
-# }
-
-## Tu use multi threading from data.table
+## Write climate values for C++ program, with cppNames for the C++ names using multi threading from data.table
 writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, deltaY, sep = " = ", rm = FALSE)
 {
 	outfileName = paste0("./climate_", id, ".txt")
 	if (rm & file.exists(outfileName))
 		file.remove(outfileName)
 
-	sink(file = outfileName, append = TRUE)
+	ofstream = file(outfileName)
+	line = ""
 	for (i in 1:length(cppNames))
-		cat(paste0(cppNames[i], sep, climateNamedVector[cppNames[i]]), sep = "\n")
+		line = paste0(line, cppNames[i], sep, climateNamedVector[cppNames[i]], "\n")
+	
+	line = paste0(line, "plotArea", sep, deltaX*deltaY, sep = "\n")
+	line = paste0(line, "proj4string", sep, crs)
 
-	cat(paste0("plotArea", sep, deltaX*deltaY), sep = "\n")
-	cat(paste0("proj4string", sep, crs), sep = "\n")
-
-	sink(file = NULL)
+	writeLines(line, ofstream)
+	close(ofstream)
 }
 
 #### Common variables
@@ -72,9 +57,13 @@ climate_rs = stack(paste0(loadPath, "clim60sec/clim_2010.grd"))
 crs = crs(climate_rs, asText = TRUE)
 
 ## Define crop extent
+# lonMin = -74
+# lonMax = -73.9
+# latMin = 41
+# latMax = 41.1
 lonMin = -74
-lonMax = -73.9
-latMin = 41
+lonMax = -73.99
+latMin = 41.09
 latMax = 41.1
 
 crop_extent = extent(c(lonMin, lonMax, latMin, latMax))
@@ -85,15 +74,21 @@ croppedClimate = crop(climate_rs[[c("bio60_01", "bio60_06", "bio60_12", "bio60_1
 names(croppedClimate) = c("annual_mean_temperature", "min_temperature_of_coldest_month",
 	"annual_precipitation", "precipitation_of_driest_quarter")
 
+nrow(croppedClimate)
+ncol(croppedClimate)
+
 deltaX = xres(croppedClimate) # 1060
 deltaY = yres(croppedClimate) # 1830
 
 ## Change resolution to a 20 x 20 m
-# downScale_factors = floor(res(croppedClimate)/20)
-# croppedClimate_downscale = disaggregate(x = croppedClimate, fact = downScale_factors)
+downScale_factors = floor(res(croppedClimate)/20)
+croppedClimate = disaggregate(x = croppedClimate, fact = downScale_factors)
 
-# nrow(croppedClimate)
-# ncol(croppedClimate)
+nrow(croppedClimate)
+ncol(croppedClimate)
+
+deltaX = xres(croppedClimate) # 1060
+deltaY = yres(croppedClimate) # 1830
 
 ## Get centroid and in which cell it belongs
 centroid = colMeans(coordinates(croppedClimate))
