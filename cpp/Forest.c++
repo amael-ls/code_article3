@@ -69,8 +69,8 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 	m_nRow_land = climateParams.get_val<unsigned int>("nRow");
 	m_nCol_land = climateParams.get_val<unsigned int>("nCol");
 	m_dim_land = m_nRow_land*m_nCol_land;
-	m_deltaLon = climateParams.get_val<unsigned int>("deltaLon");
-	m_deltaLat = climateParams.get_val<unsigned int>("deltaLat");
+	m_deltaLon = climateParams.get_val<double>("deltaLon");
+	m_deltaLat = climateParams.get_val<double>("deltaLat");
 	std::string pathLandscape = climateParams.get_val<std::string>("path");
 	checkPath(pathLandscape, "path (for landscape)");
 	std::string distanceType = climateParams.get_val<std::string>("distance");
@@ -139,7 +139,9 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 
 			// Create environment
 			Environment env(climateFile, delimiter, distanceType);
-			if (env.plotArea != m_deltaLon*m_deltaLat)
+			
+			// Precision set at 1e-3, should be fine for the numbers I am comparing: I neither expect microscopic nor gargantuan areas
+			if (std::fabs(env.plotArea - m_deltaLon*m_deltaLat) > 1e-3)
 				throw Except_Landscape(env.plotArea, m_deltaLon, m_deltaLat, climateFile);
 
 			// Create Patch which initialise the populations
