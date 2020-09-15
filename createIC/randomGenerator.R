@@ -47,18 +47,20 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 
 	for (plot in 1:nbPlots)
 	{
-		file = paste0(path, filenamePattern, id_plots[plot], ".txt")
+		outfileName = paste0(path, filenamePattern, id_plots[plot], ".txt")
 
-		if (reset & file.exists(file))
-			file.remove(file)
+		if (reset & file.exists(outfileName))
+			file.remove(outfileName)
 
-		sink(file = file, append = TRUE)
-		cat(paste0("density", sep, "dbh", sep = "\n"))
+		ofstream = file(outfileName)
+
+		line = paste0("density", sep, "dbh", sep = "\n")
 
 		for (cohort in 1:nbCohorts)
-			cat(paste0(densities[plot, cohort], sep, dbh[cohort], sep = "\n"))
+			line = paste0(line, densities[plot, cohort], sep, dbh[cohort], sep = "\n")
 
-		sink(file = NULL)
+		writeLines(line, ofstream)
+		close(ofstream)
 	}
 }
 
@@ -79,7 +81,7 @@ set.seed(1969-08-18) # Woodstock seed
 
 alphaShape = abs(rnorm(nbCohorts, 0.5, 0.5))
 BA = 25 # m^2/ha
-areaPlot = 1060*1830 # 1ha = 100 x 100 m^2
+areaPlot = 20*20 # 1ha = 100 x 100 m^2
 targetedArea = areaPlot*BA/10000
 
 ## Generate beta numbers (read comments at the beginning)
