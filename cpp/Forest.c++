@@ -200,7 +200,6 @@ void Forest::recruitment(double const t, double const delta_t)
 		{
 			// Get neighbours
 			neighbours_indices((targetPatch_it->m_env).m_patchId, boundingBox, *sp_it); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
-			
 			// Cover all the sources within neighbours to collect dispersed seeds
 			for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
 			{
@@ -229,7 +228,7 @@ void Forest::dynamics()
 	// Time loop
 	if (!m_saveOnlyLast)
 	{
-		for (unsigned int iter = 1; iter < m_nIter; ++iter) // time loop, starts at 1 because the initial condition is considered the 0th iteration
+		for (unsigned int iter = 1; iter < 2; ++iter) // time loop, starts at 1 because the initial condition is considered the 0th iteration
 		{
 			t = m_t0 + (iter - 1)*delta_t; // iter starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			this->patchDynamics(t, delta_t);
@@ -281,14 +280,22 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned 
 
 	if (influenceRadius_x >= m_deltaLon) // If more than itself is covered in longitude direction
 	{
-		topLeft_c = std::max(col_ind - influenceRadius_x, 0U); // 0U for unsigned int
-		topRight_c = std::min(col_ind + influenceRadius_x, m_nCol_land); // Casting required
+		if (col_ind < influenceRadius_x) // To avoid overflows of unsigned int
+			topLeft_c = 0;
+		else
+			topLeft_c = col_ind - influenceRadius_x;
+		
+		topRight_c = std::min(col_ind + influenceRadius_x, m_nCol_land);
 	}
 
 	if (influenceRadius_y >= m_deltaLat) // If more than itself is covered in latitude direction
 	{
-		topLeft_r = std::max(row_ind - influenceRadius_y, 0U);
-		bottomLeft_r = std::min(row_ind + influenceRadius_y, m_nRow_land); // Casting required
+		if (row_ind < influenceRadius_y) // To avoid overflows of unsigned int
+			topLeft_r = 0;
+		else
+			topLeft_r = row_ind - influenceRadius_y;
+		
+		bottomLeft_r = std::min(row_ind + influenceRadius_y, m_nRow_land);
 	}
 	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 }
