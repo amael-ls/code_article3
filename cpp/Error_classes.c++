@@ -114,7 +114,7 @@ Except_Landscape::Except_Landscape(int const dim, std::string const& filename)
 
 Except_Landscape::Except_Landscape(double const plotArea, double const deltaLon, double const deltaLat, std::string const climateFile)
 {
-	m_error_msg += "plot area (" + std::to_string(plotArea) + " mismatch with delta longitude (" + std::to_string(deltaLon) +
+	m_error_msg += "plot area (" + std::to_string(plotArea) + ") mismatch with delta longitude (" + std::to_string(deltaLon) +
 		") and delta latitude("  + std::to_string(deltaLat) + ") for file <" + climateFile + ">\n";
 }
 
