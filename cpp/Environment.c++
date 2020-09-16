@@ -28,6 +28,9 @@ Environment::Environment():
 	plotArea = std::numeric_limits<double>::infinity();
 
 	// Spatial coordinates
+	m_patchId = std::numeric_limits<unsigned int>::infinity();
+	m_row = std::numeric_limits<unsigned int>::infinity();
+	m_col = std::numeric_limits<unsigned int>::infinity();
 	longitude = std::numeric_limits<double>::infinity();
 	latitude = std::numeric_limits<double>::infinity();
 	proj4string = "";
@@ -61,9 +64,11 @@ Environment::Environment(std::string const filename, const std::string& delim, s
 	plotArea = envParams.get_val<double>("plotArea");
 
 	// Spatial coordinates
+	m_patchId = envParams.get_val<double>("patch_id");
+	m_row = envParams.get_val<unsigned int>("row");
+	m_col = envParams.get_val<unsigned int>("col");
 	longitude = envParams.get_val<double>("longitude");
 	latitude = envParams.get_val<double>("latitude");
-	m_patchId = envParams.get_val<double>("patch_id");
 	proj4string = envParams.get_val<std::string>("proj4string");
 }
 
@@ -72,14 +77,14 @@ Environment::Environment(std::string const filename, const std::string& delim, s
 /*************************************/
 double distancePoints(double longitude1, double latitude1, double longitude2, double latitude2, std::string const distanceType)
 {
-	/*
-		It is assumed the longitudes and latitudes are in decimal degrees
-	*/
 	if (distanceType == "euclidean")
 	{
 		return std::sqrt((longitude2 - longitude1)*(longitude2 - longitude1) + (latitude2 - latitude1)*(latitude2 - latitude1));
 	}
 
+	/*
+		It is assumed the longitudes and latitudes are in decimal degrees
+	*/
 	if (distanceType == "orthodromic")
 	{
 		// Convert longitudes and latitudes to radians

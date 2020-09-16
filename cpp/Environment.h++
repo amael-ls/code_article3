@@ -31,6 +31,7 @@ I list the functions here, but describe them in the associated c++ file:
 
 class Environment
 {
+	friend class Distance;
 	friend class Forest;
 	friend class Cohort;
 	friend class Patch;
@@ -73,6 +74,8 @@ class Environment
 
 		// Spatial coordinates
 		unsigned int m_patchId;
+		unsigned int m_row;
+		unsigned int m_col;
 		double longitude;
 		double latitude;
 		std::string proj4string;
