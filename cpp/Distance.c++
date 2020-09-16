@@ -22,6 +22,20 @@ Distance::Distance(int const row1, int const col1, int const row2, int const col
 	m_euclidean = std::sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
 }
 
+Distance::Distance(Environment const& env1, Environment const& env2, double const deltaLat, double deltaLon):
+	m_manhattan(2, -std::numeric_limits<int>::infinity())
+{
+	m_manhattan[0] = std::abs(env1.m_col - env2.m_col); // x-direction (longitude)
+	m_manhattan[1] = std::abs(env1.m_row - env2.m_row); // y-direction (latitude)
+
+	double x1 = env1.m_col*deltaLon;
+	double x2 = env2.m_col*deltaLon;
+	double y1 = env1.m_row*deltaLat;
+	double y2 = env2.m_row*deltaLat;
+
+	m_euclidean = std::sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
+}
+
 /************************************/
 /******        Overload        ******/
 /************************************/
