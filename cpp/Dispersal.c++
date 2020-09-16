@@ -19,8 +19,8 @@ Dispersal::Dispersal(Species const* const sp, std::string const climateFilename)
 	m_nCol_land = climateParams.get_val<unsigned int>("nCol");
 	m_dim_land = m_nRow_land*m_nCol_land;
 
-	m_deltaLon = climateParams.get_val<unsigned int>("deltaLon");
-	m_deltaLat = climateParams.get_val<unsigned int>("deltaLat");
+	m_deltaLon = climateParams.get_val<double>("deltaLon");
+	m_deltaLat = climateParams.get_val<double>("deltaLat");
 }
 
 /*************************************************/
@@ -139,7 +139,6 @@ void Dispersal::theta_integral(double theta, double xminusa, double bminusx, dou
 			r2 = y2/std::sin(theta);
 	}
 
-
 	alglib::autogkstate s;
 	alglib::autogkreport rep;
 	alglib::autogksmooth(r1, r2, s);
@@ -200,7 +199,7 @@ void landscapeIntegrals(Dispersal& disp)
 			x1 = col*deltaLon;
 			y1 = row*deltaLat;
 			distanceToZero = sqrt(x1*x1 + y1*y1);
-			
+
 			x2 = x1 + deltaLon;
 			y2 = y1 + deltaLat;
 
@@ -369,16 +368,15 @@ void landscapeIntegrals(Dispersal& disp)
 				integPatch += value2d;
 			}
 			
-
 			disp.m_totalIntegral += integPatch;
 
-			if ((disp.m_dispersalProbaThreshold) &&(integPatch > disp.m_min_dispersalProba)) // If using proba threshold
+			if ((disp.m_dispersalProbaThreshold) &&(integPatch >= disp.m_min_dispersalProba)) // If using proba threshold
 			{
 				if (disp.m_map_distance_integral.find(distanceToZero) == disp.m_map_distance_integral.end())
-					disp.m_map_distance_integral[distanceToZero] = value2d;
+					disp.m_map_distance_integral[distanceToZero] = integPatch;
 			}
 
-			if ((disp.m_dispersalDistThreshold) && (distanceToZero < disp.m_dispersalDistThreshold)) // If using distance threshold
+			if ((disp.m_dispersalDistThreshold) && (distanceToZero <= disp.m_dispersalDistThreshold)) // If using distance threshold
 			{
 				if (disp.m_map_distance_integral.find(distanceToZero) == disp.m_map_distance_integral.end())
 					disp.m_map_distance_integral[distanceToZero] = integPatch;
@@ -389,10 +387,10 @@ void landscapeIntegrals(Dispersal& disp)
 	// Because we integrated only on a quarter of the plane, we need to multiply the total integral by 4
 	disp.m_totalIntegral *= 4; // If the landscape is big enough, this should be close to 1
 
-	std::map<double, double>::const_iterator it = disp.m_map_distance_integral.cbegin();
-	for (; it != disp.m_map_distance_integral.cend(); ++it)
-		std::cout << it->first << "    " << it->second << std::endl;
-	std::cout << std::endl;
+	// std::map<double, double>::const_iterator it = disp.m_map_distance_integral.cbegin();
+	// for (; it != disp.m_map_distance_integral.cend(); ++it)
+	// 	std::cout << it->first << "    " << it->second << std::endl;
+	// std::cout << std::endl;
 
 	if ((disp.m_totalIntegral > 1) || (disp.m_totalIntegral < 0))
 		throw Except_Dispersal(disp.m_totalIntegral, disp.m_species->getName());
