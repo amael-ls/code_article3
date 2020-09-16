@@ -51,9 +51,10 @@ Except_Patch::Except_Patch(unsigned int const patch_id, std::vector<std::string>
 		m_error_msg += "    - " + speciesNames[i] + "\n";
 }
 
-Except_Patch::Except_Patch(double const distance, std::string const& speciesNames)
+Except_Patch::Except_Patch(double const distance, std::string const& speciesNames, unsigned int const target_id, unsigned int const source_id)
 {
-	m_error_msg += "Distance " + std::to_string(distance) + " not found for species <" + speciesNames + ">\n";
+	m_error_msg += "Distance " + std::to_string(distance) + " computed between target patch " + std::to_string(target_id) +
+		" and source patch " + std::to_string(source_id) +" not found for species <" + speciesNames + ">\n";
 }
 
 const char* Except_Patch::what() const throw()
