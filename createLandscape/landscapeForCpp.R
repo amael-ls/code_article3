@@ -47,7 +47,7 @@ loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
 
 ## C++ names
 cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month", "annual_precipitation",
-	"precipitation_of_driest_quarter", "isPopulated", "longitude", "latitude", "patch_id")
+	"precipitation_of_driest_quarter", "isPopulated", "longitude", "latitude", "patch_id", "row", "col")
 
 #### Get climate from raster
 ## Load raster
@@ -74,8 +74,8 @@ croppedClimate = crop(climate_rs[[c("bio60_01", "bio60_06", "bio60_12", "bio60_1
 names(croppedClimate) = c("annual_mean_temperature", "min_temperature_of_coldest_month",
 	"annual_precipitation", "precipitation_of_driest_quarter")
 
-nrow(croppedClimate)
-ncol(croppedClimate)
+nrows = nrow(croppedClimate)
+ncols = ncol(croppedClimate)
 
 deltaX = xres(croppedClimate) # 1060
 deltaY = yres(croppedClimate) # 1830
@@ -84,11 +84,16 @@ deltaY = yres(croppedClimate) # 1830
 downScale_factors = floor(res(croppedClimate)/20)
 croppedClimate = disaggregate(x = croppedClimate, fact = downScale_factors)
 
-nrow(croppedClimate)
-ncol(croppedClimate)
+#! --- Crash test zone, to have a smaller landscape
+crop_extent = extent(c(2135078, 2135278, -93158, -92958)) # order = xmin, xmax, ymin, ymax
+croppedClimate = crop(croppedClimate, crop_extent)
+#! --- End crash test zone, to have a smaller landscape
 
-deltaX = xres(croppedClimate) # 1060
-deltaY = yres(croppedClimate) # 1830
+nrows = nrow(croppedClimate)
+ncols = ncol(croppedClimate)
+
+deltaX = xres(croppedClimate) # 20
+deltaY = yres(croppedClimate) # 20.10989
 
 ## Get centroid and in which cell it belongs
 centroid = colMeans(coordinates(croppedClimate))
@@ -97,8 +102,10 @@ centroid = colMeans(coordinates(croppedClimate))
 vals = as.data.table(rasterToPoints(croppedClimate))
 setnames(vals, old = c("x", "y"), new = c("longitude", "latitude"))
 
-## Add id and isPopulated
+## Add id, row, col, and isPopulated
 vals[, patch_id := 0:(.N - 1)] # C++ starts at 0, not 1
+vals[, col := patch_id %% ncols]
+vals[, row := (patch_id - col)/ncols]
 vals[, rowNumber := 1:.N]
 vals[, isPopulated := "false"]
 
