@@ -59,4 +59,11 @@ std::ostream& operator<<(std::ostream& os, Distance const &dist)
 	return os;
 }
 
+std::string Distance::to_string() const
+{
+	return std::string("Manhattan: " + std::to_string(this->m_manhattan[0]) + " Δx + " +
+		std::to_string(this->m_manhattan[1]) + " Δy. Euclidean: " + std::to_string(this->m_euclidean));
+}
+
+
 #endif
