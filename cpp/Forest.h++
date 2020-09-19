@@ -22,7 +22,7 @@
 class Forest
 {
 	public :
-		Forest(std::string const forestParamsFilename, std::vector<Species*> const speciesList, std::string const climateFilename);
+		Forest(par::Params const& forestParameters, std::vector<Species*> const speciesList, std::string const climateFilename);
 		void dynamics();		
 	
 	// Overloading
@@ -30,7 +30,6 @@ class Forest
 
 	private :
 	// Forest parameters file
-		std::string const m_forestParamsFilename;
 		std::string m_initFilenamePattern;
 		std::string m_initPath;
 

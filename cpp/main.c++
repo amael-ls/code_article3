@@ -34,12 +34,11 @@ int main(int argc, char *argv[])
 	}
 	
 	/***** Read simulation parameters and build species *****/
-	par::Params simulationParameters(argv[1], " = "); // Be extremely careful with the delimiter, especially white spaces
+	par::Params const simulationParameters(argv[1], " = "); // Be extremely careful with the delimiter, especially white spaces
 	// std::cout << simulationParameters << std::endl;
 	
 	std::string climate_file = simulationParameters.get_val<std::string>("climate_file");
 	std::string species_path = simulationParameters.get_val<std::string>("species_path");
-	std::string forestDataFile = simulationParameters.get_val<std::string>("forestDataFile");
 	
 	std::vector<std::string> species = simulationParameters.get_val<std::vector<std::string> >("species_filenames");
 	std::vector<std::string>::const_iterator species_filenames_it = species.cbegin();
@@ -53,7 +52,7 @@ int main(int argc, char *argv[])
 	/***** Build forest and run simulation *****/
 	try
 	{
-		Forest test(forestDataFile, speciesList, climate_file);
+		Forest test(simulationParameters, speciesList, climate_file);
 		test.dynamics();
 	}
 	catch(const std::exception& e)

@@ -10,37 +10,34 @@ typedef std::vector<Species*>::const_iterator c_species_it;
 typedef std::vector<Patch>::const_iterator c_patch_it;
 typedef std::vector<Patch>::iterator patch_it;
 
-Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> const speciesList, std::string const climateFilename) :
-	m_forestParamsFilename(forestParamsFilename), m_speciesList(speciesList)
+Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const speciesList, std::string const climateFilename) :
+	m_speciesList(speciesList)
 {
-	/**** Read forest parameters from file forestParamsFilename ****/
-	// Load params
-	par::Params forestParams(forestParamsFilename.c_str(), " = ");
-
+	/**** Read forest parameters ****/
 	// Initial condition
-	m_initFilenamePattern = forestParams.get_val<std::string>("initFilenamePattern");
-	m_initPath = forestParams.get_val<std::string>("initPath");
+	m_initFilenamePattern = forestParameters.get_val<std::string>("initFilenamePattern");
+	m_initPath = forestParameters.get_val<std::string>("initPath");
 	checkPath(m_initPath, "initPath");
 
 	// Saving options
-	m_summaryFilePattern = forestParams.get_val<std::string>("summaryFilePattern");
-	m_summaryFilePath = forestParams.get_val<std::string>("summaryFilePath");
+	m_summaryFilePattern = forestParameters.get_val<std::string>("summaryFilePattern");
+	m_summaryFilePath = forestParameters.get_val<std::string>("summaryFilePath");
 	checkPath(m_summaryFilePath, "pathSummaryFile");
 
-	m_popDynFilePattern = forestParams.get_val<std::string>("popDynFilePattern");
-	m_popDynFilePath = forestParams.get_val<std::string>("popDynFilePath");
+	m_popDynFilePattern = forestParameters.get_val<std::string>("popDynFilePattern");
+	m_popDynFilePath = forestParameters.get_val<std::string>("popDynFilePath");
 	checkPath(m_popDynFilePath, "popDynFilePath");
 
-	m_freqSave = forestParams.get_val<unsigned int>("freqSave");
+	m_freqSave = forestParameters.get_val<unsigned int>("freqSave");
 
 	// Simulation parameters
-	m_t0 = forestParams.get_val<double>("t0");
-	m_tmax = forestParams.get_val<double>("tmax");
-	m_nIter = forestParams.get_val<unsigned int>("nIter");
-	m_maxCohorts = forestParams.get_val<unsigned int>("maxCohorts");
+	m_t0 = forestParameters.get_val<double>("t0");
+	m_tmax = forestParameters.get_val<double>("tmax");
+	m_nIter = forestParameters.get_val<unsigned int>("nIter");
+	m_maxCohorts = forestParameters.get_val<unsigned int>("maxCohorts");
 
 	// get rasterOrder_Rlang parameter
-	std::string rasterOrder_Rlang = forestParams.get_val<std::string>("rasterOrder_Rlang");
+	std::string rasterOrder_Rlang = forestParameters.get_val<std::string>("rasterOrder_Rlang");
 	std::transform(rasterOrder_Rlang.begin(), rasterOrder_Rlang.end(), rasterOrder_Rlang.begin(),
 		[](unsigned char c){ return std::tolower(c); });
 
@@ -48,7 +45,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 		m_rasterOrder_Rlang = true;
 
 	// Get saveOnlyLast parameter
-	std::string saveOnlyLast = forestParams.get_val<std::string>("saveOnlyLast");
+	std::string saveOnlyLast = forestParameters.get_val<std::string>("saveOnlyLast");
 	std::transform(saveOnlyLast.begin(), saveOnlyLast.end(), saveOnlyLast.begin(),
 		[](unsigned char c){ return std::tolower(c); });
 
@@ -170,7 +167,7 @@ Forest::Forest(std::string const forestParamsFilename, std::vector<Species*> con
 
 	// Compute basal area and density for each patch
 
-	std::cout << "Forest constructed with success, using file <" << m_forestParamsFilename << ">" << std::endl;
+	std::cout << "Forest constructed with success, using following parameters " << std::endl << forestParameters << std::endl;
 }
 
 void Forest::patchDynamics(double const t, double const delta_t)
@@ -187,7 +184,6 @@ void Forest::recruitment(double const t, double const delta_t)
 {
 	// Variables for neighbours
 	std::vector<unsigned int> boundingBox;
-	std::vector<unsigned int>::const_iterator itt;
 	Patch* sourcePatch;
 
 	// Iterators
@@ -202,17 +198,11 @@ void Forest::recruitment(double const t, double const delta_t)
 			// Get neighbours
 			neighbours_indices((targetPatch_it->m_env).m_patchId, boundingBox, *sp_it); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 
-			// ! --- CRASH TEST
-			// std::cout << (*sp_it)->m_speciesName << std::endl;
-			// for (itt = boundingBox.cbegin(); itt != boundingBox.cend(); ++itt)
-				// std::cout << *itt << std::endl;
-			// ! --- END CRASH TEST
 			// Cover all the sources within neighbours to collect dispersed seeds
 			for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
 			{
 				for (unsigned int col = boundingBox[1]; col <= boundingBox[2]; ++col) // Important: less than or equal to (<=)
 				{
-					// std::cout << row*m_nCol_land + col << std::endl;
 					sourcePatch = &m_patchVec[row*m_nCol_land + col];
 					// Compute dispersal from source to target, and update the seed banks:
 					targetPatch_it->dispersal(targetPatch_it, sourcePatch, *sp_it, (m_map_dispersal.find(*sp_it)->second).m_map_distance_integral, m_deltaLat, m_deltaLon);
