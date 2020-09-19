@@ -74,8 +74,8 @@ class Environment
 
 		// Spatial coordinates
 		unsigned int m_patchId;
-		unsigned int m_row;
-		unsigned int m_col;
+		int m_row;
+		int m_col;
 		double longitude;
 		double latitude;
 		std::string proj4string;
