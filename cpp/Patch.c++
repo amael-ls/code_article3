@@ -90,28 +90,14 @@ void Patch::dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePat
 	std::map<Distance, double>::const_iterator dist_it = distToIntegral.find(dist);
 	if (dist_it == distToIntegral.end())
 	{
-		// std::map<double, double>::const_iterator test = distToIntegral.cbegin();
-		// for (; test != distToIntegral.cend(); ++test)
-		// 	std::cout << test->first << std::endl;
 		throw Except_Patch(dist, species->m_speciesName, targetPatch->m_env.m_patchId, sourcePatch->m_env.m_patchId);
 		exit(EXIT_FAILURE);
 	}
 	
 	// withdrawn seeds from source = local production of source times amount dispersed by K
 	double withdrawnSeeds = ((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds * distToIntegral.find(dist)->second;
-	// std::cout << sourcePatch->m_env.m_patchId << "  ---->  " << targetPatch->m_env.m_patchId << std::endl;
 	((targetPatch->m_pop_map).find(species)->second).m_localSeedBank += withdrawnSeeds;
 	((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds -= withdrawnSeeds;
-
-	// // ! Crash test CONSTRUIRE UN OBJET DISTANCE QUI UTILISE AUSSI MANHATTAN DISTANCE
-	// if ((targetPatch->m_env.m_patchId == 56) && (sourcePatch->m_env.m_patchId == 55))
-	// {
-	// 	std::cout << "Vivaldi2: " << withdrawnSeeds << std::endl;
-	// 	std::cout << "Poulenc2:" << ((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds << std::endl;
-	// 	std::cout << "Debussy2: " << ((targetPatch->m_pop_map).find(species)->second).m_localSeedBank << std::endl;
-	// }
-	// // ! End crash test
-
 }
 
 void Patch::recruitment(std::vector<Patch>::iterator targetPatch, Species* species, double const t, double const delta_t)
