@@ -187,6 +187,7 @@ void Forest::recruitment(double const t, double const delta_t)
 {
 	// Variables for neighbours
 	std::vector<unsigned int> boundingBox;
+	std::vector<unsigned int>::const_iterator itt;
 	Patch* sourcePatch;
 
 	// Iterators
@@ -200,14 +201,21 @@ void Forest::recruitment(double const t, double const delta_t)
 		{
 			// Get neighbours
 			neighbours_indices((targetPatch_it->m_env).m_patchId, boundingBox, *sp_it); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
+
+			// ! --- CRASH TEST
+			// std::cout << (*sp_it)->m_speciesName << std::endl;
+			// for (itt = boundingBox.cbegin(); itt != boundingBox.cend(); ++itt)
+				// std::cout << *itt << std::endl;
+			// ! --- END CRASH TEST
 			// Cover all the sources within neighbours to collect dispersed seeds
 			for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
 			{
 				for (unsigned int col = boundingBox[1]; col <= boundingBox[2]; ++col) // Important: less than or equal to (<=)
 				{
+					// std::cout << row*m_nCol_land + col << std::endl;
 					sourcePatch = &m_patchVec[row*m_nCol_land + col];
 					// Compute dispersal from source to target, and update the seed banks:
-					targetPatch_it->dispersal(targetPatch_it, sourcePatch, *sp_it, (m_map_dispersal.find(*sp_it)->second).m_map_distance_integral);
+					targetPatch_it->dispersal(targetPatch_it, sourcePatch, *sp_it, (m_map_dispersal.find(*sp_it)->second).m_map_distance_integral, m_deltaLat, m_deltaLon);
 				}
 			}
 			targetPatch_it->recruitment(targetPatch_it, *sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
@@ -297,6 +305,13 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned 
 		
 		bottomLeft_r = std::min(row_ind + influenceRadius_y, m_nRow_land);
 	}
+
+	// Particular cases: if max rows/cols reached, remove last row/col, because Forest::recruitment uses <= instead of <
+	if (bottomLeft_r == m_nRow_land) // To prevent segmentation fault due to <= operator in Forest::recruitment
+		--bottomLeft_r;
+	if (topRight_c == m_nCol_land) // To prevent segmentation fault due to <= operator in Forest::recruitment
+		--topRight_c;
+
 	boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
 }
 
