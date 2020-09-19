@@ -169,7 +169,7 @@ void landscapeIntegrals(Dispersal& disp)
 	// Dimension patch (rectangle x1,y1 ---> x2,y2, with x2 = x1 + deltaLon and y2 = y1 + deltaLat)
 	double deltaLon(disp.m_deltaLon);
 	double deltaLat(disp.m_deltaLat);
-	double distanceToZero;
+	double euclideanDistanceToZero;
 
 	// Array and pointer (parameters to integrate in Cartesian a Polar function)
 	double coordsPatch[4]; // {x1, x2, y1, y2};
@@ -195,10 +195,11 @@ void landscapeIntegrals(Dispersal& disp)
 			// Reset integPatch for current patch
 			integPatch = 0;
 
-			// Coordinates
+			// Coordinates and distance, row = y = latitude, and col = x = longitude
 			x1 = col*deltaLon;
 			y1 = row*deltaLat;
-			distanceToZero = sqrt(x1*x1 + y1*y1);
+			Distance distanceToZero(0, 0, row, col, deltaLat, deltaLon);
+			euclideanDistanceToZero = sqrt(x1*x1 + y1*y1);
 
 			x2 = x1 + deltaLon;
 			y2 = y1 + deltaLat;
@@ -376,7 +377,7 @@ void landscapeIntegrals(Dispersal& disp)
 					disp.m_map_distance_integral[distanceToZero] = integPatch;
 			}
 
-			if ((disp.m_dispersalDistThreshold) && (distanceToZero <= disp.m_dispersalDistThreshold)) // If using distance threshold
+			if ((disp.m_dispersalDistThreshold) && (euclideanDistanceToZero <= disp.m_dispersalDistThreshold)) // If using distance threshold
 			{
 				if (disp.m_map_distance_integral.find(distanceToZero) == disp.m_map_distance_integral.end())
 					disp.m_map_distance_integral[distanceToZero] = integPatch;
