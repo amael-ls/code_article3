@@ -29,8 +29,8 @@ Environment::Environment():
 
 	// Spatial coordinates
 	m_patchId = std::numeric_limits<unsigned int>::infinity();
-	m_row = std::numeric_limits<unsigned int>::infinity();
-	m_col = std::numeric_limits<unsigned int>::infinity();
+	m_row = std::numeric_limits<int>::infinity();
+	m_col = std::numeric_limits<int>::infinity();
 	longitude = std::numeric_limits<double>::infinity();
 	latitude = std::numeric_limits<double>::infinity();
 	proj4string = "";
