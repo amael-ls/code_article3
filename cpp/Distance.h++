@@ -17,7 +17,7 @@ class Distance
 	public:
 	// Constructors, latitude = row x deltaLat, longitude = col x deltaLon
 		Distance(int const row1, int const col1, int const row2, int const col2, double const deltaLat, double deltaLon);
-		Distance(Environment const& env1, Environment const& env2, double const deltaLat, double deltaLon);
+		Distance(Environment const& env1, Environment const& env2, double const deltaLat, double const deltaLon);
 
 	// Overloads
 		friend bool operator<(Distance const d1, Distance const d2);

@@ -22,7 +22,7 @@ Distance::Distance(int const row1, int const col1, int const row2, int const col
 	m_euclidean = std::sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2));
 }
 
-Distance::Distance(Environment const& env1, Environment const& env2, double const deltaLat, double deltaLon):
+Distance::Distance(Environment const& env1, Environment const& env2, double const deltaLat, double const deltaLon):
 	m_manhattan(2, -std::numeric_limits<int>::infinity())
 {
 	m_manhattan[0] = std::abs(env1.m_col - env2.m_col); // x-direction (longitude)
@@ -64,6 +64,5 @@ std::string Distance::to_string() const
 	return std::string("Manhattan: " + std::to_string(this->m_manhattan[0]) + " Δx + " +
 		std::to_string(this->m_manhattan[1]) + " Δy. Euclidean: " + std::to_string(this->m_euclidean));
 }
-
 
 #endif
