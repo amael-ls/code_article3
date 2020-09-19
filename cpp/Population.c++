@@ -36,7 +36,6 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 
 	if(!summary.is_open())
 	{
-		std::cout << "Hey!!! @@" << std::endl;
 		std::stringstream ss;
 		ss << "*** ERROR (from constructor Population): cannot open output file <" << summaryFilename << ">"
 			<< "> for species <" << species->m_speciesName << ">";
@@ -138,7 +137,6 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 
 	if(!summary.is_open())
 	{
-		std::cout << "Hey!!! @@" << std::endl;
 		std::stringstream ss;
 		ss << "*** ERROR (from constructor Population): cannot open output file <" << summaryFilename
 			<< "> for species <" << species->m_speciesName << ">";
