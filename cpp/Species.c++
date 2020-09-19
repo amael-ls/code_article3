@@ -13,7 +13,7 @@
 /****************************************/
 /******        Constructors        ******/
 /****************************************/
-Species::Species(std::string const& species_filename, std::string const& species_path, const std::string& delim)
+Species::Species(std::string const& species_filename, std::string const& species_path, const std::string& delim, double const delta_t)
 {
 	// Read species' main file from the parameters got at the execution
 	std::string file_sp = species_path + species_filename;
@@ -86,7 +86,7 @@ Species::Species(std::string const& species_filename, std::string const& species
 	beta_P = speciesParams_G.get_val<double>("P");
 	beta_P_sq = speciesParams_G.get_val<double>("P_sq");
 
-	// Mortality parameters
+	// Mortality parameters (12 + 1)
 	intercept_M = speciesParams_M.get_val<double>("intercept");
 	beta_cs_M = speciesParams_M.get_val<double>("cs");
 	beta_T_M = speciesParams_M.get_val<double>("T");
@@ -99,6 +99,8 @@ Species::Species(std::string const& species_filename, std::string const& species
 	beta_cs_T_sq_M = speciesParams_M.get_val<double>("cs_T_sq");
 	beta_cs_P_M = speciesParams_M.get_val<double>("cs_P");
 	beta_cs_P_sq_M = speciesParams_M.get_val<double>("cs_P_sq");
+
+	m_delta_t = delta_t;
 
 	// Fecundity
 	fecundity = speciesParams.get_val<double>("fecundity");
@@ -159,7 +161,7 @@ Species::Species(std::string const& species_filename, std::string const& species
 /**************************************/
 /******        Demography        ******/
 /**************************************/
-// Individual growth rate (Checked, it equals the lme4 prediction)
+// Individual growth rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::v(double s, double const s_star, double temp, double precip) const
 {
 	/*
@@ -173,7 +175,7 @@ double Species::v(double s, double const s_star, double temp, double precip) con
 	temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
 	precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
 
-	// Define the coefficient of the polynom of s
+	// Define the coefficient of the polynomial of s
 	beta_0 = intercept_G +
 	(beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
 		beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
@@ -185,18 +187,11 @@ double Species::v(double s, double const s_star, double temp, double precip) con
 	beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
 		beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
 
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
-
 	// Growth function
-	return 1; // std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
-
-	// double results = ((2 + s_star)*std::exp(-s_star))/(1 + s); // with feedback loop
-	// double results = 2/(1 + s); // without feedback loop
-	// return (results);
+	return std::exp(scaling_G_mu + scaling_G_sd * (beta_0 + beta_1*s + beta_2*s*s));
 }
 
-// Individual death rate // mean(aa) = 0.7318187
+// Individual death rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::d(double s, double const s_star, double temp, double precip) const
 {
 	/*
@@ -204,31 +199,23 @@ double Species::d(double s, double const s_star, double temp, double precip) con
 	*/
 
 	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
+	double beta_0;
 
 	// Scaling all the variables (size, temperature and precipitation)
 	s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
 	temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
 	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
 
-	// Define the coefficient of the polynom of s
-	beta_0 = intercept_M +
+	// Define the coefficient of the polynomial of s
+	beta_0 = intercept_M + std::log(this->m_delta_t) +
 	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
 		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
 	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
 
-	beta_1 = beta_dbh_M;
-
-	beta_2 = beta_dbh_sq_M;
-
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
-	return 0; // 1 / (1 + std::exp(-dbh_polynom));
-
-	// return (-0.3);
+	return 1 - std::exp(-std::exp(beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s));
 }
 
-// Differentiate individual growth rate
+// Differentiate individual growth rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::dv_ds(double s, double const s_star, double temp, double precip) const
 {
 	/*
@@ -252,7 +239,7 @@ double Species::dv_ds(double s, double const s_star, double temp, double precip)
 	temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
 	precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
 
-	// Define the coefficient of the polynom of s
+	// Define the coefficient of the polynomial of s
 	beta_0 = intercept_G +
 	(beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
 		beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
@@ -264,17 +251,13 @@ double Species::dv_ds(double s, double const s_star, double temp, double precip)
 	beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
 		beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
 
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
+	// Polynomial of s (order 2)
+	double dbh_polynomial = beta_0 + beta_1*s + beta_2*s*s;
 
-	return 0; // scaling_G_sd*(beta_1 + 2*beta_2*s) * std::exp(scaling_G_mu + scaling_G_sd * dbh_polynom);
-
-	// double results = -((2 + s_star)*std::exp(-s_star))/((1 + s)*(1 + s)); // with feedback loop
-	// double results = -2/((1 + s)*(1 + s)); // without feedback loop
-	// return (results);
+	return scaling_G_sd*(beta_1 + 2*beta_2*s) * std::exp(scaling_G_mu + scaling_G_sd * dbh_polynomial);
 }
 
-// Differentiate individual mortality rate
+// Differentiate individual mortality rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::dd_ds(double s, double const s_star, double temp, double precip) const
 {
 	/*
@@ -292,29 +275,23 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 	*/
 
 	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
+	double beta_0;
 
 	// Scaling all the variables (size, temperature and precipitation)
 	s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
 	temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
 	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
 
-	// Define the coefficient of the polynom of s
-	beta_0 = intercept_M +
+	// Define the coefficient of the polynomial of s
+	beta_0 = intercept_M + std::log(this->m_delta_t) +
 	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
 		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
 	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
 
-	beta_1 = beta_dbh_M;
+	// Polynomial of s (order 2)
+	double dbh_polynomial = beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s;
 
-	beta_2 = beta_dbh_sq_M;
-
-	// Polynom of s (order 2)
-	double dbh_polynom = beta_0 + beta_1*s + beta_2*s*s;
-	double dbh_polynom_differentiate = beta_1 + 2*beta_2*s;
-
-	return 0; // dbh_polynom_differentiate / (2 + std::exp(-dbh_polynom) + std::exp(dbh_polynom));
-	// return (0);
+	return -(beta_dbh_M + 2*beta_dbh_sq_M*s)*std::exp(dbh_polynomial - std::exp(dbh_polynomial));
 }
 
 /*************************************/
