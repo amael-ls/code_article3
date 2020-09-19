@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Environment.h++"
+#include "Distance.h++"
 
 #ifndef ERROR_CLASSES_H
 #define ERROR_CLASSES_H
@@ -33,7 +34,7 @@ class Except_Patch : public std::exception
 {
 	public:
 		Except_Patch(unsigned int const patch_id, std::vector<std::string> const& speciesNames);
-		Except_Patch(double const distance, std::string const& speciesNames, unsigned int const target_id, unsigned int const source_id);
+		Except_Patch(Distance const& distance, std::string const& speciesNames, unsigned int const target_id, unsigned int const source_id);
 		const char* what() const throw();
 
 	private:
