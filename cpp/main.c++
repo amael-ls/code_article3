@@ -22,7 +22,7 @@ void* pt2Object; // global variable which points to an arbitrary Dispersal objec
 // CODER RK4, JE PENSE QU'EULER EST TROP INSTABLE
 int main(int argc, char *argv[])
 {
-	// auto start = std::chrono::high_resolution_clock::now();
+	auto start = std::chrono::high_resolution_clock::now();
 	std::cout << "Program " << argv[0] << " is running" << std::endl;
 	std::cout << "Number of arguments: " << argc - 1 << std::endl;
 
@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
 		std::cerr << e.what() << '\n';
 	}
 
-	// auto finish = std::chrono::high_resolution_clock::now();
-	// std::chrono::duration<double> elapsed = finish - start;
-	// std::cout << "Elapsed time: " << elapsed.count() << " s" << std::endl;
+	auto finish = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double> elapsed = finish - start;
+	std::cout << "Elapsed time: " << elapsed.count() << " s" << std::endl;
 	return 0;
 }
