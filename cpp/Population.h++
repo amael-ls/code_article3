@@ -71,7 +71,7 @@ class Population
 		void euler(double const t, double const delta_t, double const dbh_star, Environment const & env);
 		void seedProduction(double const height_star); // Compute the local seed production (private function)
 		void recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env, bool& isPopulated); // Compute recruitment (dispersal + euler)
-		void totalDensity_basalArea();
+		void totalDensity_totalTrunkArea();
 	
 	// --- Sorting and organising
 		void sort(bool const decreasingOrder);
@@ -84,7 +84,7 @@ class Population
 		double m_localSeedBank; // Seeds received from local source and from external source (dispersal)
 	
 	// --- Total population
-		double m_basalArea; // Basal area, an output variable
+		double m_sumTrunkArea; // Basal area, an output variable
 		double m_totalDensity; // Total density, an output variable: Integral[N(s, t) ds, from = 0, to = +Inf]
 
 	// --- Others

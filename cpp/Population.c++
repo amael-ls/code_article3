@@ -23,9 +23,9 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 	for (unsigned int i = 0; i < m_maxCohorts; ++i)
 		m_cohortsVec.emplace_back(Cohort(species, 0));
 
-	// Sort and compute basal area and total density
+	// Sort and compute total trunk area and total density
 	this->sort(true); // true to sort by decreasing size
-	this->totalDensity_basalArea();
+	this->totalDensity_totalTrunkArea();
 
 	/***** Open ofstreams to save initial condition and close them (too many to be kept open) *****/
 	// Open ofstreams m_summary_ofs
@@ -42,9 +42,9 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		throw (std::runtime_error (ss.str()));
 	}
 	
-	summary << "iteration localSeedProduced localSeedBank basalArea totalDensity" << std::endl;
+	summary << "iteration localSeedProduced localSeedBank sumTrunkArea totalDensity" << std::endl;
 	summary << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
-		m_basalArea << " " << m_totalDensity << std::endl;
+		m_sumTrunkArea << " " << m_totalDensity << std::endl;
 
 	// Open ofstream m_popDyn_ofs
 	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
@@ -124,9 +124,9 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 	if (m_s_inf < tallest_tree)
 		throw(Except_Population(m_s_inf, tallest_tree, initFilename));
 
-	// Sort and compute basal area and total density
+	// Sort and compute total trunk area and total density
 	this->sort(true); // true to sort by decreasing size
-	this->totalDensity_basalArea();
+	this->totalDensity_totalTrunkArea();
 
 /***** Open ofstreams to save initial condition and close them (too many to be kept open) *****/
 	// Open ofstreams m_summary_ofs
@@ -143,9 +143,9 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		throw (std::runtime_error (ss.str()));
 	}
 	
-	summary << "iteration localSeedProduced localSeedBank basalArea totalDensity" << std::endl;
+	summary << "iteration localSeedProduced localSeedBank sumTrunkArea totalDensity" << std::endl;
 	summary << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
-		m_basalArea << " " << m_totalDensity << std::endl;
+		m_sumTrunkArea << " " << m_totalDensity << std::endl;
 
 	// Open ofstream m_popDyn_ofs
 	if (std::filesystem::exists(popDynFilename)) // Remove file if already exists
@@ -208,8 +208,8 @@ void Population::cohortDynamics(double const t, double const delta_t, double con
 	// Age cohort
 	this->euler(t, delta_t, dbh_star, env);
 
-	// Compute basal area, and total density
-	this->totalDensity_basalArea();
+	// Compute total trunk area, and total density
+	this->totalDensity_totalTrunkArea();
 }
 
 void Population::euler(double const t, double const delta_t, double const dbh_star, Environment const & env)
@@ -282,10 +282,9 @@ void Population::seedProduction(double const height_star)
 }
 
 // ****************************************************************************************************************
-/* To compute the basal area of the community and the 'number of individuals'
-The basal area is supposed to be in m²/ha (square meter per hectar). However, my
-plot surface unit is square meter, and my diameter unit is millimiter. I there-
-fore coerce the output to fit currently used units
+/* To compute the total trunk area of the community and the 'number of individuals'
+The total trunk area is expresses in metres. I, therefore, coerce the diameter
+to metres
 The number of individuals is supposed to be (spatial case):
 	\int_{x \in Plot} \int_{0}^{+Inf} N(s, x, t) ds dx
 In my case, the density is per m per square meter (the first meter is for the
@@ -294,22 +293,21 @@ size s, the square meter is for the ground area). I therefore conclude:
 		= \int_{x \in Plot} 1 dx \times \int_{0}^{+Inf} N(s, x, t) ds
 		= plotArea \times \int_{0}^{+Inf} N(s, x, t) ds
 */
-void Population::totalDensity_basalArea()
+void Population::totalDensity_totalTrunkArea()
 {
-	double current_BA = 0;
+	double sumTrunkArea = 0;
 	double currentDensity = 0;
 
 	c_cohort_it it = m_cohortsVec.cbegin();
 	c_cohort_it it_lim = m_cohortsVec.cbegin() + m_nonZeroCohort;
 	for (; it != it_lim; ++it)
 	{
-		current_BA += it->m_mu*it->m_mu*it->m_lambda; // dbh² \times density per m per m². The += is the 'integral over s'
+		sumTrunkArea += (it->m_mu)*(it->m_mu) * (it->m_lambda); // dbh² \times density per m per m². The += is the 'integral over s'
 		currentDensity += it->m_lambda; //
 	}
 
-	double conversion = 10000.0/1000000.0; // Conversion factor to have it in m²/ha: 10 000 to get ha, 1 000 000 to get m² from mm²
-	current_BA *= M_PI/4*conversion; // π dbh^2/4
-	m_basalArea = current_BA;
+	sumTrunkArea *= M_PI/(4*1000); // π dbh^2/(4 x 1000), the 1000 is to convert from mm to metres
+	m_sumTrunkArea = sumTrunkArea;
 	m_totalDensity = currentDensity;
 }
 
@@ -439,7 +437,7 @@ void Population::saveResults()
 	}
 
 	summary << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
-		m_basalArea << " " << m_totalDensity << std::endl;
+		m_sumTrunkArea << " " << m_totalDensity << std::endl;
 
 	popDyn << *this;
 
