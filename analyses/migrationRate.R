@@ -45,7 +45,7 @@ stringCleaner = function(str, fixed, skip = NULL)
 }
 
 ######## Part I: Population dynamics
-#### Load results c++
+#### Load parameters c++
 ## Simulation parameters
 simulationParameters = setDT(read.table(file = "../cpp/simulationParameters.txt", header = FALSE, sep = "=", comment.char = "#", blank.lines.skip = TRUE))
 setnames(x = simulationParameters, new = c("parameters", "values"))
@@ -66,13 +66,46 @@ speciesList = stringCleaner(speciesList, ".txt")
 ## Paths to files
 pathCpp = "../cpp/"
 
-pathPopDyn = paste0(pathCpp, simulationParameters[parameters == "popDynFilePath", values], speciesList, "/")
 pathSummary = paste0(pathCpp, simulationParameters[parameters == "summaryFilePath", values], speciesList, "/")
+pathPopDyn = paste0(pathCpp, simulationParameters[parameters == "popDynFilePath", values], speciesList, "/")
 initPath = paste0(simulationParameters[parameters == "initPath", values], speciesList, "/")
 
+## Landscape metadata
+landscape_metadata = setDT(read.table(file = paste0(pathCpp, simulationParameters[parameters == "climate_file", values]),
+	header = FALSE, sep = "=", blank.lines.skip = TRUE, fill = TRUE))
+
+if (ncol(landscape_metadata) == 3)
+{
+	landscape_metadata[, V3 := NULL]
+	landscape_metadata[V1 == "delimiter", V2 := "="]
+}
+
+setnames(landscape_metadata, new = c("parameters", "values"))
+
+nRow_land = as.integer(landscape_metadata[parameters == "nRow", values])
+nCol_land = as.integer(landscape_metadata[parameters == "nCol", values])
+
+## Time
+t0 = as.numeric(simulationParameters[parameters == "t0", values])
+tmax = as.numeric(simulationParameters[parameters == "tmax", values])
+nIter = as.integer(simulationParameters[parameters == "nIter", values])
+delta_t
+
+#### Load results c++
 ## Initial condition
 # List files
 ls_init = list.files(initPath)
+
+# Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
+init_index = as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
+	to = stri_locate_last(ls_init, fixed = ".txt")[, "start"] - 1))
+
+init_col = init_index %% nCol_land
+init_row = (init_index - init_col)/nCol_land
+
+## Load files belonging to same transect (i.e., either same row = East-West or col = North-South)
+nbData = nRow_land*
+results = data.table()
 
 #! RESTART HERE
 # init = fread(paste0(initPath, "init.txt"))
