@@ -3,6 +3,8 @@
 ## Plot densities (initial and last states)
 #
 
+#! I SHOULD CREATE A LOOP FOR SPECIES OR CALL THIS PROG IN A FOR LOOP
+
 #### Load packages
 library(data.table)
 library(tikzDevice)
@@ -70,6 +72,10 @@ pathSummary = paste0(pathCpp, simulationParameters[parameters == "summaryFilePat
 pathPopDyn = paste0(pathCpp, simulationParameters[parameters == "popDynFilePath", values], speciesList, "/")
 initPath = paste0(simulationParameters[parameters == "initPath", values], speciesList, "/")
 
+## Files' patterns
+summaryPattern = simulationParameters[parameters == "summaryFilePattern", values]
+initPattern = simulationParameters[parameters == "initFilenamePattern", values] # Not used
+
 ## Landscape metadata
 landscape_metadata = setDT(read.table(file = paste0(pathCpp, simulationParameters[parameters == "climate_file", values]),
 	header = FALSE, sep = "=", blank.lines.skip = TRUE, fill = TRUE))
@@ -85,11 +91,15 @@ setnames(landscape_metadata, new = c("parameters", "values"))
 nRow_land = as.integer(landscape_metadata[parameters == "nRow", values])
 nCol_land = as.integer(landscape_metadata[parameters == "nCol", values])
 
+deltaLon = as.numeric(landscape_metadata[parameters == "deltaLon", values])
+deltaLat = as.numeric(landscape_metadata[parameters == "deltaLat", values])
+plotArea = deltaLon*deltaLat
+
 ## Time
 t0 = as.numeric(simulationParameters[parameters == "t0", values])
 tmax = as.numeric(simulationParameters[parameters == "tmax", values])
 nIter = as.integer(simulationParameters[parameters == "nIter", values])
-delta_t
+delta_t = (tmax - t0)/(nIter - 1)
 
 #### Load results c++
 ## Initial condition
@@ -100,37 +110,60 @@ ls_init = list.files(initPath)
 init_index = as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
 	to = stri_locate_last(ls_init, fixed = ".txt")[, "start"] - 1))
 
-init_col = init_index %% nCol_land
-init_row = (init_index - init_col)/nCol_land
+init_col = unique(init_index %% nCol_land)
+init_row = unique((init_index - init_col)/nCol_land)
 
 ## Load files belonging to same transect (i.e., either same row = East-West or col = North-South)
-nbData = nRow_land*
-results = data.table()
+# Prepare results data tables
+nbData_ns = nRow_land*nIter*length(init_col) # nb of row x nIter x number of cols to cover
+nbData_ew = nCol_land*nIter*length(init_row) # nb of row x nIter x number of rows to cover
 
-#! RESTART HERE
-# init = fread(paste0(initPath, "init.txt"))
+transect_ns = data.table(patch_id = integer(length = nbData_ns), iteration = numeric(length = nbData_ns),
+	localSeedProduced = numeric(length = nbData_ns), localSeedBank = numeric(length = nbData_ns),
+	sumTrunkArea = numeric(length = nbData_ns), totalDensity = numeric(length = nbData_ns),
+	distance = numeric(length = nbData_ns), transectOrigin = integer(length = nbData_ns))
 
-# ## Last state
-# end = fread(paste0(pathCpp, "end.txt"))
+transect_ew = data.table(patch_id = integer(length = nbData_ew), iteration = numeric(length = nbData_ew),
+	localSeedProduced = numeric(length = nbData_ew), localSeedBank = numeric(length = nbData_ew),
+	sumTrunkArea = numeric(length = nbData_ew), totalDensity = numeric(length = nbData_ew),
+	distance = numeric(length = nbData_ew), transectOrigin = integer(length = nbData_ew))
 
-# ## Competition, reproduction, basal area and total density
-# compReprod = fread(paste0(pathCpp, "compReprod.txt"))
+# Loop on the North-South transects
+for (i in 1:length(init_col))
+{
+	ind_start = (i - 1)*nRow_land*nIter + 1
+	ind_end = (i - 1)*nRow_land*nIter + nIter
+	currentOrigin = init_index[i] # This works only when length(init_col) == length(init_index)
+	currentRow = (currentOrigin - init_col[i])/nCol_land
 
-# ## Dynamics
-# # Load the density and dbh dynamics of cohorts
-# dyn = fread(paste0(pathCpp, "popDyn.txt"))
+	for (row in 0:(nRow_land - 1))
+	{
+		patch_id = init_col[i] + row*nCol_land
+		temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
+		transect_ns[ind_start:ind_end, patch_id := ..patch_id]
+		transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "localSeedBank", "sumTrunkArea", "totalDensity") := temporary]
+		transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat] # This works only when there is one line in init_row
+		transect_ns[ind_start:ind_end, transectOrigin := currentOrigin]
+		ind_start = ind_start + nIter
+		ind_end = ind_end + nIter
+	}
+}
 
-# # Determine the number of cohorts and time steps
-# nbTimeSteps = dim(compReprod)[1]
-# nbCohorts = dim(dyn)[1]/nbTimeSteps
+## Compute basal area
+transect_ns[, basalArea := sumTrunkArea/plotArea]
 
-# #### Plots
-# ## Initial state
-# plot(init$dbh, init$density)
+#### Plot density at different time
+## Initiate plot
+plot(transect_ns[(iteration == 0) & (transectOrigin == 54), distance], transect_ns[(iteration == 0) & (transectOrigin == 54), basalArea],
+	type = "l", ylim = c(0, transect_ns[transectOrigin == 54, max(basalArea)]))
 
-# ## Last state
-# plot(end$dbh, end$density)
+## For loop on time
+for (i in (seq(100, nIter, 300) - 1))
+	lines(transect_ns[(iteration == i) & (transectOrigin == 54), distance], transect_ns[(iteration == i) & (transectOrigin == 54), basalArea])
 
+aa = fread("../cpp/popDyn/Acer_saccharum/pd_54.txt")
+aa = aa[iteration == 999]
+aa = aa[density > 1/plotArea]
 # ## Dynamic plot
 # # Limits xlim and ylim
 # max_dbh = dyn[, max(dbh)]
