@@ -250,6 +250,9 @@ void Population::recruitment(double const t, double const delta_t, double const 
 	{
 		++m_nonZeroCohort;
 		recruitment_it->m_birthIteration = m_currentIter;
+		// Initialise properly the dbh (see equations 16 and 17 paper)
+		recruitment_it->m_mu /= recruitment_it->m_lambda; // π = (η - a)λ Equation 16. Here, a = 0 and π and η have the same name: recruitment_it->m_mu
+		
 		if (!isPopulated) // If isPopulated is originally false, change it to true due to the newly created cohort
 			isPopulated = true;
 	}
