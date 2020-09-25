@@ -42,8 +42,8 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		throw (std::runtime_error (ss.str()));
 	}
 	
-	summary << "iteration localSeedProduced localSeedBank sumTrunkArea totalDensity" << std::endl;
-	summary << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
+	summary << "iteration localSeedProduced heigh_star sumTrunkArea totalDensity" << std::endl; // height_star not defined yet at time 0
+	summary << m_currentIter << " " << m_localProducedSeeds << " " << NAN << " " <<
 		m_sumTrunkArea << " " << m_totalDensity << std::endl;
 
 	// Open ofstream m_popDyn_ofs
@@ -143,8 +143,8 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		throw (std::runtime_error (ss.str()));
 	}
 	
-	summary << "iteration localSeedProduced localSeedBank sumTrunkArea totalDensity" << std::endl;
-	summary << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
+	summary << "iteration localSeedProduced height_star sumTrunkArea totalDensity" << std::endl; // height_star not defined yet at time 0
+	summary << m_currentIter << " " << m_localProducedSeeds << " " << NAN << " " <<
 		m_sumTrunkArea << " " << m_totalDensity << std::endl;
 
 	// Open ofstream m_popDyn_ofs
@@ -246,12 +246,13 @@ void Population::recruitment(double const t, double const delta_t, double const 
 	recruitment_it->euler(t, delta_t, dbh_star, env, m_localSeedBank, &Cohort::ODE_V);
 
 	// If it reaches the threshold, the boundary cohort is released within Omega
-	if (recruitment_it->m_mu > m_delta_s)
+	if (recruitment_it->m_mu > 0) // recruitment_it->m_mu > m_delta_s
 	{
 		++m_nonZeroCohort;
 		recruitment_it->m_birthIteration = m_currentIter;
 		// Initialise properly the dbh (see equations 16 and 17 paper)
 		recruitment_it->m_mu /= recruitment_it->m_lambda; // π = (η - a)λ Equation 16. Here, a = 0 and π and η have the same name: recruitment_it->m_mu
+		recruitment_it->m_height = std::exp((m_species->a - m_species->b + m_species->b*std::log10(recruitment_it->m_mu))*std::log(10)); // Initialise height
 		
 		if (!isPopulated) // If isPopulated is originally false, change it to true due to the newly created cohort
 			isPopulated = true;
@@ -420,7 +421,7 @@ void Population::printNonZero() const
 	std::cout << "Number of zeros and boundary cohorts: " << m_cohortsVec.size() - m_nonZeroCohort << std::endl;
 }
 
-void Population::saveResults()
+void Population::saveResults(double const height_star)
 {
 	std::ofstream summary(m_summary_ofs, std::ofstream::app);
 
@@ -439,7 +440,7 @@ void Population::saveResults()
 		throw (std::runtime_error (ss.str()));
 	}
 
-	summary << m_currentIter << " " << m_localProducedSeeds << " " << m_localSeedBank << " " <<
+	summary << m_currentIter << " " << m_localProducedSeeds << " " << height_star << " " <<
 		m_sumTrunkArea << " " << m_totalDensity << std::endl;
 
 	popDyn << *this;
