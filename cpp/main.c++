@@ -45,14 +45,9 @@ int main(int argc, char *argv[])
 	std::vector<std::string>::const_iterator species_filenames_it = species.cbegin();
 	std::vector<Species*> speciesList;
 
-	double t0 = simulationParameters.get_val<double>("t0");
-	double tmax = simulationParameters.get_val<double>("tmax");
-	double nIter = simulationParameters.get_val<double>("nIter");
-	double delta_t = (tmax - t0)/(nIter - 1);
-
 	for (; species_filenames_it != species.cend(); ++species_filenames_it)
 	{
-		Species* sp = new Species(*species_filenames_it, species_path, " = ", delta_t); // Be extremely careful with the delimiter, especially white spaces
+		Species* sp = new Species(*species_filenames_it, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
 		speciesList.emplace_back(sp);
 	}
 

@@ -13,7 +13,7 @@
 /****************************************/
 /******        Constructors        ******/
 /****************************************/
-Species::Species(std::string const& species_filename, std::string const& species_path, const std::string& delim, double const delta_t)
+Species::Species(std::string const& species_filename, std::string const& species_path, const std::string& delim)
 {
 	// Read species' main file from the parameters got at the execution
 	std::string file_sp = species_path + species_filename;
@@ -99,8 +99,6 @@ Species::Species(std::string const& species_filename, std::string const& species
 	beta_cs_T_sq_M = speciesParams_M.get_val<double>("cs_T_sq");
 	beta_cs_P_M = speciesParams_M.get_val<double>("cs_P");
 	beta_cs_P_sq_M = speciesParams_M.get_val<double>("cs_P_sq");
-
-	m_delta_t = delta_t;
 
 	// Fecundity
 	fecundity = speciesParams.get_val<double>("fecundity");

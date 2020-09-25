@@ -56,7 +56,7 @@ class Species
 
 	public :
 		// constructors
-		Species(std::string const& species_filename, std::string const& species_path, const std::string& delim, double const delta_t);
+		Species(std::string const& species_filename, std::string const& species_path, const std::string& delim);
 
 		// friend functions and overload
 		friend std::ostream& operator<<(std::ostream& os, const Species& species);
@@ -99,8 +99,6 @@ class Species
 		double beta_dbh_M, beta_dbh_sq_M; // dbh and dbh²
 		double beta_cs_M, beta_cs_T_M, beta_cs_T_sq_M, beta_cs_P_M, beta_cs_P_sq_M; // competition (and climate interactions)
 		double beta_T_M, beta_T_sq_M, beta_P_M, beta_P_sq_M; // climate
-
-		double m_delta_t;
 
 		// Fecundity
 		double fecundity;
