@@ -207,12 +207,13 @@ double Species::d(double s, double const s_star, double temp, double precip) con
 	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
 
 	// Define the coefficient of the polynomial of s
-	beta_0 = intercept_M + std::log(this->m_delta_t) +
+	beta_0 = intercept_M +
 	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
 		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
 	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
 
-	return 1 - std::exp(-std::exp(beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s));
+	return std::exp(beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s);
+	// return 1 - std::exp(-std::exp(beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s));
 }
 
 // Differentiate individual growth rate, s is the diameter, s_star is dbh_star (obtained from height_star)
@@ -283,7 +284,7 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
 
 	// Define the coefficient of the polynomial of s
-	beta_0 = intercept_M + std::log(this->m_delta_t) +
+	beta_0 = intercept_M +
 	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
 		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
 	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
@@ -291,7 +292,8 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 	// Polynomial of s (order 2)
 	double dbh_polynomial = beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s;
 
-	return -(beta_dbh_M + 2*beta_dbh_sq_M*s)*std::exp(dbh_polynomial - std::exp(dbh_polynomial));
+	return (beta_dbh_M + 2*beta_dbh_sq_M*s)*std::exp(dbh_polynomial);
+	// return -(beta_dbh_M + 2*beta_dbh_sq_M*s)*std::exp(dbh_polynomial - std::exp(dbh_polynomial));
 }
 
 /*************************************/
