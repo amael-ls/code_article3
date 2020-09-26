@@ -127,7 +127,7 @@ can directly jump from cohorts to cohorts as the crown area is a step function
 of size s in this particular case. The flat-top case is also discontinuous, and
 there is no guarantee of having a solution for summedArea == 1.
 */
-void Patch::getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const
+void Patch::getAllNonZeroCohorts(std::vector<Cohort *>& nonZeroCohorts) const
 {
 	c_population_it it_map = m_pop_map.cbegin();
 	std::vector<Cohort>::const_iterator it_cohort, lim_it;

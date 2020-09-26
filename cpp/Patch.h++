@@ -60,7 +60,7 @@ class Patch
 		void saveResults();
 
 	// Private functions
-	void getAllNonZeroCohorts(std::vector<Cohort *> nonZeroCohorts) const;
+	void getAllNonZeroCohorts(std::vector<Cohort *>& nonZeroCohorts) const;
 };
 
 #endif
