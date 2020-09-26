@@ -204,7 +204,7 @@ void Patch::saveResults()
 {
 	population_it pop = m_pop_map.begin();
 	for (; pop != m_pop_map.end(); ++ pop)
-		(pop->second).saveResults();
+		(pop->second).saveResults(m_height_star);
 }
 
 /************************************/
