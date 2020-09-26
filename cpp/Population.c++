@@ -246,7 +246,7 @@ void Population::recruitment(double const t, double const delta_t, double const 
 	recruitment_it->euler(t, delta_t, dbh_star, env, m_localSeedBank, &Cohort::ODE_V);
 
 	// If it reaches the threshold, the boundary cohort is released within Omega
-	if (recruitment_it->m_mu > 0) // recruitment_it->m_mu > m_delta_s
+	if (recruitment_it->m_mu > m_delta_s) // recruitment_it->m_mu > 0
 	{
 		++m_nonZeroCohort;
 		recruitment_it->m_birthIteration = m_currentIter;
