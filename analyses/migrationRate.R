@@ -14,7 +14,7 @@ library(stringi)
 rm(list = ls())
 graphics.off()
 
-#### Tool function
+#### Tool functions
 stringCleaner = function(str, fixed, skip = NULL)
 {
 	if (is.null(skip))
@@ -44,6 +44,22 @@ stringCleaner = function(str, fixed, skip = NULL)
 	strToReturn = paste0(strToReturn, stri_sub(str, from = fixedPos[nrow(fixedPos), "end"] + 1, to = stri_length(str)))
 
 	return (strToReturn);
+}
+
+## Check cohorts are in decreasing order of dbh (within a species)
+checkOrder = function(dbh)
+{
+	n = length(dbh)
+	decreasingOrder = unique(dbh[1:(n-1)] - dbh[2:n] >= 0)
+
+	if (length(decreasingOrder) == 1)
+	{
+		if (decreasingOrder)
+			return (TRUE);
+		
+		return (FALSE);
+	}
+	return (FALSE);
 }
 
 ######## Part I: Population dynamics
@@ -161,9 +177,29 @@ plot(transect_ns[(iteration == 0) & (transectOrigin == 54), distance], transect_
 for (i in (seq(100, nIter, 300) - 1))
 	lines(transect_ns[(iteration == i) & (transectOrigin == 54), distance], transect_ns[(iteration == i) & (transectOrigin == 54), basalArea])
 
+
+#### ! CRASH TEST ZONE
 aa = fread("../cpp/popDyn/Acer_saccharum/pd_54.txt")
-aa = aa[iteration == 999]
+aa[, verifHeight := checkOrder(height), by = iteration]
+aa[, verifDbh := checkOrder(dbh), by = iteration]
+
+unique(aa[, verifHeight])
+unique(aa[, verifDbh])
+aa[, c("verifHeight", "verifDbh") := NULL]
+
+aa[, basalArea := pi*sum(dbh*dbh*density)/(4e2*plotArea), by = iteration]
+bb = unique(aa[, .(iteration, basalArea)])
+plot(bb$iteration, bb$basalArea)
+
+plot(aa[iteration == 999, height], aa[iteration == 999, density])
+
+cc = fread("../cpp/summary/Acer_saccharum/su_54.txt")
+
+aa = aa[(iteration == iterationBirth) & (iteration > 0)]
+plot(aa$iterationBirth, aa$height)
 aa = aa[density > 1/plotArea]
+
+
 # ## Dynamic plot
 # # Limits xlim and ylim
 # max_dbh = dyn[, max(dbh)]
