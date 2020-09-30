@@ -228,6 +228,7 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 	lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
 	// Integration within the size space Omega
+	// #pragma omp parallel for
 	for (it = m_cohortsVec.begin(); it != lim_it; ++it)
 		it->euler(t, delta_t, dbh_star, env, &Cohort::ODE_II);
 }
@@ -397,7 +398,7 @@ bool Population::mergeCohorts(double const thresholdSimilarity, double const thr
 	}
 	// Reordering, to put the zero cohorts at the end
 	this->sort(true);
-	std::cout << "mergeCohorts ended" << std::endl;
+	// std::cout << "mergeCohorts ended" << std::endl;
 	return mergedCohorts;
 }
 

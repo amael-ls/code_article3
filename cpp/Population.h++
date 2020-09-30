@@ -30,6 +30,7 @@ I list the functions here, but describe them in the associated c++ file:
 #define POPULATION_H
 
 // Official headers
+#include <filesystem>
 #include <iostream>
 #include <fstream>
 #include <vector>
