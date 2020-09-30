@@ -187,11 +187,18 @@ unique(aa[, verifHeight])
 unique(aa[, verifDbh])
 aa[, c("verifHeight", "verifDbh") := NULL]
 
-aa[, basalArea := pi*sum(dbh*dbh*density)/(4e2*plotArea), by = iteration]
+aa[, nbCohorts := .N, by = iteration]
+aa[, max(nbCohorts)]
+
+aa[, sumTrunckArea := pi*sum(dbh*dbh*density)/(4*1000*1000), by = iteration] # trunk area in metres (hence the /1000*1000)
+plotArea_ha = plotArea/1e4
+aa[, basalArea := sumTrunckArea/plotArea_ha, by = iteration]
+aa[, basalArea2 := pi*sum(dbh*dbh*density)/(4e2*plotArea), by = iteration]
 bb = unique(aa[, .(iteration, basalArea)])
 plot(bb$iteration, bb$basalArea)
 
-plot(aa[iteration == 999, height], aa[iteration == 999, density])
+plot(aa[iteration == 999, height], aa[iteration == 999, density], type = "l", lwd = 2, col = "#FF9933")
+lines(aa[iteration == 500, height], aa[iteration == 500, density], lwd = 2, col = "#3366ff")
 
 cc = fread("../cpp/summary/Acer_saccharum/su_54.txt")
 
