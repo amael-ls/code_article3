@@ -21,7 +21,11 @@ I list the functions here, but describe them in the associated c++ file:
 #define ENVIRONMENT_H
 
 // Official headers
+#include <algorithm> // for std::transform
+#include <iomanip> // std::setw, std::left, std::setprecision
+#include <limits> // for std::numeric_limits<double>::infinity()
 #include <string>
+#include <cmath> // for log, cos, sin, tg, M_PI
 #include <map>
 
 // My headers

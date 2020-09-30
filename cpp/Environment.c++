@@ -2,11 +2,6 @@
 #ifndef ENVIRONMENT_C
 #define ENVIRONMENT_C
 
-// Official headers
-#include <iomanip> // std::setw, std::left, std::setprecision
-#include <limits> // for std::numeric_limits<double>::infinity()
-#include <cmath> // for log, cos, sin, tg, M_PI
-
 // My headers
 #include "Environment.h++"
 

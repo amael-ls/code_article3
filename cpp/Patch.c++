@@ -75,7 +75,7 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList,
 /******        dynamics        ******/
 /************************************/
 // The following function just call competition and Euler for all species (i.e. populations of one patch)
-void Patch::populationDynamics(double const t, double const delta_t) // Maybe m_minDelta_s will be an argument
+void Patch::populationDynamics(double const t, double const delta_t)
 {
 	this->competition(m_minDelta_s); // Update m_height_star
 	population_it pop_it = m_pop_map.begin();
