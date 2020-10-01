@@ -74,8 +74,9 @@ abT_params = fread(paste0(matlabPath, "purves2007_allometries.csv"))
 C0_C1 = fread(paste0(matlabPath, "C0_C1.csv"))
 C0_C1 = C0_C1[!(parameter %in% c("Rus", "Vus"))]
 
-## Fecundity (from Purves et al. 2008: http://www.pnas.org/content/105/44/17018.abstract)
-fec = 0.0071
+## Fecundity
+fec = 0.0071 # From Purves et al. 2008: http://www.pnas.org/content/105/44/17018.abstract
+minAgeReproduction = 22 # For Acer saccharum; from Burns & Honkala 1990, Silvics: www.fs.usda.gov/treesearch/pubs/1548
 
 ## Max diameter (it correspond to the infinite dbh, which is the dbh at 45 meters)
 # cf article 1, to check the time it takes to grow up to 45m (folder article1/code/time)
@@ -164,6 +165,7 @@ for (folder in ls_folders)
 	sink(file = outfileName, append = TRUE)
 	cat(paste0("species = ", species_scientific), sep = "\n")
 	cat(paste0("fecundity = ", fec), sep = "\n")
+	cat(paste0("minAgeReproduction = ", minAgeReproduction), sep = "\n")
 	cat(paste0("maxDiameter = ", dbh_bounds[species_id == species_txt, dbh_infinity]), sep = "\n")
 	sink(file = NULL)
 
