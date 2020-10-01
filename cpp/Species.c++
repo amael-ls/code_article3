@@ -102,6 +102,7 @@ Species::Species(std::string const& species_filename, std::string const& species
 
 	// Fecundity
 	fecundity = speciesParams.get_val<double>("fecundity");
+	minSizeReproduction = speciesParams.get_val<double>("minSizeReproduction");
 
 	// Scaling (growth)
 	scaling_G_mu = speciesParams_scaling_G.get_val<double>("scaling_G_mu");
