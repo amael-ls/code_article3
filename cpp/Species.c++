@@ -2,10 +2,6 @@
 #ifndef SPECIES_C
 #define SPECIES_C
 
-// Official headers
-#include <iomanip> // std::setw, std::left, std::setprecision
-#include <cmath> // for log
-
 // My headers
 #include "Species.h++"
 #include "Params.h++"
@@ -100,10 +96,6 @@ Species::Species(std::string const& species_filename, std::string const& species
 	beta_cs_P_M = speciesParams_M.get_val<double>("cs_P");
 	beta_cs_P_sq_M = speciesParams_M.get_val<double>("cs_P_sq");
 
-	// Fecundity
-	fecundity = speciesParams.get_val<double>("fecundity");
-	minSizeReproduction = speciesParams.get_val<double>("minSizeReproduction");
-
 	// Scaling (growth)
 	scaling_G_mu = speciesParams_scaling_G.get_val<double>("scaling_G_mu");
 	scaling_G_sd = speciesParams_scaling_G.get_val<double>("scaling_G_sd");
@@ -121,6 +113,46 @@ Species::Species(std::string const& species_filename, std::string const& species
 	scaling_temp_sd_M = speciesParams_scaling_M.get_val<double>("scaling_temp_sd_M");
 	scaling_precip_mu_M = speciesParams_scaling_M.get_val<double>("scaling_precip_mu_M");
 	scaling_precip_sd_M = speciesParams_scaling_M.get_val<double>("scaling_precip_sd_M");
+
+	// Fecundity
+	// --- Get provided parameters
+	fecundity = speciesParams.get_val<double>("fecundity");
+	minAgeReproduction = speciesParams.get_val<double>("minAgeReproduction");
+
+	// --- Compute minimal size to reproduce
+	// ...... Define void *ptr for parameters
+	double allParameters[24] = {scaling_G_mu, scaling_G_sd,
+		scaling_dbh_mu_G, scaling_dbh_sd_G,
+		scaling_temp_mu_G, scaling_temp_sd_G,
+		scaling_precip_mu_G, scaling_precip_sd_G,
+		intercept_G, beta_dbh, beta_dbh_sq,
+		beta_T, beta_T_sq, beta_dbh_T, beta_dbh_T_sq, beta_dbh_sq_T, beta_dbh_sq_T_sq,
+		beta_P, beta_P_sq, beta_dbh_P, beta_dbh_P_sq, beta_dbh_sq_P, beta_dbh_sq_P_sq};
+	void *ptr = &allParameters;
+
+	// ...... Define solver parameters
+	std::string timeSpan = "[0, " + std::to_string(minAgeReproduction) + "]";
+	alglib::real_1d_array timeSpanArray(timeSpan.c_str());
+	alglib::real_1d_array y = "[0]"; // Initial condition
+	double eps = 0.00001;
+	double initialTimeStep = 0;
+	alglib::odesolverstate s;
+	alglib::ae_int_t m;
+	alglib::real_1d_array xtbl;
+	alglib::real_2d_array ytbl;
+	alglib::odesolverreport rep;
+	alglib::odesolverrkck(y, timeSpanArray, eps, initialTimeStep, s);
+
+	// ...... Solve ds/dt = G(s, t)
+	alglib::odesolversolve(s, Species::growth_callback, ptr);
+	odesolverresults(s, m, xtbl, ytbl, rep);
+
+	// ...... Set minimal size to reproduce
+	std::cout << m << std::endl; // Faire if m != 2 ERROR
+	if (*(ytbl[1]) < 0 || m != 2)
+		Except_Species(m, *(ytbl[1]));
+	
+	minSizeReproduction = *(ytbl[1]);
 
 	// Dispersal parameters, not necessarily all provided by the user. Note: I could have used a map to optimise the coding...
 	keysToRead = speciesParams_dispersal.get_val<std::string>("keysToRead");
@@ -465,6 +497,76 @@ void Species::printName(std::ostream& os) const
 std::string Species::getName() const
 {
 	return m_speciesName;
+}
+
+void Species::growth_callback(const alglib::real_1d_array &y, double x, alglib::real_1d_array &dy, void *ptr) 
+{
+	/*
+		x = time
+		y = function to find dy/dx = growth_callback(x, y(x))
+
+		It is assumed that size is unscaled.
+		It is assumed that the tree is in the understorey, i.e., canopy status = false
+		It is assumed that temperature and precipitation are at average, i.e. = 0 when scaled
+	*/
+	// Access parameters from void *ptr
+	// --- Casting
+	double *parameters = (double*) ptr;
+
+	// --- Growth scaling
+	double scaling_G_mu = parameters[0];
+	double scaling_G_sd = parameters[1];
+
+	// --- Size scaling
+	double scaling_dbh_mu_G = parameters[2];
+	double scaling_dbh_sd_G = parameters[3];
+
+	// --- Temperature scaling
+	double scaling_temp_mu_G = parameters[5];
+	double scaling_temp_sd_G = parameters[6];
+
+	// --- Precipitation scaling
+	double scaling_precip_mu_G = parameters[7];
+	double scaling_precip_sd_G = parameters[8];
+
+	// --- Coefficients (size y)
+	double intercept_G = parameters[9];
+	double beta_dbh = parameters[10];
+	double beta_dbh_sq = parameters[11];
+
+	// --- Coefficients (temperature)
+	double beta_T = parameters[12];
+	double beta_T_sq = parameters[13];
+	double beta_dbh_T = parameters[14];
+	double beta_dbh_T_sq = parameters[15];
+	double beta_dbh_sq_T = parameters[16];
+	double beta_dbh_sq_T_sq = parameters[17];
+
+	// --- Coefficients (precipitation)
+	double beta_P = parameters[18];
+	double beta_P_sq = parameters[19];
+	double beta_dbh_P = parameters[20];
+	double beta_dbh_P_sq = parameters[21];
+	double beta_dbh_sq_P = parameters[22];
+	double beta_dbh_sq_P_sq = parameters[23];
+
+	// Scaling all the variables (size y, temperature temp, and precipitation precip)
+	double temp = 0; // (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
+	double precip = 0; // (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
+
+	// Define the coefficient of the polynomial of s
+	double beta_0 = intercept_G +
+	beta_T*temp + beta_T_sq*temp*temp + beta_P*precip + beta_P_sq*precip*precip;
+
+	double beta_1 = beta_dbh + beta_dbh_T*temp + beta_dbh_T_sq*temp*temp +
+		beta_dbh_P*precip + beta_dbh_P_sq*precip*precip;
+
+	double beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
+		beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
+
+	// Growth function
+	dy[0] = std::exp(scaling_G_mu + scaling_G_sd * (beta_0 + beta_1 * (y[0] - scaling_dbh_mu_G)/scaling_dbh_sd_G
+		+ beta_2 * (y[0] - scaling_dbh_mu_G)/scaling_dbh_sd_G * (y[0] - scaling_dbh_mu_G)/scaling_dbh_sd_G));
 }
 
 #endif

@@ -35,10 +35,15 @@ Allometries:
 #define SPECIES_H
 
 // Official headers
+#include <iomanip> // std::setw, std::left, std::setprecision
 #include <string>
-#include <cmath>
+#include <cmath> // for log
+
+// Alglib header
+#include "diffequations.h" // To compute minSizeReproduction
 
 // My headers
+#include "Error_classes.h++"
 #include "Environment.h++"
 
 /*************************************/
@@ -74,6 +79,7 @@ class Species
 		double K(double const longitude1, double const latitude1, double const longitude2, double const latitude2) const;
 
 		// others
+		static void growth_callback(const alglib::real_1d_array &y, double x, alglib::real_1d_array &dy, void *ptr);
 		void printName(std::ostream& os) const;
 		std::string getName() const;
 
@@ -102,6 +108,7 @@ class Species
 
 		// Fecundity
 		double fecundity;
+		double minAgeReproduction;
 		double minSizeReproduction;
 
 		// Scaling (growth)
