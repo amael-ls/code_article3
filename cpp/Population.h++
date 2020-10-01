@@ -35,6 +35,7 @@ I list the functions here, but describe them in the associated c++ file:
 #include <fstream>
 #include <vector>
 #include <string>
+// #include <omp.h>
 
 // My headers
 #include "Error_classes.h++"
