@@ -224,7 +224,6 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 	if (m_maxCohorts < m_nonZeroCohort)
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
 	
-	// m_compReprod_ofs << t + delta_t << " "; // Added delta_t because, t is one step behind (Euler explicit)
 	lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
 	// Integration within the size space Omega
