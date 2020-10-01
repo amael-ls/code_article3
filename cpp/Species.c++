@@ -152,7 +152,8 @@ Species::Species(std::string const& species_filename, std::string const& species
 	if (*(ytbl[1]) < 0 || m != 2)
 		Except_Species(m, *(ytbl[1]));
 	
-	minSizeReproduction = *(ytbl[1]);
+	minDbhReproduction = *(ytbl[1]);
+	minHeightReproduction = std::exp((a - b + b*std::log10(minDbhReproduction))*std::log(10));
 
 	// Dispersal parameters, not necessarily all provided by the user. Note: I could have used a map to optimise the coding...
 	keysToRead = speciesParams_dispersal.get_val<std::string>("keysToRead");
@@ -432,7 +433,8 @@ std::ostream &operator<<(std::ostream &os, Species const& species)
 		<< species.beta_P_sq_M << "\t" << std::endl;
 	os << std::endl;
 
-	os << "fecundity:" << std::endl << species.fecundity << std::endl;
+	os << "Fecundity parameters:" << std::endl;
+	os << species.fecundity << "\t" << species.minHeightReproduction << std::endl;
 	os << std::endl;
 
 	os << "Scaling (growth):" << std::endl;

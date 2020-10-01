@@ -109,7 +109,8 @@ class Species
 		// Fecundity
 		double fecundity;
 		double minAgeReproduction;
-		double minSizeReproduction;
+		double minDbhReproduction;
+		double minHeightReproduction;
 
 		// Scaling (growth)
 		double scaling_G_mu, scaling_G_sd;
