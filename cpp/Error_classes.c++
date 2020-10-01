@@ -95,6 +95,24 @@ const char* Except_Population::what() const throw()
 	return (m_error_msg.c_str());
 }
 
+/***********************************/
+/******        Species        ******/
+/***********************************/
+
+Except_Species::Except_Species(int const nbVals, double const integVal)
+{
+	if (nbVals != 2)
+		m_error_msg += "The number of returned value by the integral should be two (initial and final state). Currently " + std::to_string(nbVals);
+
+	if (integVal < 0)
+		m_error_msg += "The integrals of G should be positive. Currently " + std::to_string(integVal);
+}
+
+const char* Except_Species::what() const throw()
+{
+	return (m_error_msg.c_str());
+}
+
 /*************************************/
 /******        Landscape        ******/
 /*************************************/

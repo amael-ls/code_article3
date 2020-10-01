@@ -59,6 +59,19 @@ class Except_Population : public std::exception
 		std::string m_error_msg = "Error from Population: ";
 };
 
+/***********************************/
+/******        Species        ******/
+/***********************************/
+class Except_Species : public std::exception
+{
+	public:
+		Except_Species(int const nbVals, double const integVal);
+		const char* what() const throw();
+
+	private:
+		std::string m_error_msg = "Error from Species: ";
+};
+
 /*************************************/
 /******        Landscape        ******/
 /*************************************/
