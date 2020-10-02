@@ -1,7 +1,7 @@
 
 #### Aim of prog: Plot and analyse the ouptuts of Cpp prog
 ## Plot densities (initial and last states)
-#
+# sumTrunkArea is in m^2
 
 #! I SHOULD CREATE A LOOP FOR SPECIES OR CALL THIS PROG IN A FOR LOOP
 
@@ -110,6 +110,7 @@ nCol_land = as.integer(landscape_metadata[parameters == "nCol", values])
 deltaLon = as.numeric(landscape_metadata[parameters == "deltaLon", values])
 deltaLat = as.numeric(landscape_metadata[parameters == "deltaLat", values])
 plotArea = deltaLon*deltaLat
+plotArea_ha = plotArea/1e4
 
 ## Time
 t0 = as.numeric(simulationParameters[parameters == "t0", values])
@@ -159,6 +160,7 @@ for (i in 1:length(init_col))
 		transect_ns[ind_start:ind_end, patch_id := ..patch_id]
 		transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "localSeedBank", "sumTrunkArea", "totalDensity") := temporary]
 		transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat] # This works only when there is one line in init_row
+		transect_ns[ind_start:ind_end, signedDistance := (currentRow - row)*deltaLat] # 'negative distance' means it is south to the origin
 		transect_ns[ind_start:ind_end, transectOrigin := currentOrigin]
 		ind_start = ind_start + nIter
 		ind_end = ind_end + nIter
@@ -166,7 +168,7 @@ for (i in 1:length(init_col))
 }
 
 ## Compute basal area
-transect_ns[, basalArea := sumTrunkArea/plotArea]
+transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
 
 #### Plot density at different time
 ## Initiate plot
@@ -177,9 +179,34 @@ plot(transect_ns[(iteration == 0) & (transectOrigin == 54), distance], transect_
 for (i in (seq(100, nIter, 300) - 1))
 	lines(transect_ns[(iteration == i) & (transectOrigin == 54), distance], transect_ns[(iteration == i) & (transectOrigin == 54), basalArea])
 
+## Dynamic plot for transectOrigin == 54 toward north
+transect_ns54 = transect_ns[(transectOrigin == 54) & (signedDistance >= 0)]
+
+# Limits xlim and ylim
+max_distance = transect_ns54[, max(distance)]
+max_basalArea = transect_ns54[, max(basalArea)]
+
+# Plot
+plot(transect_ns54[iteration == 0, distance], transect_ns54[iteration == 0, basalArea],
+	type = "l", xlim = c(0, max_distance), ylim = c(0, max_basalArea))
+invisible(sapply(seq(2, nIter, by = 10), function(x, parameters) {
+	Sys.sleep(0.005)
+	plot(transect_ns54[iteration == x, distance], transect_ns54[iteration == x, basalArea], type = 'l', lwd = 1,
+		xlim = c(0, max_distance), ylim = c(0, max_basalArea))
+}, parameters = 0)) # unused parameter, I just put it to remember how to do it in case of I need it
+
+#### Compute the speed
+## Threshold basal area o consider a plot populated
+threshold_BA = 5
+speed_dt = transect_ns54[basalArea > threshold_BA, min(iteration), by = distance]
+setnames(speed_dt, new = c("distance", "iteration"))
+setorder(speed_dt, -distance)
+speed_dt[, year := iteration*delta_t]
+speed_dt[1:(.N - 1), speed := distance/(year - speed_dt[2:.N, year])]
 
 #### ! CRASH TEST ZONE
 aa = fread("../cpp/popDyn/Acer_saccharum/pd_54.txt")
+# aa[iteration > 125 & iteration < 128]
 aa[, verifHeight := checkOrder(height), by = iteration]
 aa[, verifDbh := checkOrder(dbh), by = iteration]
 
@@ -201,27 +228,11 @@ plot(aa[iteration == 999, height], aa[iteration == 999, density], type = "l", lw
 lines(aa[iteration == 500, height], aa[iteration == 500, density], lwd = 2, col = "#3366ff")
 
 cc = fread("../cpp/summary/Acer_saccharum/su_54.txt")
+plot(cc[125:135, iteration], cc[125:135, height_star])
 
 aa = aa[(iteration == iterationBirth) & (iteration > 0)]
 plot(aa$iterationBirth, aa$height)
 aa = aa[density > 1/plotArea]
-
-
-# ## Dynamic plot
-# # Limits xlim and ylim
-# max_dbh = dyn[, max(dbh)]
-# max_density = dyn[, max(density)]
-
-# # Plot
-# plot(dyn[1:nbCohorts, dbh], dyn[1:nbCohorts, density], pch = '', # type = 'l',
-# 	xlim = c(0, max_dbh), ylim = c(0, max_density))
-# invisible(sapply(2:nbTimeSteps, function(x, nbCohorts) {
-# 	Sys.sleep(0.005)
-# 	ind_start = (x - 1)*nbCohorts + 1
-# 	ind_end = x*nbCohorts
-# 	plot(dyn[ind_start:ind_end, dbh], dyn[ind_start:ind_end, density], type = 'l', lwd = 1,
-# 		xlim = c(0, max_dbh), ylim = c(0, max_density))
-# }, nbCohorts = nbCohorts))
 
 # ## Reproduction and competition
 # par(mfrow = c(4,1))
