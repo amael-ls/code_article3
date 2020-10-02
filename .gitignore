@@ -9,3 +9,4 @@ test/
 *.rds
 *.png
 *.zip
+*.sh
