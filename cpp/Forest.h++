@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <omp.h>
 #include <map>
 
 // My headers

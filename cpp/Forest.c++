@@ -127,6 +127,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	std::string initFile;
 	unsigned int counterPatch = 0;
 
+	#pragma omp parallel for
 	for(auto& p: std::filesystem::directory_iterator(pathLandscape))
 	{
 		climateFile = p.path().filename();
