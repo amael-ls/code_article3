@@ -200,11 +200,18 @@ void Patch::competition(double const heightTol) // The best heightTol is delta_s
 /**************************************/
 /******        Organising        ******/
 /**************************************/
-void Patch::saveResults()
+void Patch::saveResults(bool const writeSummary)
 {
 	population_it pop = m_pop_map.begin();
 	for (; pop != m_pop_map.end(); ++ pop)
-		(pop->second).saveResults(m_height_star);
+		(pop->second).saveResults(m_height_star, writeSummary);
+}
+
+void Patch::summary()
+{
+	population_it pop = m_pop_map.begin();
+	for (; pop != m_pop_map.end(); ++ pop)
+		(pop->second).summary(m_height_star);
 }
 
 /************************************/

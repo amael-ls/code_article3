@@ -14,6 +14,7 @@
 // g++ -I. -std=c++17 -o demo.out *.cpp main.c++ Species.c++ Params.c++ Landscape.c++ Environment.c++ Error_classes.c++
 // Linking the library won't work
 // g++ -Wall -std=c++17 -I ~/Documents/Cpp_libraries/alglib_v3-16/src main.c++ -o test
+// g++ -I. -std=c++17 -fopenmp -Wall -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp  
 
 void* pt2Object; // global variable which points to an arbitrary Dispersal object for kernel integration
 

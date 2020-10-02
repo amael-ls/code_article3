@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
-#include <omp.h>
+// #include <omp.h>
 #include <map>
 
 // My headers
@@ -78,7 +78,8 @@ class Forest
 		bool m_lastIncludedInFreq;
 
 	// --- Functions
-		void saveResults();
+		void saveResults(bool const writeSummary);
+		void summary();
 };
 
 // External functions

@@ -57,7 +57,8 @@ class Patch
 		void competition(double const tolHeight);
 
 	// Output writing function
-		void saveResults();
+		void saveResults(bool const writeSummary);
+		void summary();
 
 	// Private functions
 	void getAllNonZeroCohorts(std::vector<Cohort *>& nonZeroCohorts) const;

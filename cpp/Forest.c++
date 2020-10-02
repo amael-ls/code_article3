@@ -127,7 +127,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	std::string initFile;
 	unsigned int counterPatch = 0;
 
-	#pragma omp parallel for
+	// #pragma omp parallel for
 	for(auto& p: std::filesystem::directory_iterator(pathLandscape))
 	{
 		climateFile = p.path().filename();
@@ -234,10 +234,10 @@ void Forest::dynamics()
 			this->recruitment(t, delta_t);
 
 			if (iter % m_freqSave == 0)
-				this->saveResults();
+				this->saveResults(true);
 		}
 		if (!m_lastIncludedInFreq)
-			this->saveResults();
+			this->saveResults(true);
 	}
 	else
 	{
@@ -246,8 +246,9 @@ void Forest::dynamics()
 			t = m_t0 + (iter - 1)*delta_t; // iter starts at 1, but remember explicit Euler y_{n + 1} = y_n + delta_t f(t_n, y_n)
 			this->patchDynamics(t, delta_t);
 			this->recruitment(t, delta_t);
+			this->summary();
 		}
-		this->saveResults();
+		this->saveResults(false);
 	}
 
 	std::cout << "Simulation done. Files saved in folders: <" << m_summaryFilePath << "*> and <" << m_popDynFilePath << "*>" << std::endl;
@@ -309,11 +310,18 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned 
 /***********************************/
 /******        Writing        ******/
 /***********************************/
-void Forest::saveResults()
+void Forest::saveResults(bool const writeSummary)
 {
 	patch_it patch = m_patchVec.begin();
 	for (; patch != m_patchVec.end(); ++patch)
-		patch->saveResults();
+		patch->saveResults(writeSummary);
+}
+
+void Forest::summary()
+{
+	patch_it patch = m_patchVec.begin();
+	for (; patch != m_patchVec.end(); ++patch)
+		patch->summary();
 }
 
 /************************************************/
