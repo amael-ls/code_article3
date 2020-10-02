@@ -312,7 +312,7 @@ void Population::totalDensity_totalTrunkArea()
 		currentDensity += it->m_lambda; //
 	}
 
-	sumTrunkArea *= M_PI/(4*1000); // π dbh^2/(4 x 1000), the 1000 is to convert from mm to metres
+	sumTrunkArea *= M_PI/(4*1000*1000); // π dbh^2/(4 x 1000 x 1000), the 1000 is to convert from mm^2 to m^2 (square metres)
 	m_sumTrunkArea = sumTrunkArea;
 	m_totalDensity = currentDensity;
 }
