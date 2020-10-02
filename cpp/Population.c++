@@ -28,10 +28,6 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 	this->totalDensity_totalTrunkArea();
 
 	/***** Open ofstreams to save initial condition and close them (too many to be kept open) *****/
-	// Open ofstreams m_summary_ofs
-	// if (std::filesystem::exists(summaryFilename)) // Remove file if already exists
-	// 	std::filesystem::remove(summaryFilename);
-	
 	std::ofstream summary(m_summary_ofs);
 
 	if(!summary.is_open())
@@ -129,10 +125,6 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 	this->totalDensity_totalTrunkArea();
 
 /***** Open ofstreams to save initial condition and close them (too many to be kept open) *****/
-	// Open ofstreams m_summary_ofs
-	// if (std::filesystem::exists(summaryFilename)) // Remove file if already exists
-	// 	std::filesystem::remove(summaryFilename);
-	
 	std::ofstream summary(m_summary_ofs);
 
 	if(!summary.is_open())

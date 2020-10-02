@@ -69,8 +69,6 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList,
 	this->competition(m_minDelta_s);
 }
 
-// filename_it file_it = m_filenamePattern_map.begin();
-
 /************************************/
 /******        dynamics        ******/
 /************************************/
