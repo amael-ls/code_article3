@@ -5,7 +5,9 @@
 // Official headers
 // Official headers
 #include <filesystem> // To list files from folder, experimental/filesystem is now deprecated
-#include <algorithm> // std::sort
+// #include <execution> // For parallel run on the supercomputer. Requires C++17 and an up-to-date g++ (at least g++-10)
+#include <functional> // std::bind
+#include <algorithm> // std::sort, std::for_each
 #include <fstream>
 #include <vector>
 #include <string>

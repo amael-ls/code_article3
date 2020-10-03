@@ -173,12 +173,21 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 
 void Forest::patchDynamics(double const t, double const delta_t)
 {
-	patch_it targetPatch;
-	for (targetPatch = m_patchVec.begin(); targetPatch != m_patchVec.end(); ++targetPatch)
-	{
-		if (targetPatch->m_isPopulated) // Do the following computation only when necessary
-			targetPatch->populationDynamics(t, delta_t); // Compute local seed bank, local competition, and age local population for each species
-	}
+	// patch_it targetPatch;
+	// for (targetPatch = m_patchVec.begin(); targetPatch != m_patchVec.end(); ++targetPatch)
+	// {
+	// 	if (targetPatch->m_isPopulated) // Do the following computation only when necessary
+	// 		targetPatch->populationDynamics(t, delta_t); // Compute local seed bank, local competition, and age local population for each species
+	// }
+	// std::execution::par_unseq, 
+	// std::for_each(m_patchVec.begin(), m_patchVec.end(), std::bind(&Patch::populationDynamics2, this, std::placeholders::_1, t, delta_t));
+	std::for_each(m_patchVec.begin(), m_patchVec.end(), [=] (Patch& patch){patch.populationDynamics(t, delta_t);});
+
+	/*  Explanation lambda functions: https://docs.microsoft.com/en-us/cpp/cpp/lambda-expressions-in-cpp?view=vs-2019
+		Square brackets [] are for the capture clause, i.e., how to access variables in the enclosing scope.
+		In my case, the variables are t and delta_t. Because I put [=], I access them by value.
+		If I had put [&], they were be accessed by reference. I could have put an hybrid such as [&t, delta_t]
+	*/
 }
 
 void Forest::recruitment(double const t, double const delta_t)
