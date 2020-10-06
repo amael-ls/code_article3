@@ -219,9 +219,7 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 	lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // It might involve segmentation fault if maxCohort < nonZero
 
 	// Integration within the size space Omega
-	// #pragma omp parallel for
-	for (it = m_cohortsVec.begin(); it != lim_it; ++it)
-		it->euler(t, delta_t, dbh_star, env, &Cohort::ODE_II);
+	std::for_each(std::execution::par_unseq, m_cohortsVec.begin(), lim_it, [=] (Cohort& cohort){cohort.euler(t, delta_t, dbh_star, env, &Cohort::ODE_II);});
 }
 
 void Population::recruitment(double const t, double const delta_t, double const dbh_star, Environment const & env, bool& isPopulated)

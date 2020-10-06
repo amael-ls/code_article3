@@ -31,6 +31,7 @@ I list the functions here, but describe them in the associated c++ file:
 
 // Official headers
 #include <filesystem>
+#include <execution>
 #include <iostream>
 #include <fstream>
 #include <vector>
