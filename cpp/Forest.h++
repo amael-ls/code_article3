@@ -13,7 +13,6 @@
 #include <string>
 #include <chrono>
 #include <cmath>
-// #include <mutex> // For parralel run with synchronisation
 #include <map>
 
 // My headers

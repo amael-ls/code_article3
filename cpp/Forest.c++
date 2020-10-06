@@ -368,16 +368,14 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned 
 /***********************************/
 void Forest::saveResults(bool const writeSummary)
 {
-	patch_it patch = m_patchVec.begin();
-	for (; patch != m_patchVec.end(); ++patch)
-		patch->saveResults(writeSummary);
+	std::for_each(std::execution::par_unseq, m_patchVec.begin(), m_patchVec.end(),
+		[=] (Patch& patch){patch.saveResults(writeSummary);});
 }
 
 void Forest::summary()
 {
-	patch_it patch = m_patchVec.begin();
-	for (; patch != m_patchVec.end(); ++patch)
-		patch->summary();
+	std::for_each(std::execution::par_unseq, m_patchVec.begin(), m_patchVec.end(),
+		[=] (Patch& patch){patch.summary();});
 }
 
 /************************************************/
