@@ -51,9 +51,9 @@ class Patch
 
 	// --- Functions
 		void populationDynamics(double const t, double const delta_t);
-		void dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePatch, Species* species,
+		void dispersal(Patch* sourcePatch, Species* species,
 			std::map<Distance, double> const& distToIntegral, double const deltaLat, double const deltaLon);
-		void recruitment(std::vector<Patch>::iterator targetPatch, Species* species, double const t, double const delta_t);
+		void recruitment(Species* species, double const t, double const delta_t);
 		void competition(double const tolHeight);
 
 	// Output writing function

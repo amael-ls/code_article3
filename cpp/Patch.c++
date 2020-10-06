@@ -81,27 +81,21 @@ void Patch::populationDynamics(double const t, double const delta_t)
 		(pop_it->second).cohortDynamics(t, delta_t, m_height_star, m_env);
 }
 
-void Patch::dispersal(std::vector<Patch>::iterator targetPatch, Patch* sourcePatch, Species* species,
+void Patch::dispersal(Patch* sourcePatch, Species* species,
 	std::map<Distance, double> const& distToIntegral, double const deltaLat, double const deltaLon)
 {
-	Distance dist(targetPatch->m_env, sourcePatch->m_env, deltaLat, deltaLon);
-	std::map<Distance, double>::const_iterator dist_it = distToIntegral.find(dist);
-	if (dist_it == distToIntegral.end())
-	{
-		throw Except_Patch(dist, species->m_speciesName, targetPatch->m_env.m_patchId, sourcePatch->m_env.m_patchId);
-		exit(EXIT_FAILURE);
-	}
-	
+	Distance dist(m_env, sourcePatch->m_env, deltaLat, deltaLon);
+
 	// withdrawn seeds from source = local production of source times amount dispersed by K
-	double withdrawnSeeds = ((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds * distToIntegral.find(dist)->second;
-	((targetPatch->m_pop_map).find(species)->second).m_localSeedBank += withdrawnSeeds;
-	((sourcePatch->m_pop_map).find(species)->second).m_localProducedSeeds -= withdrawnSeeds;
+	double withdrawnSeeds = ((sourcePatch->m_pop_map).at(species)).m_localProducedSeeds * distToIntegral.at(dist);
+	(m_pop_map.at(species)).m_localSeedBank += withdrawnSeeds;
+	((sourcePatch->m_pop_map).at(species)).m_localProducedSeeds -= withdrawnSeeds;
 }
 
-void Patch::recruitment(std::vector<Patch>::iterator targetPatch, Species* species, double const t, double const delta_t)
+void Patch::recruitment(Species* species, double const t, double const delta_t)
 {
 	double const dbh_star = std::exp(1/species->b*(std::log10(m_height_star) - species->a)*std::log(10));
-	((targetPatch->m_pop_map).find(species)->second).recruitment(t, delta_t, dbh_star, m_env, m_isPopulated);
+	(m_pop_map.at(species)).recruitment(t, delta_t, dbh_star, m_env, m_isPopulated);
 }
 
 /* Competition calculation:
