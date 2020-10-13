@@ -129,6 +129,9 @@ vals[dist == min(dist), isPopulated := "true"]
 # Populations are at the bottom of the landscape
 vals[row == max(row), isPopulated := "true"]
 
+# Populations are at the 10 bottom lines of the landscape
+vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
+
 #### Save files
 ## Environment files for C++ prog
 vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, deltaX, deltaY, sep = " = ", rm = TRUE), by = rowNumber]
