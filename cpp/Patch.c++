@@ -142,11 +142,7 @@ void Patch::getAllNonZeroCohorts(std::vector<Cohort *>& nonZeroCohorts) const
 	}
 
 	// Sort vector
-	std::sort(nonZeroCohorts.begin(), nonZeroCohorts.end(), greaterCohortPtr);
-
-// 	std::vector<Cohort *>::iterator it = nonZeroCohorts.begin();
-// 	for (; it != nonZeroCohorts.end(); ++it)
-// 		std::cout << **it << std::endl;
+	std::sort(std::execution::par_unseq, nonZeroCohorts.begin(), nonZeroCohorts.end(), greaterCohortPtr);
 }
 
 void Patch::competition(double const heightTol) // The best heightTol is delta_s
