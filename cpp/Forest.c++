@@ -43,6 +43,8 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 
 	if (rasterOrder_Rlang == "true")
 		m_rasterOrder_Rlang = true;
+	else
+		m_rasterOrder_Rlang = false;
 
 	// Get saveOnlyLast parameter
 	std::string saveOnlyLast = forestParameters.get_val<std::string>("saveOnlyLast");
@@ -52,7 +54,12 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	if (saveOnlyLast == "true")
 	{
 		m_saveOnlyLast = true;
-		std::cout << "Only the last iteration will be saved, despite freqSave = " << m_freqSave << std::endl;
+		std::cout << "Only the last iteration will be saved, despite frequency = " << m_freqSave << std::endl;
+	}
+	else
+	{
+		m_saveOnlyLast = false;
+		std::cout << "Results will be saved at a frequency = " << m_freqSave << std::endl;
 	}
 
 	if (m_freqSave > m_nIter && !m_saveOnlyLast)
@@ -120,6 +127,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 			exit(EXIT_FAILURE);
 		}
 	}
+	std::cout << "Species and dispersal object created" <<  std::endl;
 
 	/**** Creating forest of patches ****/
 	// Fill the environment
@@ -149,7 +157,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 			}
 			catch(const std::exception& e)
 			{
-				std::cerr << e.what() << '\n';
+				std::cerr << "An error occurred with the patch linked to <" << climateFile << ">" << "\n" << e.what() << std::endl;
 				exit(EXIT_FAILURE);
 			}
 
