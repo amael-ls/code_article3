@@ -57,14 +57,14 @@ climate_rs = stack(paste0(loadPath, "clim60sec/clim_2010.grd"))
 crs = crs(climate_rs, asText = TRUE)
 
 ## Define crop extent
-# lonMin = -74
-# lonMax = -73.9
-# latMin = 41
-# latMax = 41.1
 lonMin = -74
-lonMax = -73.99
-latMin = 41.09
-latMax = 41.1
+lonMax = -73.9
+latMin = 41
+latMax = 41.2
+# lonMin = -74
+# lonMax = -73.99
+# latMin = 41.09
+# latMax = 41.1
 
 crop_extent = extent(c(lonMin, lonMax, latMin, latMax))
 crop_extent = projectExtent(raster(crop_extent, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"),
@@ -82,12 +82,22 @@ deltaY = yres(croppedClimate) # 1830
 
 ## Change resolution to a 20 x 20 m
 downScale_factors = floor(res(croppedClimate)/20)
-croppedClimate = disaggregate(x = croppedClimate, fact = downScale_factors)
+croppedClimate = disaggregate(x = croppedClimate, fact = downScale_factors, method = "bilinear")
 
 #! --- Crash test zone, to have a smaller landscape
-crop_extent = extent(c(2135078, 2135278, -93158, -92958)) # order = xmin, xmax, ymin, ymax
-croppedClimate = crop(croppedClimate, crop_extent)
+# For a 100 x 100 landscape
+crop_extent = extent(c(2135078, 2137078, -93158, -91146)) # order = xmin, xmax, ymin, ymax
+
+# For a 100 x 5 landscape
+crop_extent = extent(c(2135078, 2135178, -93158, -91146))
+
+# For a 10 x 100 landscape
+crop_extent = extent(c(2135078, 2137078, -93158, -92957))
+
+# For a 20 x 20 landscape
+crop_extent = extent(c(2135078, 2135478, -93158, -92758))
 #! --- End crash test zone, to have a smaller landscape
+croppedClimate = crop(croppedClimate, crop_extent)
 
 nrows = nrow(croppedClimate)
 ncols = ncol(croppedClimate)
@@ -112,8 +122,12 @@ vals[, isPopulated := "false"]
 ## Compute distance to centroid
 vals[, dist := sqrt((longitude - centroid["x"])^2 + (latitude - centroid["y"])^2)]
 
-## Set patches that are populated (currently, only the closest to the centroid)
+## Set patches that are populated
+# Populations are the closest to the centroid
 vals[dist == min(dist), isPopulated := "true"]
+
+# Populations are at the bottom of the landscape
+vals[row == max(row), isPopulated := "true"]
 
 #### Save files
 ## Environment files for C++ prog
