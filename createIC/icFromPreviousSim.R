@@ -10,9 +10,9 @@ rm(list = ls())
 graphics.off()
 
 #### Tool function
-printIC = function(density_vec, dbh_vec, patch_id, filenamePattern, outputPath, sep = " ", rm = FALSE)
+printIC = function(density_vec, dbh_vec, patch_id, filenamePattern, outputPath, addToId = 0, sep = " ", rm = FALSE)
 {
-	patch_id = unique(patch_id)
+	patch_id = unique(patch_id) + addToId
 	nbCohorts = length(density_vec)
 
 	outfileName = paste0(outputPath, filenamePattern, patch_id, ".txt")
@@ -57,8 +57,11 @@ for (i in 1:nbFiles)
 
 popDyn_ls = rbindlist(popDyn_ls, idcol = "patch_id")
 
+# C++ start at 0
+popDyn_ls[, patch_id := patch_id - 1]
+
 # Filter low densities because std::stod in C++ cannot handle smaller numbers than std::numeric_limits<double>::min()
-popDyn_ls = popDyn_ls[density > 1e-50]
+popDyn_ls = popDyn_ls[density > 1e-8] # 1e-8 way above std::numeric_limits<double>::min()
 
 #### Few plots
 plot(popDyn_ls[patch_id == 1, dbh], popDyn_ls[patch_id == 1, density], type = "l", lwd = 2,
@@ -71,4 +74,4 @@ if (!dir.exists(path_ic))
 	dir.create(path_ic)
 
 ## Write files
-popDyn_ls[, printIC(density, dbh, patch_id, filenamePattern, path_ic, sep = " ", rm = TRUE), by = patch_id]
+popDyn_ls[, printIC(density, dbh, patch_id, filenamePattern, path_ic, addToId = 9000, sep = " ", rm = TRUE), by = patch_id]
