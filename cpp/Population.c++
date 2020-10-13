@@ -413,31 +413,13 @@ void Population::printNonZero() const
 	std::cout << "Number of zeros and boundary cohorts: " << m_cohortsVec.size() - m_nonZeroCohort << std::endl;
 }
 
-void Population::saveResults(double const height_star, bool const writeSummary)
+void Population::savePopulation(double const height_star) const
 {
-	if (writeSummary)
-	{
-		std::ofstream summary(m_summary_ofs, std::ofstream::app);
-
-		if(!summary.is_open())
-		{
-			std::stringstream ss;
-			ss << "*** ERROR (from Population::saveResults): cannot open output file <" << m_summary_ofs << ">";
-			throw (std::runtime_error (ss.str()));
-		}
-
-		summary << m_currentIter << " " << m_localProducedSeeds << " " << height_star << " " <<
-			m_sumTrunkArea << " " << m_totalDensity << std::endl;
-
-		// Close ofstream	
-		summary.close();
-	}
-
 	std::ofstream popDyn(m_popDyn_ofs, std::ofstream::app);
 	if(!popDyn.is_open())
 	{
 		std::stringstream ss;
-		ss << "*** ERROR (from Population::saveResults): cannot open output file <" << m_popDyn_ofs << ">";
+		ss << "*** ERROR (from Population::savePopulation): cannot open output file <" << m_popDyn_ofs << ">";
 		throw (std::runtime_error (ss.str()));
 	}
 
@@ -447,7 +429,7 @@ void Population::saveResults(double const height_star, bool const writeSummary)
 	popDyn.close();
 }
 
-void Population::summary(double const height_star)
+void Population::summary(double const height_star) const
 {
 	std::ofstream summary(m_summary_ofs, std::ofstream::app);
 

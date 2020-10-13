@@ -99,8 +99,8 @@ class Population
 		std::string m_popDyn_ofs; // Population dynamics file containing all the non zero cohorts
 
 	// --- Output writing function
-		void saveResults(double const height_star, bool const writeSummary);
-		void summary(double const height_star);
+		void savePopulation(double const height_star) const;
+		void summary(double const height_star) const;
 		void closeOutputFiles();
 		
 };
