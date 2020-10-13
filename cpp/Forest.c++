@@ -127,7 +127,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	std::string initFile;
 	unsigned int counterPatch = 0;
 
-	for(auto& p: std::filesystem::directory_iterator(pathLandscape))
+	for (auto& p: std::filesystem::directory_iterator(pathLandscape))
 	{
 		climateFile = p.path().filename();
 		if (climateFile.find(climateFilenamePattern) != std::string::npos)
@@ -165,15 +165,12 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	// Sort forest
 	this->sort(true);
 
-	// Compute basal area and density for each patch
-
 	std::cout << "Forest constructed with success, using following parameters " << std::endl << forestParameters << std::endl;
 }
 
 void Forest::patchDynamics(double const t, double const delta_t)
 {
 	std::for_each(std::execution::par_unseq, m_patchVec.begin(), m_patchVec.end(), [=] (Patch& patch){patch.populationDynamics(t, delta_t);});
-
 	/*  Explanation lambda functions: https://docs.microsoft.com/en-us/cpp/cpp/lambda-expressions-in-cpp?view=vs-2019
 		Square brackets [] are for the capture clause, i.e., how to access variables in the enclosing scope.
 		In my case, the variables are t and delta_t. Because I put [=], I access them by value.
@@ -187,35 +184,9 @@ void Forest::recruitment(double const t, double const delta_t)
 	std::vector<unsigned int> boundingBox;
 	Patch* sourcePatch;
 
-	// Iterators
-	patch_it targetPatch_it;
+	// Iterator
 	c_species_it sp_it;
 
-	// int counter = 0;
-	// std::chrono::duration<double> timeNeigh(0), timeDisp(0), timeRec(0);
-	// auto t1 = std::chrono::high_resolution_clock::now();
-	// // Compute recruitment
-	// for (targetPatch_it = m_patchVec.begin(); targetPatch_it != m_patchVec.end(); ++targetPatch_it)
-	// {
-	// 	for (sp_it = m_speciesList.cbegin(); sp_it != m_speciesList.cend(); ++sp_it)
-	// 	{
-	// 		// Get neighbours, and store it in bounding box (using reference '&')
-	// 		neighbours_indices((targetPatch_it->m_env).m_patchId, boundingBox, *sp_it); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
-
-	// 		// Cover all the sources within neighbours to collect dispersed seeds
-	// 		for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
-	// 		{
-	// 			for (unsigned int col = boundingBox[1]; col <= boundingBox[2]; ++col) // Important: less than or equal to (<=)
-	// 			{
-	// 				sourcePatch = &m_patchVec[row*m_nCol_land + col];
-	// 				// Compute dispersal from source to target, and update the seed banks:
-	// 				targetPatch_it->dispersal(targetPatch_it, sourcePatch, *sp_it, (m_map_dispersal.find(*sp_it)->second).m_map_distance_integral, m_deltaLat, m_deltaLon);
-	// 			}
-	// 		}
-	// 		targetPatch_it->recruitment(targetPatch_it, *sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
-	// 	}
-	// }
-	
 	/*
 	std::execution::seq (Williams2019, p. 330)
 	The sequenced policy imposes few requirements on the iterators, values, and callable objects used with the algorithm:
@@ -227,14 +198,7 @@ void Forest::recruitment(double const t, double const delta_t)
 		for (sp_it = m_speciesList.cbegin(); sp_it != m_speciesList.cend(); ++sp_it)
 		{
 			// Get neighbours, and store it in bounding box (using reference '&')
-			// auto t3 = std::chrono::high_resolution_clock::now();
 			neighbours_indices((patch.m_env).m_patchId, boundingBox, *sp_it); // boundingBox = {topLeft_r, topLeft_c, topRight_c, bottomLeft_r};
-			// auto t4 = std::chrono::high_resolution_clock::now();
-			// std::chrono::duration<double> time_span = t4 - t3;
-			// timeNeigh += time_span;
-
-			// ++counter;
-
 			// Cover all the sources within neighbours to collect dispersed seeds
 			for (unsigned int row = boundingBox[0]; row <= boundingBox[3]; ++row) // Important: less than or equal to (<=)
 			{
@@ -242,32 +206,19 @@ void Forest::recruitment(double const t, double const delta_t)
 				{
 					sourcePatch = &m_patchVec[row*m_nCol_land + col];
 					// Compute dispersal from source to target, and update the seed banks:
-					// auto t5 = std::chrono::high_resolution_clock::now();
 					patch.dispersal(sourcePatch, *sp_it, (m_map_dispersal.at(*sp_it)).m_map_distance_integral, m_deltaLat, m_deltaLon);
-					// auto t6 = std::chrono::high_resolution_clock::now();
-					// std::chrono::duration<double> time_span2 = t6 - t5;
-					// timeDisp += time_span2;
 				}
 			}
-			// auto t7 = std::chrono::high_resolution_clock::now();
-			patch.recruitment(*sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
-			// auto t8 = std::chrono::high_resolution_clock::now();
-			// std::chrono::duration<double> time_span3 = t8 - t7;
-			// timeRec += time_span3;
+			// patch.recruitment(*sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
 		}
 	});
+	std::for_each(std::execution::par_unseq, m_patchVec.begin(), m_patchVec.end(),
+	[&] (Patch& patch)
+	{
+		for (sp_it = m_speciesList.cbegin(); sp_it != m_speciesList.cend(); ++sp_it)
+			patch.recruitment(*sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
+	});
 
-	// auto t2 = std::chrono::high_resolution_clock::now();
-
-	// std::cout << "Average neighbours' time: " << timeNeigh.count()/counter << " s" << std::endl;
-	// std::cout << "Total neighbours' time: " << timeNeigh.count() << " s" << std::endl;
-	// std::cout << "Average dispersals' time: " << timeDisp.count()/counter << " s" << std::endl;
-	// std::cout << "Total dispersals' time: " << timeDisp.count() << " s" << std::endl;
-	// std::cout << "Average recruitments' time: " << timeRec.count()/counter << " s" << std::endl;
-	// std::cout << "Total recruitments' time: " << timeRec.count() << " s" << std::endl;
-	// std::chrono::duration<double> elapsed = t2 - t1;
-	// std::cout << "Total recruitment time: " << elapsed.count() << " s" << std::endl;
-	// std::cout << "---------------" << std::endl;
 }
 
 void Forest::dynamics()
@@ -289,11 +240,13 @@ void Forest::dynamics()
 			this->patchDynamics(t, delta_t);
 			this->recruitment(t, delta_t);
 
+			this->summary();
+
 			if (iter % m_freqSave == 0)
-				this->saveResults(true);
+				this->saveResults(false);
 		}
 		if (!m_lastIncludedInFreq)
-			this->saveResults(true);
+			this->saveResults(false);
 	}
 	else
 	{
