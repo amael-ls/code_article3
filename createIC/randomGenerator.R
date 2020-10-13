@@ -66,12 +66,12 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 
 #### Parameters
 ## Folder and id plots (for names initial condition)
-path = "./randomInitialCondition/"
+path = "./randomInitialCondition/Acer_saccharum/"
 filenamePattern = "ic_"
 id_plots = readRDS("../createLandscape/populatedPatches.rds")
 
 ## Cohorts 
-nbCohorts = 5
+nbCohorts = 150
 maxDiameter = 960
 minDiameter = 2
 nbPlots = length(id_plots)
@@ -105,6 +105,15 @@ for (i in 1:nbPlots)
 
 ## Number of trees per patch
 data.table(id_plots, density_patch = rowSums(densities))
+
+## Remove all values smaller than 1e-50
+# I do this because std::stod in C++ cannot handle smaller numbers than std::numeric_limits<double>::min() which is around 1e-308 in my computer
+densities[densities < 1e-50] = 0
+
+## Check cohorts basal area again
+for (i in 1:nbPlots)
+	if (!all.equal((10^4*dbh_meters^2 %*% t(densities)[,i]*pi/(4*areaPlot))[1,1], BA))
+		print(paste0("Check row ", i, ". The basal area of this plot might not be the value expected"))
 
 #### Write files initial condition
 ## Create folder
