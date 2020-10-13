@@ -243,10 +243,10 @@ void Forest::dynamics()
 			this->summary();
 
 			if (iter % m_freqSave == 0)
-				this->saveResults(false);
+				this->saveForest();
 		}
 		if (!m_lastIncludedInFreq)
-			this->saveResults(false);
+			this->saveForest();
 	}
 	else
 	{
@@ -257,7 +257,7 @@ void Forest::dynamics()
 			this->recruitment(t, delta_t);
 			this->summary();
 		}
-		this->saveResults(false);
+		this->saveForest();
 	}
 
 	std::cout << "Simulation done. Files saved in folders: <" << m_summaryFilePath << "*> and <" << m_popDynFilePath << "*>" << std::endl;
@@ -319,16 +319,16 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned 
 /***********************************/
 /******        Writing        ******/
 /***********************************/
-void Forest::saveResults(bool const writeSummary)
+void Forest::saveForest() const
 {
-	std::for_each(std::execution::par_unseq, m_patchVec.begin(), m_patchVec.end(),
-		[=] (Patch& patch){patch.saveResults(writeSummary);});
+	std::for_each(std::execution::par_unseq, m_patchVec.cbegin(), m_patchVec.cend(),
+		[=] (Patch const& patch){patch.savePatch();});
 }
 
-void Forest::summary()
+void Forest::summary() const
 {
-	std::for_each(std::execution::par_unseq, m_patchVec.begin(), m_patchVec.end(),
-		[=] (Patch& patch){patch.summary();});
+	std::for_each(std::execution::par_unseq, m_patchVec.cbegin(), m_patchVec.cend(),
+		[=] (Patch const& patch){patch.summary();});
 }
 
 /************************************************/

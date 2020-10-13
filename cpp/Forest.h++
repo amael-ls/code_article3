@@ -80,8 +80,8 @@ class Forest
 		bool m_lastIncludedInFreq;
 
 	// --- Functions
-		void saveResults(bool const writeSummary);
-		void summary();
+		void saveForest() const;
+		void summary() const;
 };
 
 // External functions
