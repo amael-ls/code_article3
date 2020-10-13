@@ -98,7 +98,6 @@ const char* Except_Population::what() const throw()
 /***********************************/
 /******        Species        ******/
 /***********************************/
-
 Except_Species::Except_Species(int const nbVals, double const integVal)
 {
 	if (nbVals != 2)

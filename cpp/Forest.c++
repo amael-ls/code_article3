@@ -59,7 +59,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	else
 	{
 		m_saveOnlyLast = false;
-		std::cout << "Results will be saved at a frequency = " << m_freqSave << std::endl;
+		std::cout << "Populations' densities will be saved at a frequency = " << m_freqSave << std::endl;
 	}
 
 	if (m_freqSave > m_nIter && !m_saveOnlyLast)
