@@ -10,36 +10,6 @@ rm(list = ls())
 graphics.off()
 
 #### Tool function
-printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(densities), sep = " ", reset = TRUE)
-{
-	nbCohorts = ncol(densities)
-	nbPlots = nrow(densities)
-	if (length(dbh) != nbCohorts)
-		stop(paste0("Number of cohorts (", nbCohorts, ") and dbh (", length(dbh), ") mismatch"))
-	
-	if (length(id_plots) != nbPlots)
-		stop(paste0("Number of plots (", nbPlots, ") and id_plots (", length(id_plots), ") mismatch"))
-
-	for (plot in 1:nbPlots)
-	{
-		outfileName = paste0(path, filenamePattern, id_plots[plot], ".txt")
-
-		if (reset & file.exists(outfileName))
-			file.remove(outfileName)
-
-		ofstream = file(outfileName)
-
-		line = paste0("density", sep, "dbh", sep = "\n")
-
-		for (cohort in 1:nbCohorts)
-			line = paste0(line, densities[plot, cohort], sep, dbh[cohort], sep = "\n")
-
-		writeLines(line, ofstream)
-		close(ofstream)
-	}
-}
-
-# writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, deltaY, sep = " = ", rm = FALSE)
 printIC = function(density_vec, dbh_vec, patch_id, filenamePattern, outputPath, sep = " ", rm = FALSE)
 {
 	patch_id = unique(patch_id)
