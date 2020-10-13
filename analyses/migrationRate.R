@@ -9,10 +9,13 @@
 library(data.table)
 library(tikzDevice)
 library(stringi)
+library(raster)
 
 #### Clear memory and graphs
 rm(list = ls())
 graphics.off()
+
+options(max.print = 500)
 
 #### Tool functions
 stringCleaner = function(str, fixed, skip = NULL)
@@ -122,6 +125,7 @@ delta_t = (tmax - t0)/(nIter - 1)
 ## Initial condition
 # List files
 ls_init = list.files(initPath)
+# ls_init = c("ic_5049.txt", "ic_5050.txt") # In the case 100 x 100
 
 # Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
 init_index = as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
@@ -144,6 +148,11 @@ transect_ew = data.table(patch_id = integer(length = nbData_ew), iteration = num
 	localSeedProduced = numeric(length = nbData_ew), localSeedBank = numeric(length = nbData_ew),
 	sumTrunkArea = numeric(length = nbData_ew), totalDensity = numeric(length = nbData_ew),
 	distance = numeric(length = nbData_ew), transectOrigin = integer(length = nbData_ew))
+
+#! TEMPORARY
+pathSummary = "../cpp/summary/Acer_saccharum_100x100/"
+pathSummary = "../cpp/summary/Acer_saccharum_100x5_TW/"
+#! END TEMPORARY
 
 # Loop on the North-South transects
 for (i in 1:length(init_col))
@@ -172,15 +181,27 @@ transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
 
 #### Plot density at different time
 ## Initiate plot
-plot(transect_ns[(iteration == 0) & (transectOrigin == 54), distance], transect_ns[(iteration == 0) & (transectOrigin == 54), basalArea],
-	type = "l", ylim = c(0, transect_ns[transectOrigin == 54, max(basalArea)]))
+pdf("travellingWave.pdf", width = 10, height = 2*10/3)
+plot(transect_ns[(iteration == 1000) & (transectOrigin == init_index[1]), distance], transect_ns[(iteration == 1000) & (transectOrigin == init_index[1]), basalArea],
+	type = "l", ylim = c(0, transect_ns[transectOrigin == init_index[1], max(basalArea)]),
+	xlab = "Distance", ylab = "Basal area", lwd = 2)
 
 ## For loop on time
-for (i in (seq(100, nIter, 300) - 1))
-	lines(transect_ns[(iteration == i) & (transectOrigin == 54), distance], transect_ns[(iteration == i) & (transectOrigin == 54), basalArea])
+coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
+count = 1
+for (i in (seq(1300, nIter, 300) - 1))
+{
+	lines(transect_ns[(iteration == i) & (transectOrigin == init_index[1]), distance], transect_ns[(iteration == i) & (transectOrigin == init_index[1]), basalArea],
+		lwd = 2, col = coloursVec[count])
+	count = count + 1
+}
+round(c(1000, (seq(1300, nIter, 300) - 1))*delta_t)
+legend(x = "topright", legend = paste(round(c(1000, (seq(1300, nIter, 300) - 1))*delta_t), "years"),
+	lwd = 2, col = c("#000000", coloursVec), bty = "n")
+dev.off()
 
 ## Dynamic plot for transectOrigin == 54 toward north
-transect_ns54 = transect_ns[(transectOrigin == 54) & (signedDistance >= 0)]
+transect_ns54 = transect_ns[(transectOrigin == init_index[1]) & (signedDistance >= 0)]
 
 # Limits xlim and ylim
 max_distance = transect_ns54[, max(distance)]
@@ -190,21 +211,100 @@ max_basalArea = transect_ns54[, max(basalArea)]
 plot(transect_ns54[iteration == 0, distance], transect_ns54[iteration == 0, basalArea],
 	type = "l", xlim = c(0, max_distance), ylim = c(0, max_basalArea))
 invisible(sapply(seq(2, nIter, by = 10), function(x, parameters) {
-	Sys.sleep(0.005)
+	Sys.sleep(0.01)
 	plot(transect_ns54[iteration == x, distance], transect_ns54[iteration == x, basalArea], type = 'l', lwd = 1,
 		xlim = c(0, max_distance), ylim = c(0, max_basalArea))
 }, parameters = 0)) # unused parameter, I just put it to remember how to do it in case of I need it
 
 #### Compute the speed
 ## Threshold basal area o consider a plot populated
-threshold_BA = 5
+threshold_BA = 1
 speed_dt = transect_ns54[basalArea > threshold_BA, min(iteration), by = distance]
 setnames(speed_dt, new = c("distance", "iteration"))
 setorder(speed_dt, -distance)
 speed_dt[, year := iteration*delta_t]
-speed_dt[1:(.N - 1), speed := distance/(year - speed_dt[2:.N, year])]
+speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
 
-#### ! CRASH TEST ZONE
+#### ! CRASH TEST ZONE 1, ON RASTER
+## Load everything
+nbPatches = nRow_land*nCol_land
+nbData = nbPatches*nIter
+summary_dt = data.table(patch_id = integer(length = nbData), iteration = numeric(length = nbData),
+	localSeedProduced = numeric(length = nbData), localSeedBank = numeric(length = nbData),
+	sumTrunkArea = numeric(length = nbData), totalDensity = numeric(length = nbData),
+	row = numeric(length = nbData), col = integer(length = nbData))
+
+pathSummary = "../cpp/summary/Acer_saccharum_100x100/"
+
+for (patch_id in 0:(nbPatches - 1))
+{
+	ind_start = patch_id*nIter + 1
+	ind_end = (patch_id + 1)*nIter
+	temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
+	summary_dt[ind_start:ind_end, patch_id := ..patch_id]
+	summary_dt[ind_start:ind_end, c("iteration", "localSeedProduced", "localSeedBank", "sumTrunkArea", "totalDensity") := temporary]
+}
+
+summary_dt[, basalArea := sumTrunkArea/plotArea_ha]
+
+summary_dt[, col := patch_id %% nCol_land]
+summary_dt[, row := (patch_id - col)/nCol_land]
+
+summary_dt[, x := col*deltaLon]
+summary_dt[, y := (nRow_land - 1 - row)*deltaLat]
+
+coordinates(summary_dt) = ~ x + y
+gridded(summary_dt) = TRUE
+
+indices = seq(1, nbData, nIter) # iter = 0
+l_out = 10
+iterLoaded = round(seq(1, nIter - 1, length.out = l_out))
+summary_list_rs = vector(mode = "list", length = l_out + 1)
+summary_list_rs[[1]] = raster(summary_dt[indices, "basalArea"]) # iter = 0
+
+for (i in 1:l_out)
+{
+	iter = iterLoaded[i]
+	indices = seq(iter + 1, nbData, nIter)
+	summary_list_rs[[i + 1]] = raster(summary_dt[indices, "basalArea"])
+}
+
+crop_extent = extent(c(500, 1500, 500, 1500))
+pdf("0.pdf")
+plot(crop(summary_list_rs[[1]], crop_extent), legend = FALSE)
+BA_range = c(minValue(summary_list_rs[[1]]), maxValue(summary_list_rs[[1]]))
+plot(summary_list_rs[[1]], legend.only = TRUE,
+	legend.width = 1, legend.shrink = 0.75,
+	axis.args = list(at = seq(trunc(BA_range[1]), round(BA_range[2]), 5),
+		labels = seq(trunc(BA_range[1]), round(BA_range[2]), 5),
+		cex.axis = 1),
+	legend.args = list(text = "Basal area", side = 4, font = 2, line = 2.5, cex = 1))
+dev.off()
+
+pdf(paste0(iterLoaded[9], ".pdf"))
+plot(crop(summary_list_rs[[9]], crop_extent), legend = FALSE)
+BA_range = c(minValue(summary_list_rs[[9]]), maxValue(summary_list_rs[[9]]))
+plot(summary_list_rs[[9]], legend.only = TRUE,
+	legend.width = 1, legend.shrink = 0.75,
+	axis.args = list(at = seq(trunc(BA_range[1]), round(BA_range[2]), 5),
+		labels = seq(trunc(BA_range[1]), round(BA_range[2]), 5),
+		cex.axis = 1),
+	legend.args = list(text = "Basal area", side = 4, font = 2, line = 2.5, cex = 1))
+dev.off()
+
+pdf(paste0(iterLoaded[10], ".pdf"))
+plot(crop(summary_list_rs[[10]], crop_extent), legend = FALSE)
+BA_range = c(minValue(summary_list_rs[[10]]), maxValue(summary_list_rs[[10]]))
+plot(summary_list_rs[[10]], legend.only = TRUE,
+	legend.width = 1, legend.shrink = 0.75,
+	axis.args = list(at = seq(trunc(BA_range[1]), round(BA_range[2]), 5),
+		labels = seq(trunc(BA_range[1]), round(BA_range[2]), 5),
+		cex.axis = 1),
+	legend.args = list(text = "Basal area", side = 4, font = 2, line = 2.5, cex = 1))
+dev.off()
+
+
+#### ! CRASH TEST ZONE 2
 aa = fread("../cpp/popDyn/Acer_saccharum/pd_54.txt")
 # aa[iteration > 125 & iteration < 128]
 aa[, verifHeight := checkOrder(height), by = iteration]
@@ -247,7 +347,7 @@ aa = aa[density > 1/plotArea]
 
 # #### Tikz version
 # tikz(paste0("./ba_plot.tex"), width = 3.1, height = 3.1) #, standAlone = TRUE)
-# op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
+# op = par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
 # plot(compReprod$time, compReprod$basalArea, type = "l", lwd = 2,
 # 	xlab = "Time", ylab = "Basal area")
 # dev.off()
