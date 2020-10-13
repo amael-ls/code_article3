@@ -148,9 +148,8 @@ Species::Species(std::string const& species_filename, std::string const& species
 	odesolverresults(s, m, xtbl, ytbl, rep);
 
 	// ...... Set minimal size to reproduce
-	std::cout << m << std::endl; // Faire if m != 2 ERROR
 	if (*(ytbl[1]) < 0 || m != 2)
-		Except_Species(m, *(ytbl[1]));
+		throw Except_Species(m, *(ytbl[1]));
 	
 	minDbhReproduction = *(ytbl[1]);
 	minHeightReproduction = std::exp((a - b + b*std::log10(minDbhReproduction))*std::log(10));
