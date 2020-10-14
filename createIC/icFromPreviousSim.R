@@ -63,6 +63,22 @@ popDyn_ls[, patch_id := patch_id - 1]
 # Filter low densities because std::stod in C++ cannot handle smaller numbers than std::numeric_limits<double>::min()
 popDyn_ls = popDyn_ls[density > 1e-8] # 1e-8 way above std::numeric_limits<double>::min()
 
+#### Check all the plots are there
+## Get all the patch_id from files
+patch_id_vec = as.integer(stri_sub(str = files_ls, from = stri_locate(str = files_ls, regex = "_")[, 2] + 1,
+	to = stri_locate(str = files_ls, regex = ".txt")[, 1] - 1))
+
+patch_id_ls = popDyn_ls[, unique(patch_id)]
+missingPatches = patch_id_vec[!(patch_id_vec %in% patch_id_ls)]
+
+## Fill the missing patches
+if (length(missingPatches) != 0)
+{
+	iter = popDyn_ls[, max(iteration)]
+	for (patch in missingPatches)
+		popDyn_ls = rbindlist(list(popDyn_ls, list(patch, iter, iter, 0, 1, 1)))
+}
+
 #### Few plots
 plot(popDyn_ls[patch_id == 1, dbh], popDyn_ls[patch_id == 1, density], type = "l", lwd = 2,
 	xlab = "dbh", ylab = "density")
