@@ -234,7 +234,7 @@ summary_dt = data.table(patch_id = integer(length = nbData), iteration = numeric
 	sumTrunkArea = numeric(length = nbData), totalDensity = numeric(length = nbData),
 	row = numeric(length = nbData), col = integer(length = nbData))
 
-pathSummary = "../cpp/summary/Acer_saccharum_100x100/"
+pathSummary = "../cpp/summary/Acer_saccharum/"
 
 for (patch_id in 0:(nbPatches - 1))
 {
@@ -269,7 +269,12 @@ for (i in 1:l_out)
 	summary_list_rs[[i + 1]] = raster(summary_dt[indices, "basalArea"])
 }
 
+# Example of cropping
 crop_extent = extent(c(500, 1500, 500, 1500))
+
+# For not cropping
+crop_extent = extent(summary_list_rs[[1]])
+
 pdf("0.pdf")
 plot(crop(summary_list_rs[[1]], crop_extent), legend = FALSE)
 BA_range = c(minValue(summary_list_rs[[1]]), maxValue(summary_list_rs[[1]]))
