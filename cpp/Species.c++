@@ -331,7 +331,7 @@ double Species::dd_ds(double s, double const s_star, double temp, double precip)
 /******        Dispersal        ******/
 /*************************************/
 // From Moorcroft & Lewis 2006: Potential role of natural enemies during tree range expansions following climate change.
-// Rk: There kernel has small mistakes that have been corrected here
+// Rk: Their kernel has small mistakes that have been corrected here
 double Species::K(double const distance) const
 {
 	double proba = 0;
@@ -343,6 +343,9 @@ double Species::K(double const distance) const
 
 	if (refKernel_doi == "10.2307/176541") // Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
+
+	if (refKernel_doi == "dirac")
+		proba = (distance == 0) ? 1 : 0;
 	
 	return proba;
 }
@@ -360,6 +363,9 @@ double Species::K(double delta_lon, double delta_lat) const
 	if (refKernel_doi == "10.2307/176541") // Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
 
+	if (refKernel_doi == "dirac")
+		proba = (distance == 0) ? 1 : 0;
+
 	return proba;
 }
 
@@ -369,6 +375,9 @@ double Species::K(double const longitude1, double const latitude1, double const 
 	double distance = sqrt((longitude1 - longitude2)*(longitude1 - longitude2) + (latitude1 - latitude2)*(latitude1 - latitude2));
 	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
 		proba = (1.0 - propLDD)/2.0*exp(-std::abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
+
+	if (refKernel_doi == "dirac")
+		proba = (distance == 0) ? 1 : 0;
 	
 	return proba;
 }
