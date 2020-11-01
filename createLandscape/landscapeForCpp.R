@@ -23,9 +23,12 @@ graphics.off()
 
 #### Tool functions
 ## Write climate values for C++ program, with cppNames for the C++ names using multi threading from data.table
-writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, deltaY, sep = " = ", rm = FALSE)
+writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, deltaY, path = "./", sep = " = ", rm = FALSE)
 {
-	outfileName = paste0("./climate_", id, ".txt")
+	if (!(stri_detect(str = path, regex = "/")) | (stri_locate_last(str = path, regex = "/")[, "end"] != stri_length(path)))
+		path = paste0(path, "/")
+	
+	outfileName = paste0(path, "climate_", id, ".txt")
 	if (rm & file.exists(outfileName))
 		file.remove(outfileName)
 
@@ -44,6 +47,7 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, del
 #### Common variables
 ## Folders
 loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
+outputPath = "./"
 
 ## C++ names
 cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month", "annual_precipitation",
@@ -96,6 +100,9 @@ crop_extent = extent(c(2135078, 2137078, -93158, -92957))
 
 # For a 20 x 20 landscape
 crop_extent = extent(c(2135078, 2135478, -93158, -92758))
+
+# For a 5 x 5 landscape
+crop_extent = extent(c(2135078, 2135178, -93158, -93057))
 #! --- End crash test zone, to have a smaller landscape
 croppedClimate = crop(croppedClimate, crop_extent)
 
@@ -134,10 +141,10 @@ vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
 
 #### Save files
 ## Environment files for C++ prog
-vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, deltaX, deltaY, sep = " = ", rm = TRUE), by = rowNumber]
+vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, deltaX, deltaY, path = outputPath, sep = " = ", rm = TRUE), by = rowNumber]
 
 ## Id files of populated patches (to create the Initial Condition in createIC folder)
-saveRDS(vals[ifelse(isPopulated == "true", TRUE, FALSE), patch_id], "./populatedPatches.rds")
+saveRDS(vals[ifelse(isPopulated == "true", TRUE, FALSE), patch_id], paste0(outputPath, "populatedPatches.rds"))
 
 #### Plot to check centroid
 # pdf("test.pdf", height = 8, width = 8)
