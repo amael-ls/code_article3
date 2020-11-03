@@ -388,6 +388,13 @@ void landscapeIntegrals(Dispersal& disp)
 	// Because we integrated only on a quarter of the plane, we need to multiply the total integral by 4
 	disp.m_totalIntegral *= 4; // If the landscape is big enough, this should be close to 1
 
+	if (disp.m_species->isDirac()) // ALGLIB does not compute the integral of a dirac distribution, only regular functions
+	{
+		Distance nullDistance(0, 0, 0, 0, deltaLat, deltaLon);
+		disp.m_map_distance_integral.at(nullDistance) = 1;
+		disp.m_totalIntegral = 1;
+	}
+
 	// std::map<Distance, double>::const_iterator it = disp.m_map_distance_integral.cbegin();
 	// for (; it != disp.m_map_distance_integral.cend(); ++it)
 	// 	std::cout << it->first << "    " << it->second << std::endl;
