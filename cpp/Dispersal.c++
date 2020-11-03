@@ -388,7 +388,7 @@ void landscapeIntegrals(Dispersal& disp)
 	// Because we integrated only on a quarter of the plane, we need to multiply the total integral by 4
 	disp.m_totalIntegral *= 4; // If the landscape is big enough, this should be close to 1
 
-	// std::map<double, double>::const_iterator it = disp.m_map_distance_integral.cbegin();
+	// std::map<Distance, double>::const_iterator it = disp.m_map_distance_integral.cbegin();
 	// for (; it != disp.m_map_distance_integral.cend(); ++it)
 	// 	std::cout << it->first << "    " << it->second << std::endl;
 	// std::cout << std::endl;
