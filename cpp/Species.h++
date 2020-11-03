@@ -77,6 +77,7 @@ class Species
 		double K(double const distance) const;
 		double K(double delta_lon, double delta_lat) const;
 		double K(double const longitude1, double const latitude1, double const longitude2, double const latitude2) const;
+		bool isDirac() const;
 
 		// others
 		static void growth_callback(const alglib::real_1d_array &y, double x, alglib::real_1d_array &dy, void *ptr);
