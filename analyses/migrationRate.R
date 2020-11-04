@@ -121,11 +121,20 @@ tmax = as.numeric(simulationParameters[parameters == "tmax", values])
 nIter = as.integer(simulationParameters[parameters == "nIter", values])
 delta_t = (tmax - t0)/(nIter - 1)
 
+#! TEMPORARY ZONE
+pathSummary = "../cpp/summary/Acer_saccharum_100x100_10RowsInit/"
+nIter = 1997
+delta_t = 1000/2999
+tmax = (nIter - 1)*delta_t
+ls_init = paste0("ic_", 9000:9999, ".txt")
+nRow_land = 100
+nCol_land = 100
+#! END TEMPORARY ZONE
+
 #### Load results c++
 ## Initial condition
-# List files
-ls_init = list.files(initPath)
-# ls_init = c("ic_5049.txt", "ic_5050.txt") # In the case 100 x 100
+# List files #! UNCOMMENT NEXT LINE
+# ls_init = list.files(initPath)
 
 # Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
 init_index = as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
@@ -137,30 +146,32 @@ init_row = unique((init_index - init_col)/nCol_land)
 ## Load files belonging to same transect (i.e., either same row = East-West or col = North-South)
 # Prepare results data tables
 nbData_ns = nRow_land*nIter*length(init_col) # nb of row x nIter x number of cols to cover
-nbData_ew = nCol_land*nIter*length(init_row) # nb of row x nIter x number of rows to cover
+# nbData_ew = nCol_land*nIter*length(init_row) # nb of row x nIter x number of rows to cover
 
 transect_ns = data.table(patch_id = integer(length = nbData_ns), iteration = numeric(length = nbData_ns),
 	localSeedProduced = numeric(length = nbData_ns), localSeedBank = numeric(length = nbData_ns),
 	sumTrunkArea = numeric(length = nbData_ns), totalDensity = numeric(length = nbData_ns),
 	distance = numeric(length = nbData_ns), transectOrigin = integer(length = nbData_ns))
 
-transect_ew = data.table(patch_id = integer(length = nbData_ew), iteration = numeric(length = nbData_ew),
-	localSeedProduced = numeric(length = nbData_ew), localSeedBank = numeric(length = nbData_ew),
-	sumTrunkArea = numeric(length = nbData_ew), totalDensity = numeric(length = nbData_ew),
-	distance = numeric(length = nbData_ew), transectOrigin = integer(length = nbData_ew))
+# transect_ew = data.table(patch_id = integer(length = nbData_ew), iteration = numeric(length = nbData_ew),
+# 	localSeedProduced = numeric(length = nbData_ew), localSeedBank = numeric(length = nbData_ew),
+# 	sumTrunkArea = numeric(length = nbData_ew), totalDensity = numeric(length = nbData_ew),
+# 	distance = numeric(length = nbData_ew), transectOrigin = integer(length = nbData_ew))
 
-#! TEMPORARY
-pathSummary = "../cpp/summary/Acer_saccharum_100x100/"
-pathSummary = "../cpp/summary/Acer_saccharum_100x5_TW/"
-#! END TEMPORARY
+ls_origin = c()
 
 # Loop on the North-South transects
 for (i in 1:length(init_col))
 {
 	ind_start = (i - 1)*nRow_land*nIter + 1
 	ind_end = (i - 1)*nRow_land*nIter + nIter
-	currentOrigin = init_index[i] # This works only when length(init_col) == length(init_index)
+	# Detect the northest point colonised in column col_id
+	col_id = i - 1 # C++ starts at 0
+	indicesCol = seq(col_id, (nRow_land - 1)*nCol_land, nCol_land)
+	currentOrigin = min(init_index[init_index %in% indicesCol]) # min because raster starts numbering from north, so the lower, the norther
 	currentRow = (currentOrigin - init_col[i])/nCol_land
+
+	ls_origin = c(ls_origin, currentOrigin)
 
 	for (row in 0:(nRow_land - 1))
 	{
@@ -168,8 +179,8 @@ for (i in 1:length(init_col))
 		temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
 		transect_ns[ind_start:ind_end, patch_id := ..patch_id]
 		transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "localSeedBank", "sumTrunkArea", "totalDensity") := temporary]
-		transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat] # This works only when there is one line in init_row
-		transect_ns[ind_start:ind_end, signedDistance := (currentRow - row)*deltaLat] # 'negative distance' means it is south to the origin
+		transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat]
+		transect_ns[ind_start:ind_end, signedDistance := (currentRow - row)*deltaLat]
 		transect_ns[ind_start:ind_end, transectOrigin := currentOrigin]
 		ind_start = ind_start + nIter
 		ind_end = ind_end + nIter
@@ -179,51 +190,57 @@ for (i in 1:length(init_col))
 ## Compute basal area
 transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
 
-#### Plot density at different time
-## Initiate plot
-pdf("travellingWave.pdf", width = 10, height = 2*10/3)
-plot(transect_ns[(iteration == 1000) & (transectOrigin == init_index[1]), distance], transect_ns[(iteration == 1000) & (transectOrigin == init_index[1]), basalArea],
-	type = "l", ylim = c(0, transect_ns[transectOrigin == init_index[1], max(basalArea)]),
-	xlab = "Distance", ylab = "Basal area", lwd = 2)
+#### Compute speed of travelling wave
+## Common variables
+threshold_BA = 1 # Required basal area to consider a plot is populated
 
-## For loop on time
-coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
-count = 1
-for (i in (seq(1300, nIter, 300) - 1))
-{
-	lines(transect_ns[(iteration == i) & (transectOrigin == init_index[1]), distance], transect_ns[(iteration == i) & (transectOrigin == init_index[1]), basalArea],
-		lwd = 2, col = coloursVec[count])
-	count = count + 1
-}
-round(c(1000, (seq(1300, nIter, 300) - 1))*delta_t)
-legend(x = "topright", legend = paste(round(c(1000, (seq(1300, nIter, 300) - 1))*delta_t), "years"),
-	lwd = 2, col = c("#000000", coloursVec), bty = "n")
-dev.off()
+## Data table for speed (keep only positive distance, going northward)
+speed_dt = transect_ns[(transectOrigin == ls_origin[50]) & (basalArea > threshold_BA) & (signedDistance >= 0), min(iteration, na.rm = TRUE), by = distance]
 
-## Dynamic plot for transectOrigin == 54 toward north
-transect_ns54 = transect_ns[(transectOrigin == init_index[1]) & (signedDistance >= 0)]
-
-# Limits xlim and ylim
-max_distance = transect_ns54[, max(distance)]
-max_basalArea = transect_ns54[, max(basalArea)]
-
-# Plot
-plot(transect_ns54[iteration == 0, distance], transect_ns54[iteration == 0, basalArea],
-	type = "l", xlim = c(0, max_distance), ylim = c(0, max_basalArea))
-invisible(sapply(seq(2, nIter, by = 10), function(x, parameters) {
-	Sys.sleep(0.01)
-	plot(transect_ns54[iteration == x, distance], transect_ns54[iteration == x, basalArea], type = 'l', lwd = 1,
-		xlim = c(0, max_distance), ylim = c(0, max_basalArea))
-}, parameters = 0)) # unused parameter, I just put it to remember how to do it in case of I need it
-
-#### Compute the speed
-## Threshold basal area o consider a plot populated
-threshold_BA = 1
-speed_dt = transect_ns54[basalArea > threshold_BA, min(iteration), by = distance]
 setnames(speed_dt, new = c("distance", "iteration"))
 setorder(speed_dt, -distance)
 speed_dt[, year := iteration*delta_t]
 speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
+
+#### Plot travelling waves emanating from same origin, at different time 
+## Common variables
+coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
+count = 1
+iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
+
+## Plot
+par(mfrow(c(2, 1)))
+pdf("travellingWave_100x100_10RowsInit.pdf", width = 10, height = 2*10/3)
+plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), distance],
+	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
+	type = "l", ylim = c(0, transect_ns[transectOrigin == ls_origin[50], max(basalArea, na.rm = TRUE)]),
+	xlab = "Distance", ylab = "Basal area", lwd = 2)
+
+## For loop on time
+for (i in iterToPlot[2:length(iterToPlot)])
+{
+	if (count > length(coloursVec))
+		print("*** Warning, curve will not be plotted because of undefined colour")
+	lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), distance],
+		transect_ns[(iteration == i) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
+		lwd = 2, col = coloursVec[count])
+	count = count + 1
+}
+
+legend(x = "topright", legend = paste(iterToPlot, "years"),
+	lwd = 2, col = c("#000000", coloursVec), bty = "n")
+
+## Plot speed on a 2nd graph
+plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
+	xlab = "Year", ylab = "speed (m/yr)")
+
+dev.off()
+
+#! -----------------------------------------------------------
+#* -----------------------------------------------------------
+#? WHAT FOLLOW IS A CRASH TEST ZONE CONTAINING MANY CRASH TEST
+#* -----------------------------------------------------------
+#! -----------------------------------------------------------
 
 #### ! CRASH TEST ZONE 1, ON RASTER
 ## Load everything
@@ -307,6 +324,26 @@ plot(summary_list_rs[[10]], legend.only = TRUE,
 		cex.axis = 1),
 	legend.args = list(text = "Basal area", side = 4, font = 2, line = 2.5, cex = 1))
 dev.off()
+
+#### Plot density at different time
+## Initiate plot
+
+
+## Dynamic plot for transectOrigin == 54 toward north
+transect_ns54 = transect_ns[(transectOrigin == init_index[1]) & (signedDistance >= 0)]
+
+# Limits xlim and ylim
+max_distance = transect_ns54[, max(distance)]
+max_basalArea = transect_ns54[, max(basalArea)]
+
+# Plot
+plot(transect_ns54[iteration == 0, distance], transect_ns54[iteration == 0, basalArea],
+	type = "l", xlim = c(0, max_distance), ylim = c(0, max_basalArea))
+invisible(sapply(seq(2, nIter, by = 10), function(x, parameters) {
+	Sys.sleep(0.01)
+	plot(transect_ns54[iteration == x, distance], transect_ns54[iteration == x, basalArea], type = 'l', lwd = 1,
+		xlim = c(0, max_distance), ylim = c(0, max_basalArea))
+}, parameters = 0)) # unused parameter, I just put it to remember how to do it in case of I need it
 
 
 #### ! CRASH TEST ZONE 2
