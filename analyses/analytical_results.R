@@ -83,8 +83,16 @@ for (iterBirth in ls_iterationBirth)
 	dbh_diff[iterationBirth == iterBirth, delta_density := ..dbh_maxDiff]
 }
 
-print(paste0("Max difference density: ", density_diff))
-print(paste0("Max difference dbh: ", dbh_diff))
+print(density_diff)
+print(dbh_diff)
 
-print(paste0("Max difference density: ", density_diff_init))
-print(paste0("Max difference dbh: ", dbh_diff_init))
+print(paste0("Max difference density init: ", density_diff_init))
+print(paste0("Max difference dbh init: ", dbh_diff_init))
+
+if (!dir.exists("./diffResults"))
+	dir.create("./diffResults")
+
+saveRDS(density_diff, paste0("./diffResults/density_", nIter, ".rds"))
+saveRDS(dbh_diff, paste0("./diffResults/dbh_", nIter, ".rds"))
+saveRDS(density_diff_init, paste0("./diffResults/density_init_", nIter, ".rds"))
+saveRDS(dbh_diff_init, paste0("./diffResults/dbh_init_", nIter, ".rds"))

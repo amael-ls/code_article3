@@ -122,3 +122,49 @@ t0 = as.numeric(simulationParameters[parameters == "t0", values])
 tmax = as.numeric(simulationParameters[parameters == "tmax", values])
 nIter = as.integer(simulationParameters[parameters == "nIter", values])
 delta_t = (tmax - t0)/(nIter - 1)
+
+#! TEMPORARY ZONE
+pathSummary = "../cpp/summary/Acer_saccharum_100x100_10RowsInit/"
+nIter = 1997
+delta_t = 1000/2999
+tmax = (nIter - 1)*delta_t
+#! END TEMPORARY ZONE
+
+#### Load results c++
+## List files
+ls_files = list.files(pathSummary)
+
+## Record plot_id and iteration missing
+plot_id_rec = c()
+iteration_rec = c()
+
+## Load files and fill NA
+allIterations = 0:(nIter - 1)
+for (file in ls_files)
+{
+	summaryFile = fread(paste0(pathSummary, file))
+	if (summaryFile[, .N] != nIter)
+	{
+		missing = allIterations[!(allIterations %in% summaryFile[, iteration])]
+		plot_id_rec = c(plot_id_rec, rep(file, length(missing)))
+		iteration_rec = c(iteration_rec, missing)
+
+		summaryFile = rbind(summaryFile, data.table(iteration = missing, localSeedProduced = NA, heigh_star = NA, sumTrunkArea = NA, totalDensity = NA))
+		setorder(x = summaryFile, iteration)
+		fwrite(x = summaryFile, file = paste0(pathSummary, file), sep = " ", col.names = TRUE, na = "NA")
+	}
+}
+
+missingLines = data.table(plot_id = as.integer(stri_sub(plot_id_rec, from = stri_locate(str = plot_id_rec, regex = "_")[, "end"] + 1,
+		to = stri_locate(str = plot_id_rec, regex = ".txt")[, "start"] - 1)),
+	iteration = iteration_rec)
+
+print(paste0("Minimum iteration: ", missingLines[, min(iteration)]))
+
+hist(missingLines[, iteration])
+
+## Check that those whom are missing iterations before nIter - 1 are actually missing up to nIter - 1
+missingLines[, freq := .N, by = plot_id]
+missingLines[, minIter := min(iteration), by = plot_id]
+
+missingLines[minIter + freq != nIter]
