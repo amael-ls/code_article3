@@ -1,9 +1,14 @@
 
-#### Aim of prog:  Create initial condition for analytical cases:
-# Case 1: No dispersal, no fecundity, no competition. Path = ../code/popDyn/case1/
-# Case 2: No dispersal, no fecundity. Path = ../code/popDyn/case2/
-# Case 3: No dispersal, no competition. Path = ../code/popDyn/case3/
-# Case 4: No dispersal. Path = ../code/popDyn/case4/
+#### Aim of prog: Conpare results with analytical solution
+## Case 1: No dispersal, no competition.
+# I alternate between this program and the C++ program. Each time,
+# I first run the C++ program with a given number of iteration nIter
+# and then run this progra, accordingly (with the good nIter)
+#
+# Remark:
+# The path is for Acer saccharum, note that I might have run the C++
+# program with other parameters that do not correspond anymore to this
+# analytical case.
 
 #### Load library and clear memory
 library(data.table)
@@ -15,7 +20,7 @@ graphics.off()
 ## Parameters
 # pathPopDyn = "../cpp/popDyn/case1/"
 pathPopDyn = "../cpp/popDyn/Acer_saccharum/"
-nIter = 500
+nIter = 1500
 tmax = 100
 
 delta_t = tmax/(nIter - 1)
@@ -46,7 +51,7 @@ max(abs(ode_II(N0_initCond, dbh0_initCond, mu, 0)[["density"]] - results_case1[i
 density_diff_init = -1
 dbh_diff_init = -1
 
-for (i in 1:499)
+for (i in 1:(nIter - 1))
 {
 	delta_density = max(abs(ode_II(N0_initCond, dbh0_initCond, mu, i*delta_t)[["density"]] - results_case1[iteration == i & iterationBirth == 0, density]))
 	if (density_diff_init < delta_density)
@@ -60,7 +65,7 @@ for (i in 1:499)
 # Check for cohorts born later
 ls_iterationBirth = results_case1[iterationBirth > 0, unique(iterationBirth)]
 density_diff = data.table(iterationBirth = ls_iterationBirth, delta_density = -1)
-dbh_diff = data.table(iterationBirth = ls_iterationBirth, delta_density = -1)
+dbh_diff = data.table(iterationBirth = ls_iterationBirth, delta_dbh = -1)
 
 for (iterBirth in ls_iterationBirth)
 {
@@ -69,7 +74,7 @@ for (iterBirth in ls_iterationBirth)
 	density_maxDiff = -1
 	dbh_maxDiff = -1
 	
-	for (i in iterBirth:499)
+	for (i in iterBirth:(nIter - 1))
 	{	
 		delta_density = max(abs(ode_II(initDensity, initDBH, mu, (i - iterBirth)*delta_t)[["density"]] - results_case1[iteration == i & iterationBirth == iterBirth, density]))
 		if (density_maxDiff < delta_density)
@@ -80,7 +85,7 @@ for (iterBirth in ls_iterationBirth)
 			dbh_maxDiff = delta_dbh
 	}
 	density_diff[iterationBirth == iterBirth, delta_density := ..density_maxDiff]
-	dbh_diff[iterationBirth == iterBirth, delta_density := ..dbh_maxDiff]
+	dbh_diff[iterationBirth == iterBirth, delta_dbh := ..dbh_maxDiff]
 }
 
 print(density_diff)
