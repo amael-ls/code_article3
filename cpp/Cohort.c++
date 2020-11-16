@@ -101,8 +101,6 @@ double Cohort::crownArea(double const height_star) const
 	double crownRadius = Rp_max * std::exp(B*std::log(std::min(distToTop, m_height*M) / (m_height*M))); // R_{i, y}^p
 
 	return M_PI*crownRadius*crownRadius;
-
-	// return (std::exp(-m_mu*m_mu/2.0 - m_mu));
 }
 
 
