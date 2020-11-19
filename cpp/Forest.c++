@@ -157,7 +157,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 			}
 			catch(const std::exception& e)
 			{
-				std::cerr << "An error occurred with the patch linked to <" << climateFile << ">" << "\n" << e.what() << std::endl;
+				std::cerr << "An error occurred with the patch linked to <" << climateFile << ">" << "\n" << "Maybe check your initialisation path <" << m_initPath << ">" << e.what() << std::endl;
 				exit(EXIT_FAILURE);
 			}
 
