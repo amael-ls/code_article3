@@ -187,4 +187,8 @@ void Environment::printId(std::ostream& os) const
 	os << m_patchId;
 }
 
+unsigned int Environment::printId() const
+{
+	return m_patchId;
+}
 #endif

@@ -57,6 +57,7 @@ class Environment
 
 		// Others
 		void printId(std::ostream& os) const;
+		unsigned int printId() const;
 
 	private :
 		// File name
