@@ -78,7 +78,7 @@ class Population
 	
 	// --- Sorting and organising
 		void sort(bool const decreasingOrder);
-		bool mergeCohorts(double const thresholdSimilarity, double const thresholdDensity);
+		std::vector<bool> mergeCohorts(double const thresholdSimilarity, double const thresholdDensity);
 		void resetCohorts(std::vector<Cohort>::iterator const it);
 
 	// --- Reproduction

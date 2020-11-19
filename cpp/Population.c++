@@ -211,7 +211,14 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 
 	// Check there is space to create a new cohort and merge/delete if required
 	if (m_nonZeroCohort == m_maxCohorts)
-		this->mergeCohorts(m_delta_s/8, 0.001);
+	{
+		std::vector<bool> merged_deleted = this->mergeCohorts(m_delta_s/8, 0.001);
+		
+		if (merged_deleted[0])
+			std::cout << "Above max size or similar cohorts merged at iteration " << m_currentIter << std::endl;
+		if (merged_deleted[1])
+			std::cout << "Low density cohorts deleted at iteration " << m_currentIter << std::endl;
+	}
 
 	if (m_maxCohorts < m_nonZeroCohort)
 		throw(Except_Population(m_maxCohorts, m_nonZeroCohort));
@@ -268,7 +275,7 @@ void Population::seedProduction(double const height_star)
 
 	double limiting_size = std::max(height_star, m_species->minHeightReproduction);
 
-	while (cohort_it != m_cohortsVec.cend() && cohort_it->m_height > -1) // limiting_size) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
+	while (cohort_it != m_cohortsVec.cend() && cohort_it->m_height > limiting_size) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
 	{
 		popReprod += cohort_it->crownArea(height_star) * cohort_it->m_lambda;
 		++cohort_it;
@@ -338,7 +345,7 @@ sary to release some space. There are two ways:
 	- Merge similar cohorts
 	- Remove negligeable cohorts
 */
-bool Population::mergeCohorts(double const thresholdSimilarity, double const thresholdDensity)
+std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, double const thresholdDensity)
 {
 	cohort_it it = m_cohortsVec.begin() + 1; // moving iterator
 	cohort_it first = m_cohortsVec.begin();
@@ -346,6 +353,7 @@ bool Population::mergeCohorts(double const thresholdSimilarity, double const thr
 	cohort_it lim_it = first + m_nonZeroCohort; // limit iterator
 
 	bool mergedCohorts = false;
+	bool deletedCohorts = false;
 	double mu, lambda;
 
 	// First, merging cohorts taller than m_s_inf
@@ -385,12 +393,18 @@ bool Population::mergeCohorts(double const thresholdSimilarity, double const thr
 	for (it = m_cohortsVec.begin(); it != m_cohortsVec.end(); ++it)
 	{
 		if ((0 < it->m_lambda) && (it->m_lambda < thresholdDensity))
+		{
 			this->resetCohorts(it);
+			deletedCohorts = true;
+		}
 	}
 	// Reordering, to put the zero cohorts at the end
 	this->sort(true);
-	// std::cout << "mergeCohorts ended" << std::endl;
-	return mergedCohorts;
+
+	std::vector<bool> merged_deleted (2);
+	merged_deleted[0] = mergedCohorts;
+	merged_deleted[1] = deletedCohorts;
+	return merged_deleted;
 }
 
 void Population::resetCohorts(cohort_it const it)
