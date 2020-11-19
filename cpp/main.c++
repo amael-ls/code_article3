@@ -10,13 +10,13 @@
 #include "Forest.h++"
 #include "Params.h++"
 
-// g++ -I. -std=c++17 -ltbb -Wall -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp
+// Compilation on the super computer; the -ltbb flag might be required (not with gcc/10.2.0):
+// g++ -I. -std=c++2a -Wall -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp
 
 void* pt2Object; // global variable which points to an arbitrary Dispersal object for kernel integration
 
 // Compiler command: g++ -Wall -std=c++17 *.cpp -lstdc++fs -o test
 
-// CODER RK4, JE PENSE QU'EULER EST TROP INSTABLE
 int main(int argc, char *argv[])
 {
 	auto start = std::chrono::high_resolution_clock::now();
