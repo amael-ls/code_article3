@@ -51,7 +51,7 @@ class Except_Population : public std::exception
 		Except_Population(int const maxCohorts, std::string const& filename);
 		Except_Population(int const maxCohorts, int const nbCohorts, double const t);
 		Except_Population(int const maxCohorts, int const nbCohorts);
-		Except_Population(unsigned int const iter, std::vector<bool> const& merge_deleted);
+		Except_Population(unsigned int const iter, std::vector<bool> const& merged_deleted, int const patch_id);
 		const char* what() const throw();
 
 	private:

@@ -90,9 +90,17 @@ Except_Population::Except_Population(int const maxCohorts, int const nbCohorts, 
 		std::to_string(m_maxCohorts) + " at time t = " + std::to_string(t) + "\n";
 }
 
-Except_Population::Except_Population(unsigned int const iter, std::vector<bool> const& merge_deleted)
+Except_Population::Except_Population(unsigned int const iter, std::vector<bool> const& merged_deleted, int const patch_id)
 {
-	m_error_msg += "merge cohort had a division by zero" + std::to_string(iter) + "\n";
+	m_error_msg += "function mergeCohorts had a division by zero at iteration " + std::to_string(iter) + " for patch " + std::to_string(patch_id) + "\n";
+	
+	std::string b0, b1, b2;
+	b0 = merged_deleted[0] ? "true" : "false";
+	b1 = merged_deleted[1] ? "true" : "false";
+	b2 = merged_deleted[2] ? "true" : "false";
+	m_error_msg += "Above max size cohorts merged: " + b0;
+	m_error_msg += "Similar cohorts merged: " + b1;
+	m_error_msg += "Low density cohorts deleted: " + b2;
 }
 
 const char* Except_Population::what() const throw()
