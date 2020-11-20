@@ -169,7 +169,7 @@ To solve equation y'(t) = f(t, y). Iterative method with a time step delta_t
 	y_{n + 1} = y_n + delta_t f(t_n, y_n)
 For stability reason, I use Runge-Kutta 4 method later, but I left Euler methods
 
-In this method, I had to manage the negligeable cohorts. Indeed, there is only a
+In this method, I had to manage the negligible cohorts. Indeed, there is only a
 finite number of cohorts, although along the characteristics, the population de-
 crease exponentially (and therefore never reach 0). Hence, cohorts that are si-
 milar are merged with their characteristics (density and diameter) averaged.
@@ -215,9 +215,11 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 		std::vector<bool> merged_deleted = this->mergeCohorts(m_delta_s/8, 0.001);
 		
 		if (merged_deleted[0])
-			std::cout << "Above max size or similar cohorts merged at iteration " << m_currentIter << std::endl;
+			std::cout << "Above max size cohorts merged at iteration " << m_currentIter << " for patch " << env.printId() << std::endl;
 		if (merged_deleted[1])
-			std::cout << "Low density cohorts deleted at iteration " << m_currentIter << std::endl;
+			std::cout << "Similar cohorts merged at iteration " << m_currentIter << " for patch " << env.printId() << std::endl;
+		if (merged_deleted[2])
+			std::cout << "Low density cohorts deleted at iteration " << m_currentIter << " for patch " << env.printId() << std::endl;
 	}
 
 	if (m_maxCohorts < m_nonZeroCohort)
@@ -341,69 +343,101 @@ void Population::sort(bool const decreasingOrder)
 /* Merge/delete cohorts
 There is only a limited amount of cohorts, set by the user (m_maxCohorts in the
 population's constructor). Therefore, to avoid segmentation fault, it is neces-
-sary to release some space. There are two ways:
+sary to release some space. The next function acts as follow:
+	- Remove null density cohorts (i.e., cohorts with a positive dbh, but density zero)
+	- Merge cohorts above s_inf
 	- Merge similar cohorts
-	- Remove negligeable cohorts
+	- Remove negligible cohorts
+Note that it is necessary to first remove null density cohorts as otherwise it might
+lead to divisions by zero
 */
 std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, double const thresholdDensity)
 {
-	cohort_it it = m_cohortsVec.begin() + 1; // moving iterator
 	cohort_it first = m_cohortsVec.begin();
-	cohort_it ref_it; // reference iterator
 	cohort_it lim_it = first + m_nonZeroCohort; // limit iterator
+	cohort_it moving_it; // moving iterator
+	cohort_it ref_it; // reference iterator
 
-	bool mergedCohorts = false;
-	bool deletedCohorts = false;
-	double mu, lambda;
+	std::vector<bool> merged_deleted (3); // mergedTallCohorts, mergedCohorts, deletedCohorts
+	
+	double mu = 0;
+	double lambda = 0;
 
-	// First, merging cohorts taller than m_s_inf
-	while ((it != m_cohortsVec.end()) && (it->m_mu > m_s_inf))
+	// First: remove null density cohorts and reset them to zeros cohorts
+	for (moving_it = first; moving_it != lim_it; ++moving_it)
 	{
-		// Weighted (by density m_lambda) sum for mu
-		first->m_mu = (first->m_lambda * first->m_mu + it->m_lambda * it->m_mu)/(first->m_lambda + it->m_lambda);
-		first->m_lambda += it->m_lambda;
-		this->resetCohorts(it);
-		mergedCohorts = true;
-		++it;
+		if (moving_it->m_lambda == 0)
+		{
+			this->resetCohorts(moving_it);
+			merged_deleted[2] = true;
+		}
 	}
 
-	ref_it = it;
+	// --- Reordering, to put the zeros cohorts at the end
+	this->sort(true);
 
-	// Second (if required), merge similar cohorts
+	// --- Update or reset iterators
+	lim_it = first + m_nonZeroCohort; // update (m_nonZeroCohorts might have changed)
+	moving_it = first + 1; // reset for second step
+
+	// Second: merging cohorts taller than m_s_inf
+	while ((moving_it != m_cohortsVec.end()) && (moving_it->m_mu > m_s_inf))
+	{
+		// Sum for lambda
+		lambda += moving_it->m_lambda;
+		
+		// Weighted sum for mu by density m_lambda
+		mu += moving_it->m_lambda*moving_it->m_mu;
+		this->resetCohorts(moving_it);
+		merged_deleted[0] = true;
+		++moving_it;
+	}
+
+	if (first->m_lambda + lambda == 0)
+		throw(Except_Population(m_currentIter, merged_deleted));
+	
+	first->m_mu = (first->m_lambda*first->m_mu + mu)/(first->m_lambda + lambda); // mu already weighted
+	first->m_lambda += lambda;
+
+	// Third: merge similar cohorts
+	// --- Set reference iterator. All cohorts above s_inf have been merged
+	ref_it = moving_it;
+
+	// --- Merge similar cohorts
 	while (ref_it != lim_it)
 	{
 		mu = 0;
 		lambda = 0;
-		it = ref_it + 1;
+		moving_it = ref_it + 1;
 		// abs val for float = fabs, useless in the next while loop because population is sorted (decreasing order)
-		while ((it != lim_it) && (ref_it->m_mu - it->m_mu < thresholdSimilarity)) // BUG <--- TO CHECK, DID I FORGET TO REMOVE IT
+		while ((moving_it != lim_it) && (ref_it->m_mu - moving_it->m_mu < thresholdSimilarity)) // BUG <--- TO CHECK, DID I FORGET TO REMOVE IT
 		{
-			mu += it->m_lambda * it->m_mu;
-			lambda += it->m_lambda;
-			this->resetCohorts(it);
-			mergedCohorts = true;
-			++it;
+			lambda += moving_it->m_lambda;
+			mu += moving_it->m_lambda * moving_it->m_mu;
+			this->resetCohorts(moving_it);
+			merged_deleted[1] = true;
+			++moving_it;
 		} // END BUG <--- TO CHECK, DID I FORGET TO REMOVE IT
-		ref_it->m_mu = (ref_it->m_lambda * ref_it->m_mu + mu)/(ref_it->m_lambda + lambda);
+		if (ref_it->m_lambda + lambda == 0)
+			throw(Except_Population(m_currentIter, merged_deleted));
+		
+		ref_it->m_mu = (ref_it->m_lambda*ref_it->m_mu + mu)/(ref_it->m_lambda + lambda); // mu already weighted
 		ref_it->m_lambda += lambda;
-		ref_it = it;
+		ref_it = moving_it; // This is correct, the last moving_it was not reset in the while loop
 	}
 
 	// Reseting cohorts considered negligible
-	for (it = m_cohortsVec.begin(); it != m_cohortsVec.end(); ++it)
+	for (moving_it = m_cohortsVec.begin(); moving_it != lim_it; ++moving_it)
 	{
-		if ((0 < it->m_lambda) && (it->m_lambda < thresholdDensity))
+		if ((0 < moving_it->m_lambda) && (moving_it->m_lambda < thresholdDensity))
 		{
-			this->resetCohorts(it);
-			deletedCohorts = true;
+			this->resetCohorts(moving_it);
+			merged_deleted[2] = true;
 		}
 	}
-	// Reordering, to put the zero cohorts at the end
+	// Reordering, to put the zeros cohorts at the end
 	this->sort(true);
 
-	std::vector<bool> merged_deleted (2);
-	merged_deleted[0] = mergedCohorts;
-	merged_deleted[1] = deletedCohorts;
 	return merged_deleted;
 }
 
