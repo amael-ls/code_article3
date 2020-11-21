@@ -212,7 +212,7 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 	// Check there is space to create a new cohort and merge/delete if required
 	if (m_nonZeroCohort == m_maxCohorts)
 	{
-		std::vector<bool> merged_deleted = this->mergeCohorts(m_delta_s/8, 0.001);
+		std::vector<bool> merged_deleted = this->mergeCohorts(m_delta_s/8, 0.00001, env.printId());
 		
 		if (merged_deleted[0])
 			std::cout << "Above max size cohorts merged at iteration " << m_currentIter << " for patch " << env.printId() << std::endl;
@@ -351,25 +351,30 @@ sary to release some space. The next function acts as follow:
 Note that it is necessary to first remove null density cohorts as otherwise it might
 lead to divisions by zero
 */
-std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, double const thresholdDensity)
+std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, double const thresholdDensity, int const patch_id)
 {
 	cohort_it first = m_cohortsVec.begin();
 	cohort_it lim_it = first + m_nonZeroCohort; // limit iterator
 	cohort_it moving_it; // moving iterator
 	cohort_it ref_it; // reference iterator
 
-	std::vector<bool> merged_deleted (3); // mergedTallCohorts, mergedCohorts, deletedCohorts
+	std::vector<bool> merged_deleted (3); // mergedTallCohorts, mergedSimilarCohorts, negligibleCohorts
+	bool mergedTallCohorts = false;
+	bool mergedSimilarCohorts = false;
+	bool negligibleCohorts = false;
+	bool hasChanged;
 	
 	double mu = 0;
 	double lambda = 0;
+	unsigned int birthIteration = 0;
 
 	// First: remove null density cohorts and reset them to zeros cohorts
-	for (moving_it = first; moving_it != lim_it; ++moving_it)
+	for (moving_it = m_cohortsVec.begin(); moving_it != lim_it; ++moving_it)
 	{
-		if (moving_it->m_lambda == 0)
+		if (moving_it->m_lambda == 0 && moving_it->m_mu > 0)
 		{
 			this->resetCohorts(moving_it);
-			merged_deleted[2] = true;
+			negligibleCohorts = true;
 		}
 	}
 
@@ -377,27 +382,33 @@ std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, dou
 	this->sort(true);
 
 	// --- Update or reset iterators
-	lim_it = first + m_nonZeroCohort; // update (m_nonZeroCohorts might have changed)
-	moving_it = first + 1; // reset for second step
+	lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // update (m_nonZeroCohorts might have changed)
+	moving_it = m_cohortsVec.begin() + 1; // reset for second step
 
-	// Second: merging cohorts taller than m_s_inf
-	while ((moving_it != m_cohortsVec.end()) && (moving_it->m_mu > m_s_inf))
+	// Second: merging cohorts taller than m_s_inf, useless to go beyond lim_it
+	while ((moving_it != lim_it) && (moving_it->m_mu > m_s_inf))
 	{
 		// Sum for lambda
 		lambda += moving_it->m_lambda;
-		
 		// Weighted sum for mu by density m_lambda
-		mu += moving_it->m_lambda*moving_it->m_mu;
+		mu += moving_it->m_lambda * moving_it->m_mu;
+		// Weighted sum for birthIteration by density m_lambda
+		birthIteration += moving_it->m_lambda * moving_it->m_birthIteration;
+
 		this->resetCohorts(moving_it);
-		merged_deleted[0] = true;
+		mergedTallCohorts = true;
 		++moving_it;
 	}
 
-	if (first->m_lambda + lambda == 0)
-		throw(Except_Population(m_currentIter, merged_deleted));
+	if (mergedTallCohorts && (first->m_lambda + lambda == 0))
+		throw(Except_Population(m_currentIter, merged_deleted, patch_id));
 	
-	first->m_mu = (first->m_lambda*first->m_mu + mu)/(first->m_lambda + lambda); // mu already weighted
-	first->m_lambda += lambda;
+	if (mergedTallCohorts) // Important: compute mu before lambda!
+	{
+		first->m_mu = (first->m_lambda * first->m_mu + mu)/(first->m_lambda + lambda); // mu already weighted
+		first->m_birthIteration = static_cast<unsigned int>((first->m_lambda * first->m_birthIteration + birthIteration)/(first->m_lambda + lambda)); // birthIteration already weighted
+		first->m_lambda += lambda;
+	}
 
 	// Third: merge similar cohorts
 	// --- Set reference iterator. All cohorts above s_inf have been merged
@@ -408,21 +419,30 @@ std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, dou
 	{
 		mu = 0;
 		lambda = 0;
+		birthIteration = 0;
 		moving_it = ref_it + 1;
-		// abs val for float = fabs, useless in the next while loop because population is sorted (decreasing order)
-		while ((moving_it != lim_it) && (ref_it->m_mu - moving_it->m_mu < thresholdSimilarity)) // BUG <--- TO CHECK, DID I FORGET TO REMOVE IT
+		hasChanged = false;
+		// Population is sorted (decreasing order), so no need for std::fabs
+		while ((moving_it != lim_it) && (ref_it->m_mu - moving_it->m_mu < thresholdSimilarity))
 		{
 			lambda += moving_it->m_lambda;
 			mu += moving_it->m_lambda * moving_it->m_mu;
+			birthIteration += moving_it->m_lambda * moving_it->m_birthIteration;
 			this->resetCohorts(moving_it);
-			merged_deleted[1] = true;
+			mergedSimilarCohorts = true;
 			++moving_it;
-		} // END BUG <--- TO CHECK, DID I FORGET TO REMOVE IT
-		if (ref_it->m_lambda + lambda == 0)
-			throw(Except_Population(m_currentIter, merged_deleted));
+			hasChanged = true;
+		}
+		if (hasChanged && (ref_it->m_lambda + lambda == 0))
+			throw(Except_Population(m_currentIter, merged_deleted, patch_id));
 		
-		ref_it->m_mu = (ref_it->m_lambda*ref_it->m_mu + mu)/(ref_it->m_lambda + lambda); // mu already weighted
-		ref_it->m_lambda += lambda;
+		if (hasChanged) // Important: compute mu before lambda!
+		{
+			ref_it->m_mu = (ref_it->m_lambda * ref_it->m_mu + mu)/(ref_it->m_lambda + lambda); // mu already weighted
+			ref_it->m_birthIteration = static_cast<unsigned int>(
+				(ref_it->m_lambda * ref_it->m_birthIteration + birthIteration)/(ref_it->m_lambda + lambda)); // birthIteration already weighted
+			ref_it->m_lambda += lambda;
+		}
 		ref_it = moving_it; // This is correct, the last moving_it was not reset in the while loop
 	}
 
@@ -432,12 +452,16 @@ std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, dou
 		if ((0 < moving_it->m_lambda) && (moving_it->m_lambda < thresholdDensity))
 		{
 			this->resetCohorts(moving_it);
-			merged_deleted[2] = true;
+			negligibleCohorts = true;
 		}
 	}
 	// Reordering, to put the zeros cohorts at the end
 	this->sort(true);
 
+	merged_deleted[0] = mergedTallCohorts;
+	merged_deleted[1] = mergedSimilarCohorts;
+	merged_deleted[2] = negligibleCohorts;
+	
 	return merged_deleted;
 }
 
@@ -445,6 +469,7 @@ void Population::resetCohorts(cohort_it const it)
 {
 	it->m_mu = 0;
 	it->m_lambda = 0;
+	it->m_height = 0;
 	if (m_nonZeroCohort > 0)
 		--m_nonZeroCohort;
 }
