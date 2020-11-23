@@ -47,7 +47,13 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, del
 #### Common variables
 ## Folders
 loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
-outputPath = "./"
+outputPath = "./climate_200x7/"
+
+if (!dir.exists(outputPath))
+	dir.create(outputPath)
+
+if (length(list.files(outputPath, all.files = TRUE, include.dirs = TRUE, no.. = TRUE)) != 0)
+	unlink(paste0(outputPath, "*"))
 
 ## C++ names
 cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month", "annual_precipitation",
@@ -91,6 +97,9 @@ croppedClimate = disaggregate(x = croppedClimate, fact = downScale_factors, meth
 #! --- Crash test zone, to have a smaller landscape
 # For a 100 x 100 landscape
 crop_extent = extent(c(2135078, 2137078, -93158, -91146)) # order = xmin, xmax, ymin, ymax
+
+# For a 200 x 7 landscape
+crop_extent = extent(c(2135078, 2135218, -93158, -89136))
 
 # For a 100 x 5 landscape
 crop_extent = extent(c(2135078, 2135178, -93158, -91146))
@@ -138,6 +147,11 @@ vals[row == max(row), isPopulated := "true"]
 
 # Populations are at the 10 bottom lines of the landscape
 vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
+
+# # Populations are at the 10 bottom lines of the landscape + refugia
+# vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
+# refugia
+# vals[refugia, isPopulated := "true"]
 
 #### Save files
 ## Environment files for C++ prog
