@@ -68,7 +68,7 @@ checkOrder = function(dbh)
 ######## Part I: Population dynamics
 #### Load parameters c++
 ## Simulation parameters
-simulationParameters = setDT(read.table(file = "../cpp/simulationParameters.txt", header = FALSE, sep = "=", comment.char = "#", blank.lines.skip = TRUE))
+simulationParameters = setDT(read.table(file = "../cpp/simulationParameters2.txt", header = FALSE, sep = "=", comment.char = "#", blank.lines.skip = TRUE))
 setnames(x = simulationParameters, new = c("parameters", "values"))
 
 ## Clean parameters
@@ -122,19 +122,19 @@ nIter = as.integer(simulationParameters[parameters == "nIter", values])
 delta_t = (tmax - t0)/(nIter - 1)
 
 #! TEMPORARY ZONE
-pathSummary = "../cpp/summary/Acer_saccharum_100x100_10RowsInit/"
-nIter = 1997
-delta_t = 1000/2999
-tmax = (nIter - 1)*delta_t
-ls_init = paste0("ic_", 9000:9999, ".txt")
-nRow_land = 100
-nCol_land = 100
+pathSummary = "../cpp/summary/Acer_saccharum_200x7_fat-tailed_noBC_10init/"
+# nIter = 1997
+# delta_t = 1000/2999
+# tmax = (nIter - 1)*delta_t
+# ls_init = paste0("ic_", 9000:9999, ".txt")
+# nRow_land = 100
+# nCol_land = 100
 #! END TEMPORARY ZONE
 
 #### Load results c++
 ## Initial condition
 # List files #! UNCOMMENT NEXT LINE
-# ls_init = list.files(initPath)
+ls_init = list.files(initPath)
 
 # Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
 init_index = as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
@@ -195,7 +195,14 @@ transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
 threshold_BA = 1 # Required basal area to consider a plot is populated
 
 ## Data table for speed (keep only positive distance, going northward)
-speed_dt = transect_ns[(transectOrigin == ls_origin[50]) & (basalArea > threshold_BA) & (signedDistance >= 0), min(iteration, na.rm = TRUE), by = distance]
+# Select transect
+transect_index = 3
+
+if ((transect_index < 1) | (transect_index > length(ls_origin)))
+	stop(paste0("The index transect_index must be between 1 and ", length(ls_origin), ". Currently, transect_index = ", transect_index))
+
+# Subset data
+speed_dt = transect_ns[(transectOrigin == ls_origin[transect_index]) & (basalArea > threshold_BA) & (signedDistance >= 0), min(iteration, na.rm = TRUE), by = distance]
 
 setnames(speed_dt, new = c("distance", "iteration"))
 setorder(speed_dt, -distance)
@@ -209,11 +216,17 @@ count = 1
 iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
 
 ## Plot
-par(mfrow(c(2, 1)))
-pdf("travellingWave_100x100_10RowsInit.pdf", width = 10, height = 2*10/3)
-plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), distance],
-	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
-	type = "l", ylim = c(0, transect_ns[transectOrigin == ls_origin[50], max(basalArea, na.rm = TRUE)]),
+kernelType = "fat-tailed"
+landscapeSize = paste0(nRow_land, "x", nCol_land)
+initOption = "10RowsInit"
+
+pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 6, height = 4)
+# tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".tex"), width = 6, height = 4)
+count = 1
+op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
+plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
+	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
+	type = "l", ylim = c(0, 125), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
 	xlab = "Distance", ylab = "Basal area", lwd = 2)
 
 ## For loop on time
@@ -221,26 +234,31 @@ for (i in iterToPlot[2:length(iterToPlot)])
 {
 	if (count > length(coloursVec))
 		print("*** Warning, curve will not be plotted because of undefined colour")
-	lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), distance],
-		transect_ns[(iteration == i) & (transectOrigin == ls_origin[50]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
+	lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
+		transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
 		lwd = 2, col = coloursVec[count])
 	count = count + 1
 }
 
-legend(x = "topright", legend = paste(iterToPlot, "years"),
-	lwd = 2, col = c("#000000", coloursVec), bty = "n")
+legend(x = "topright", # x = 1850, y = 130, # horiz = TRUE, x.intersp = 0.25,
+	title = "Years", legend = iterToPlot, lwd = 2, col = c("#000000", coloursVec), bty = "n")
+
+dev.off()
 
 ## Plot speed on a 2nd graph
+pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.pdf"), width = 6, height = 4)
+# tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.tex"), width = 6, height = 4)
+op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
 plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
 	xlab = "Year", ylab = "speed (m/yr)")
 
 dev.off()
 
-#! -----------------------------------------------------------
-#* -----------------------------------------------------------
-#? WHAT FOLLOW IS A CRASH TEST ZONE CONTAINING MANY CRASH TEST
-#* -----------------------------------------------------------
-#! -----------------------------------------------------------
+#! ------------------------------------------------------------
+#* ------------------------------------------------------------
+#? WHAT FOLLOW IS A CRASH TEST ZONE CONTAINING MANY CRASH TESTS
+#* ------------------------------------------------------------
+#! ------------------------------------------------------------
 
 #### ! CRASH TEST ZONE 1, ON RASTER
 ## Load everything
