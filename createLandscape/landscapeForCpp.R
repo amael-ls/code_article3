@@ -59,6 +59,14 @@ if (length(list.files(outputPath, all.files = TRUE, include.dirs = TRUE, no.. = 
 cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month", "annual_precipitation",
 	"precipitation_of_driest_quarter", "isPopulated", "longitude", "latitude", "patch_id", "row", "col")
 
+## Options
+# Averaged conditions on landscape
+homogeneousClimate = TRUE
+
+# Refugia beyond southern distribution
+refugiaOption = FALSE
+nbRefugia = 10
+
 #### Get climate from raster
 ## Load raster
 climate_rs = stack(paste0(loadPath, "clim60sec/clim_2010.grd"))
@@ -113,6 +121,7 @@ crop_extent = extent(c(2135078, 2135478, -93158, -92758))
 # For a 5 x 5 landscape
 crop_extent = extent(c(2135078, 2135178, -93158, -93057))
 #! --- End crash test zone, to have a smaller landscape
+
 croppedClimate = crop(croppedClimate, crop_extent)
 
 nrows = nrow(croppedClimate)
@@ -127,6 +136,14 @@ centroid = colMeans(coordinates(croppedClimate))
 ## Coerce to data table
 vals = as.data.table(rasterToPoints(croppedClimate))
 setnames(vals, old = c("x", "y"), new = c("longitude", "latitude"))
+
+## If homogeneous climate, compute average
+if (homogeneousClimate)
+{
+	cols = c("annual_mean_temperature", "min_temperature_of_coldest_month",
+		"annual_precipitation", "precipitation_of_driest_quarter")
+	vals[ , (cols) := lapply(.SD, "mean"), .SDcols = cols]
+}
 
 ## Add id, row, col, and isPopulated
 vals[, patch_id := 0:(.N - 1)] # C++ starts at 0, not 1
@@ -148,10 +165,31 @@ vals[row == max(row), isPopulated := "true"]
 # Populations are at the 10 bottom lines of the landscape
 vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
 
-# # Populations are at the 10 bottom lines of the landscape + refugia
-# vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
-# refugia
-# vals[refugia, isPopulated := "true"]
+# Populations are at the 20 bottom lines of the landscape
+vals[row %in% seq(max(row) - 19, max(row)), isPopulated := "true"]
+
+# Add refugia
+if (refugiaOption)
+{
+
+	#! --- Crash test zone, to have refugia
+	# Randomly assignated refugia
+	set.seed(1969-08-18) # Woodstock seed
+	if (vals[isPopulated != "true", .N] < nbRefugia)
+	{
+		nbRefugia = vals[!isPopulated, .N]
+		print("*** The number of refugia was above the number of free patches. All the landscape is colonised! ***")
+	}
+	
+	refugia = sample(vals[isPopulated != "true", patch_id], nbRefugia, replace = FALSE)
+
+	# Refugia assigned by user
+	refugia = c(154, 118, 654)
+	#! --- End crash test zone, to have refugia
+
+	# Assigned refugia
+	vals[patch_id %in% , isPopulated := "true"]
+}
 
 #### Save files
 ## Environment files for C++ prog
