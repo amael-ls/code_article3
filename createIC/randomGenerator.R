@@ -66,9 +66,10 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 
 #### Parameters
 ## Folder and id plots (for names initial condition)
-path = "./randomInitialCondition/Acer_saccharum/"
+outputPath = "./randomInitialCondition/Acer_saccharum/"
 filenamePattern = "ic_"
-id_plots = readRDS("../createLandscape/populatedPatches.rds")
+pathLandscape = "../createLandscape/climate_200x7/"
+id_plots = readRDS(paste0(pathLandscape, "populatedPatches.rds"))
 
 ## Cohorts 
 nbCohorts = 150
@@ -117,8 +118,11 @@ for (i in 1:nbPlots)
 
 #### Write files initial condition
 ## Create folder
-if (!dir.exists(path))
-	dir.create(path)
+if (!dir.exists(outputPath))
+	dir.create(outputPath)
+
+if (length(list.files(outputPath, all.files = TRUE, include.dirs = TRUE, no.. = TRUE)) != 0)
+	unlink(paste0(outputPath, "*"))
 
 ## Write files
-printIC(densities, dbh, path, filenamePattern, id_plots, sep = " ", reset = TRUE)
+printIC(densities, dbh, outputPath, filenamePattern, id_plots, sep = " ", reset = TRUE)
