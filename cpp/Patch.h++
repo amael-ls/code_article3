@@ -53,6 +53,8 @@ class Patch
 		void populationDynamics(double const t, double const delta_t);
 		void dispersal(Patch* sourcePatch, Species* species,
 			std::map<Distance, double> const& distToIntegral, double const deltaLat, double const deltaLon);
+		void dispersal(Patch* sourcePatch, Species* species, double const totalIntegral,
+			std::map<Distance, double> const& distToIntegral, double const deltaLat, double const deltaLon);
 		void recruitment(Species* species, double const t, double const delta_t);
 		void competition(double const tolHeight);
 

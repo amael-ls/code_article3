@@ -215,6 +215,9 @@ void Forest::recruitment(double const t, double const delta_t)
 					sourcePatch = &m_patchVec[row*m_nCol_land + col];
 					// Compute dispersal from source to target, and update the seed banks:
 					patch.dispersal(sourcePatch, *sp_it, (m_map_dispersal.at(*sp_it)).m_map_distance_integral, m_deltaLat, m_deltaLon);
+					// // Compute dispersal from source to target, and update the seed banks (with Neumann BC = 0, i.e., rebound):
+					// patch.dispersal(sourcePatch, *sp_it, (m_map_dispersal.at(*sp_it)).m_totalIntegral,
+					// (m_map_dispersal.at(*sp_it)).m_map_distance_integral, m_deltaLat, m_deltaLon);
 				}
 			}
 			// patch.recruitment(*sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank

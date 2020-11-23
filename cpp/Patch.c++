@@ -92,6 +92,17 @@ void Patch::dispersal(Patch* sourcePatch, Species* species,
 	((sourcePatch->m_pop_map).at(species)).m_localProducedSeeds -= withdrawnSeeds;
 }
 
+void Patch::dispersal(Patch* sourcePatch, Species* species, double const totalIntegral,
+	std::map<Distance, double> const& distToIntegral, double const deltaLat, double const deltaLon)
+{
+	Distance dist(m_env, sourcePatch->m_env, deltaLat, deltaLon);
+
+	// withdrawn seeds from source = local production of source times amount dispersed by K
+	double withdrawnSeeds = ((sourcePatch->m_pop_map).at(species)).m_localProducedSeeds * distToIntegral.at(dist);
+	(m_pop_map.at(species)).m_localSeedBank += withdrawnSeeds/totalIntegral;
+	((sourcePatch->m_pop_map).at(species)).m_localProducedSeeds -= withdrawnSeeds;
+}
+
 void Patch::recruitment(Species* species, double const t, double const delta_t)
 {
 	double const dbh_star = std::exp(1/species->b*(std::log10(m_height_star) - species->a)*std::log(10));
