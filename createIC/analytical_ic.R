@@ -1,5 +1,5 @@
 
-#### Aim of prog:  Create initial condition for analytical cases:
+#### Aim of prog: Create initial condition for analytical cases:
 # Case 1: No dispersal, no fecundity, no competition. Path = ic_1/
 # Case 2: No dispersal, no fecundity. Path = ic_2/
 # Case 3: No dispersal, no competition. Path = ic_3/
@@ -52,7 +52,7 @@ minDiameter = 2
 
 #### Case number 1
 ## Parameters
-path = "./ic_1/"
+path = "./ic_1/Acer_saccharum/"
 id_plots = readRDS("../createLandscape/clim_5x5/populatedPatches.rds")
 nbPlots = length(id_plots)
 
@@ -64,9 +64,7 @@ dbh = seq(minDiameter, maxDiameter, length.out = nbCohorts)
 densities = matrix(data = 0, nrow = nbCohorts, ncol = nbPlots)
 
 for (col in 1:nbPlots)
-	densities[, col] = exp(dbh/10)
+	densities[, col] = 1 + dbh
 
 ## Write files
 printIC(densities, dbh, path, filenamePattern, id_plots, sep = " ", reset = TRUE)
-
-
