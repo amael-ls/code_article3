@@ -80,6 +80,7 @@ names(coeffs) = c("intercept", "slope")
 #### Plot results
 ## Plot for density
 tikz("error_density.tex", width = 3.1, height = 3.1)
+op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
 plot(0, pch = "", xlim = slopesZero[, range(log10_deltaT)], ylim = slopesZero[, range(log10_ddensity)],
 	xlab = "$\\log_{10}(\\Delta t) $", ylab = "$ \\log_{10}(Error density) $")
 abline(coef = coeffs, col = "orange", lwd = 2)
@@ -88,6 +89,7 @@ dev.off()
 
 ## Plot for dbh
 tikz("error_dbh.tex", width = 3.1, height = 3.1)
+op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
 plot(0, pch = "", xlim = ls_results_dbh[iterationBirth == 0, range(log10(deltaT))],
 	ylim = ls_results_dbh[iterationBirth == 0, range(log10(delta_dbh))],
 	xlab = "$\\log_{10}(\\Delta t) $", ylab = "$ \\log_{10}(Error dbh) $")
