@@ -209,11 +209,15 @@ vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, delt
 patch_id = vals[isPopulated == "true", patch_id]
 
 # Abies balsamea
-ls_id_abba = patch_id[patch_id <= 100]
+maxRow_abba = 100
+max_index_limitRow = (maxRow_abba - 1)*ncols + ncols - 1
+ls_id_abba = patch_id[patch_id <= max_index_limitRow]
 abba = data.table(patch_id = ls_id_abba, species = "Abies_balsamea")
 
 # Acer saccharum
-ls_id_acsa = patch_id[patch_id >= 100]
+minRow_acsa = 100
+min_index_limitRow = (minRow_acsa - 1)*ncols
+ls_id_acsa = patch_id[patch_id >= min_index_limitRow]
 acsa = data.table(patch_id = ls_id_acsa, species = "Acer_saccharum")
 
 # Merge all the species in a data.table
