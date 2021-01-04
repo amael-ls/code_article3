@@ -47,7 +47,7 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, del
 #### Common variables
 ## Folders
 loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
-outputPath = "./climate_200x7_refugia/"
+outputPath = "./climate_200x7_abba-acsa/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
@@ -64,7 +64,7 @@ cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month", "ann
 homogeneousClimate = TRUE
 
 # Refugia beyond southern distribution
-refugiaOption = TRUE
+refugiaOption = FALSE
 nbRefugia = 10
 
 #### Get climate from raster
@@ -172,6 +172,9 @@ vals[row %in% seq(max(row) - 19, max(row)), isPopulated := "true"]
 # Populations are at the 100 top lines of the landscape
 vals[row %in% seq(min(row), min(row) + 99), isPopulated := "true"]
 
+# Populations are at the 100 bottom lines of the landscape
+vals[row %in% seq(max(row) - 99, max(row)), isPopulated := "true"]
+
 # Add refugia
 if (refugiaOption)
 {
@@ -202,7 +205,22 @@ if (refugiaOption)
 vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, deltaX, deltaY, path = outputPath, sep = " = ", rm = TRUE), by = rowNumber]
 
 ## Id files of populated patches (to create the Initial Condition in createIC folder)
-saveRDS(vals[ifelse(isPopulated == "true", TRUE, FALSE), patch_id], paste0(outputPath, "populatedPatches.rds"))
+# List occupied patches
+patch_id = vals[isPopulated == "true", patch_id]
+
+# Abies balsamea
+ls_id_abba = patch_id[patch_id <= 100]
+abba = data.table(patch_id = ls_id_abba, species = "Abies_balsamea")
+
+# Acer saccharum
+ls_id_acsa = patch_id[patch_id >= 100]
+acsa = data.table(patch_id = ls_id_acsa, species = "Acer_saccharum")
+
+# Merge all the species in a data.table
+patch_data = rbind(abba, acsa)
+
+# Save patch cata
+saveRDS(patch_data, paste0(outputPath, "populatedPatches.rds"))
 
 ## Write data to create Matlab's data
 saveRDS(vals, paste0(outputPath, "climate.rds"))
