@@ -169,6 +169,9 @@ vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
 # Populations are at the 20 bottom lines of the landscape
 vals[row %in% seq(max(row) - 19, max(row)), isPopulated := "true"]
 
+# Populations are at the 100 top lines of the landscape
+vals[row %in% seq(min(row), min(row) + 99), isPopulated := "true"]
+
 # Add refugia
 if (refugiaOption)
 {
