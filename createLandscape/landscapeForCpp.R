@@ -47,7 +47,7 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, del
 #### Common variables
 ## Folders
 loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
-outputPath = "./climate_200x7/"
+outputPath = "./climate_200x7_refugia/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
@@ -64,7 +64,7 @@ cppNames = c("annual_mean_temperature", "min_temperature_of_coldest_month", "ann
 homogeneousClimate = TRUE
 
 # Refugia beyond southern distribution
-refugiaOption = FALSE
+refugiaOption = TRUE
 nbRefugia = 10
 
 #### Get climate from raster
@@ -152,6 +152,7 @@ vals[, row := (patch_id - col)/ncols]
 vals[, rowNumber := 1:.N]
 vals[, isPopulated := "false"]
 
+#! Select one or more option below
 ## Compute distance to centroid
 vals[, dist := sqrt((longitude - centroid["x"])^2 + (latitude - centroid["y"])^2)]
 
@@ -184,11 +185,13 @@ if (refugiaOption)
 	refugia = sample(vals[isPopulated != "true", patch_id], nbRefugia, replace = FALSE)
 
 	# Refugia assigned by user
-	refugia = c(154, 118, 654)
+	#* This is for the 200x7 landscape: (row 65, 66 and cols 0, 1); (row 12-14 and cols 4, 5)
+	refugia = c(64*7, 64*7 + 1, 65*7, 65*7 + 1,
+		11*7 + 3, 12*7 + 4, 12*7 + 3, 13*7 + 4, 13*7 + 3, 11*7 + 4)
 	#! --- End crash test zone, to have refugia
 
 	# Assigned refugia
-	vals[patch_id %in% , isPopulated := "true"]
+	vals[patch_id %in% refugia, isPopulated := "true"]
 }
 
 #### Save files
@@ -197,6 +200,9 @@ vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, delt
 
 ## Id files of populated patches (to create the Initial Condition in createIC folder)
 saveRDS(vals[ifelse(isPopulated == "true", TRUE, FALSE), patch_id], paste0(outputPath, "populatedPatches.rds"))
+
+## Write data to create Matlab's data
+saveRDS(vals, paste0(outputPath, "climate.rds"))
 
 #### Plot to check centroid
 # pdf("test.pdf", height = 8, width = 8)
