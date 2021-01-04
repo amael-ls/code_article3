@@ -11,7 +11,7 @@
 #include "Params.h++"
 
 // Compilation on the super computer; the -ltbb flag might be required (not with gcc/10.2.0):
-// g++ -I. -std=c++2a -Wall -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp
+// g++ -I. -std=c++2a -Wall -O2 -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp
 
 void* pt2Object; // global variable which points to an arbitrary Dispersal object for kernel integration
 
