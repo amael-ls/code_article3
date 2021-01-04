@@ -25,6 +25,7 @@
 # 		- 1 km^2 might contain more than 60,000 trees (https://www.reddit.com/r/MapPorn/comments/47f9s5/trees_per_square_km_in_europe_1200x1000/)
 #		- 1 ha might contain up to 2,500 trees (plantation), between 620-1,500 (regeneration) or 15-150 (old-growth forest)
 # 			source: https://naldc.nal.usda.gov/download/34466/PDF
+# 3/. If there is more than one species, you need to rerun this program for each one of them. Please change the variable sp accordingly!
 #
 
 #### Load library and clear memory
@@ -66,10 +67,15 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 
 #### Parameters
 ## Folder and id plots (for names initial condition)
-outputPath = "./randomInitialCondition/Acer_saccharum/"
+sp = "Acer_saccharum"
+outputPath = paste0("./randomInitialCondition/", sp, "/")
 filenamePattern = "ic_"
-pathLandscape = "../createLandscape/climate_200x7/"
+pathLandscape = "../createLandscape/climate_200x7_abba-acsa/"
 id_plots = readRDS(paste0(pathLandscape, "populatedPatches.rds"))
+id_plots = id_plots[species == sp, patch_id]
+
+if (length(id_plots) == 0)
+	stop(paste0("It seems that the species <", sp, "> is not present. Check the spelling"))
 
 ## Cohorts 
 nbCohorts = 150
@@ -78,7 +84,12 @@ minDiameter = 2
 nbPlots = length(id_plots)
 
 #### Generate cohorts
-set.seed(1969-08-18) # Woodstock seed
+if (sp == "Acer_saccharum")
+{
+	set.seed(1969-08-18) # Woodstock seed
+} else {
+   set.seed(1962-09-11) # Beatles, Love me do
+}
 
 alphaShape = abs(rnorm(nbCohorts, 0.5, 0.5))
 BA = 25 # m^2/ha
