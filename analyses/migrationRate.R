@@ -122,7 +122,16 @@ nIter = as.integer(simulationParameters[parameters == "nIter", values])
 delta_t = (tmax - t0)/(nIter - 1)
 
 #! TEMPORARY ZONE
-pathSummary = "../cpp/summary/Acer_saccharum_200x7_fat-tailed_noBC_10init/"
+# dir("../cpp/summary/")
+# [1] "Acer_saccharum"                             
+# [2] "Acer_saccharum_100x5_fat-tailed_noBC_10init"
+# [3] "Acer_saccharum_100x5_noFat_noBC"            
+# [4] "Acer_saccharum_200x7_fat-tailed_noBC_10init"
+# [5] "Acer_saccharum_200x7_fat-tailed_noBC_20init"
+# [6] "Acer_saccharum_200x7_noFat_noBC_20init"     
+# [7] "toto"
+pathSummary = "../cpp/summary/Acer_saccharum_200x7_fat-tailed_noBC_20init/"
+initPath = "../createIC/randomInitialCondition/Acer_saccharum_200x7/"
 # nIter = 1997
 # delta_t = 1000/2999
 # tmax = (nIter - 1)*delta_t
@@ -133,7 +142,10 @@ pathSummary = "../cpp/summary/Acer_saccharum_200x7_fat-tailed_noBC_10init/"
 
 #### Load results c++
 ## Initial condition
-# List files #! UNCOMMENT NEXT LINE
+# List files
+if (!dir.exists(initPath))
+	stop(paste0("*** Folder <", initPath, "> does not exist ***"))
+
 ls_init = list.files(initPath)
 
 # Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
@@ -209,6 +221,8 @@ setorder(speed_dt, -distance)
 speed_dt[, year := iteration*delta_t]
 speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
 
+paste0("The averaged speed is: ", speed_dt[, round(mean(speed, na.rm = TRUE), 2)], " m/yr")
+
 #### Plot travelling waves emanating from same origin, at different time 
 ## Common variables
 coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
@@ -216,14 +230,14 @@ count = 1
 iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
 
 ## Plot
-kernelType = "fat-tailed"
+kernelType = "noFat"
 landscapeSize = paste0(nRow_land, "x", nCol_land)
-initOption = "10RowsInit"
+initOption = "20RowsInit"
 
-pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 6, height = 4)
-# tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".tex"), width = 6, height = 4)
+# pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 4.5, height = 3)
+tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".tex"), width = 4.5, height = 3)
 count = 1
-op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
+op <- par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
 plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
 	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
 	type = "l", ylim = c(0, 125), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
@@ -240,17 +254,17 @@ for (i in iterToPlot[2:length(iterToPlot)])
 	count = count + 1
 }
 
-legend(x = "topright", # x = 1850, y = 130, # horiz = TRUE, x.intersp = 0.25,
+legend(x = 3670, y = 130, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
 	title = "Years", legend = iterToPlot, lwd = 2, col = c("#000000", coloursVec), bty = "n")
 
 dev.off()
 
 ## Plot speed on a 2nd graph
-pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.pdf"), width = 6, height = 4)
-# tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.tex"), width = 6, height = 4)
+# pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.pdf"), width = 4.5, height = 3)
+tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.tex"), width = 4.5, height = 3)
 op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
 plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
-	xlab = "Year", ylab = "speed (m/yr)")
+	lwd = 2, xlab = "Year", ylab = "speed (m/yr)")
 
 dev.off()
 
