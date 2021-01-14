@@ -83,6 +83,7 @@ if (stri_detect(speciesList, regex = ","))
 	speciesList = unlist(stri_split(str = speciesList, regex = ","))
 
 speciesList = stringCleaner(speciesList, ".txt")
+speciesList = stringCleaner(speciesList, " ")
 
 ## Paths to files
 pathCpp = "../cpp/"
@@ -131,7 +132,9 @@ delta_t = (tmax - t0)/(nIter - 1)
 # [6] "Acer_saccharum_200x7_noFat_noBC_20init"     
 # [7] "toto"
 pathSummary = "../cpp/summary/Acer_saccharum_200x7_fat-tailed_noBC_20init/"
+pathSummary = pathSummary[1] # In the case there is more than one species
 initPath = "../createIC/randomInitialCondition/Acer_saccharum_200x7/"
+initPath = initPath[1] # In the case there is more than one species
 # nIter = 1997
 # delta_t = 1000/2999
 # tmax = (nIter - 1)*delta_t
@@ -143,14 +146,14 @@ initPath = "../createIC/randomInitialCondition/Acer_saccharum_200x7/"
 #### Load results c++
 ## Initial condition
 # List files
-if (!dir.exists(initPath))
-	stop(paste0("*** Folder <", initPath, "> does not exist ***"))
+if (any(!dir.exists(initPath)))
+	stop(paste0("*** Folder <", initPath[!dir.exists(initPath)], "> does not exist ***"))
 
 ls_init = list.files(initPath)
 
 # Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
-init_index = as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
-	to = stri_locate_last(ls_init, fixed = ".txt")[, "start"] - 1))
+init_index = sort(as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
+	to = stri_locate_last(ls_init, fixed = ".txt")[, "start"] - 1)))
 
 init_col = unique(init_index %% nCol_land)
 init_row = unique((init_index - init_col)/nCol_land)
@@ -230,9 +233,9 @@ count = 1
 iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
 
 ## Plot
-kernelType = "noFat"
+kernelType = "acsa-versus-abba" # "noFat"
 landscapeSize = paste0(nRow_land, "x", nCol_land)
-initOption = "20RowsInit"
+initOption = "100RowsInit" # "20RowsInit"
 
 # pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 4.5, height = 3)
 tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".tex"), width = 4.5, height = 3)
