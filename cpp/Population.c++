@@ -208,11 +208,12 @@ void Population::euler(double const t, double const delta_t, double const dbh_st
 {
 	cohort_it it;
 	cohort_it lim_it; // limit iterator
+	double thresholdDensity = 1.0/env.getPlotArea();
 
 	// Check there is space to create a new cohort and merge/delete if required
 	if (m_nonZeroCohort == m_maxCohorts)
 	{
-		std::vector<bool> merged_deleted = this->mergeCohorts(m_delta_s/8, 0.00001, env.printId());
+		std::vector<bool> merged_deleted = this->mergeCohorts(m_delta_s/2, thresholdDensity, env.printId());
 		
 		if (merged_deleted[0])
 			std::cout << "Above max size cohorts merged at iteration " << m_currentIter << " for patch " << env.printId() << std::endl;
