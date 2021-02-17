@@ -191,4 +191,10 @@ unsigned int Environment::printId() const
 {
 	return m_patchId;
 }
+
+double Environment::getPlotArea() const
+{
+	return plotArea;
+}
+
 #endif

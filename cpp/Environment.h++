@@ -58,6 +58,7 @@ class Environment
 		// Others
 		void printId(std::ostream& os) const;
 		unsigned int printId() const;
+		double getPlotArea() const;
 
 	private :
 		// File name
