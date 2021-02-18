@@ -139,6 +139,12 @@ class Species
 		double twoDt_a;
 		double twoDt_b;
 
+		// Gaussian Kernel, Cousens 2008 - Dispersal in plants, p. 82
+		double gaussParam;
+
+		// Laplace Kernel, Cousens 2008 - Dispersal in plants, p. 82
+		double laplaceParam;
+
 		// Others
 		double maxDiameter;
 };

@@ -185,6 +185,12 @@ Species::Species(std::string const& species_filename, std::string const& species
 	if (keysToRead.find("twoDt_b") != std::string::npos)
 		twoDt_b = speciesParams_dispersal.get_val<double>("twoDt_b");
 
+	if (keysToRead.find("gaussParam") != std::string::npos)
+		gaussParam = speciesParams_dispersal.get_val<double>("gaussParam");
+
+	if (keysToRead.find("laplaceParam") != std::string::npos)
+		laplaceParam = speciesParams_dispersal.get_val<double>("laplaceParam");
+
 	// Others
 	maxDiameter = speciesParams.get_val<double>("maxDiameter");
 }
@@ -338,14 +344,14 @@ double Species::K(double const distance) const
 	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
 		proba = (1.0 - propLDD)/2.0*exp(-std::abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
 
-	if (refKernel_doi == "laplacian") // Laplace kernel with parameter = 100 (for testing), Cousens2008, p. 82
-		proba = 1.0/(2*M_PI*100*100) * std::exp(- distance/100);
+	if (refKernel_doi == "laplace") // Laplace kernel, Cousens2008, p. 82
+		proba = 1.0/(2*M_PI*laplaceParam*laplaceParam) * std::exp(- distance/laplaceParam);
 
 	if (refKernel_doi == "10.2307/176541") // 2Dt Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
 	
-	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 30
-		proba = 1.0/(M_PI*30*30) * std::exp(-distance*distance/(30*30));
+	if (refKernel_doi == "gaussian") // Gaussian kernel, Cousens2008, p. 82
+		proba = 1.0/(M_PI*gaussParam*gaussParam) * std::exp(-distance*distance/(gaussParam*gaussParam));
 
 	if (refKernel_doi == "dirac")
 		proba = (distance == 0) ? 1 : 0;
@@ -360,14 +366,14 @@ double Species::K(double delta_lon, double delta_lat) const
 	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
 		proba = (1.0 - propLDD)/2.0*exp(-std::abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
 	
-	if (refKernel_doi == "laplacian") // Laplacian with parameter = 100 (for testing)
-		proba = 1.0/(2*M_PI*100*100) * std::exp(- distance/100);
+	if (refKernel_doi == "laplace") // Laplace kernel, Cousens2008, p. 82
+		proba = 1.0/(2*M_PI*laplaceParam*laplaceParam) * std::exp(- distance/laplaceParam);
 
 	if (refKernel_doi == "10.2307/176541") // Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
 
-	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 30
-		proba = 1.0/(M_PI*30*30) * std::exp(-distance*distance/(30*30));
+	if (refKernel_doi == "gaussian") // Gaussian kernel, Cousens2008, p. 82, with a = 30
+		proba = 1.0/(M_PI*gaussParam*gaussParam) * std::exp(-distance*distance/(gaussParam*gaussParam));
 
 	if (refKernel_doi == "dirac")
 		proba = (distance == 0) ? 1 : 0;
