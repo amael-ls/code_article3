@@ -159,7 +159,7 @@ const char* Except_Landscape::what() const throw()
 /*************************************/
 Except_Dispersal::Except_Dispersal(double const totalIntegral, std::string const species)
 {
-	if (totalIntegral > 1.01) // 1.01 to allow errors from the computation of integrals up to 0.1
+	if (totalIntegral > 1.01) // 1.01 to allow errors from the computation of integrals up to 0.01
 	{
 		m_error_msg += "The sum of the probabilities of dispersion over landscape Γ (Gamma) should be 1 maximum. ";
 		m_error_msg += "Currently it is " + std::to_string(totalIntegral) + " for species " + species + "\n";

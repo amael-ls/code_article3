@@ -31,13 +31,13 @@ void Dispersal::kernel(double r, double xminusa, double bminusx, double &y, void
 	// double *param = (double *) ptr; // casting
 	// double const z = param[0];
 
-	// y = m_species->K(x, z); //y = x*x*cos(sqrt(x - 3)) + 2 - cos(z)*sin(z) + exp(-z*z/2.0);
+	// y = m_species->K(x, z);
 	y = r * m_species->K(r); // Because integrate g(r) r drdθ // ! Using polar coords
 }
 
 void Dispersal::wrapper_r_integral(double x, double xminusa, double bminusx, double &y, void *ptr)
 {
-	// explicitly cast global variable <pt2Object> to a pointer to Dispersal
+	// explicitly cast global variable <pt2Object> to a pointer of type Dispersal
 	// warning: <pt2Object> MUST point to an appropriate object!
 	Dispersal* mySelf = (Dispersal*) pt2Object;
 
@@ -399,8 +399,8 @@ void landscapeIntegrals(Dispersal& disp)
 	// for (; it != disp.m_map_distance_integral.cend(); ++it)
 	// 	std::cout << it->first << "    " << it->second << std::endl;
 	// std::cout << std::endl;
-
-	if ((disp.m_totalIntegral > 1) || (disp.m_totalIntegral < 0))
+	
+	if ((disp.m_totalIntegral > 1.01) || (disp.m_totalIntegral < 0)) // 1.01 to allow computation errors up to 0.01
 		throw Except_Dispersal(disp.m_totalIntegral, disp.m_species->getName());
 }
 
