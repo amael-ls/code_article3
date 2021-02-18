@@ -344,8 +344,8 @@ double Species::K(double const distance) const
 	if (refKernel_doi == "10.2307/176541") // 2Dt Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
 	
-	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 3
-		proba = 1.0/(M_PI*3*3) * std::exp(-distance*distance/(3*3));
+	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 30
+		proba = 1.0/(M_PI*30*30) * std::exp(-distance*distance/(30*30));
 
 	if (refKernel_doi == "dirac")
 		proba = (distance == 0) ? 1 : 0;
@@ -366,8 +366,8 @@ double Species::K(double delta_lon, double delta_lat) const
 	if (refKernel_doi == "10.2307/176541") // Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
 
-	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 3
-		proba = 1.0/(M_PI*3*3) * std::exp(-distance*distance/(3*3));
+	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 30
+		proba = 1.0/(M_PI*30*30) * std::exp(-distance*distance/(30*30));
 
 	if (refKernel_doi == "dirac")
 		proba = (distance == 0) ? 1 : 0;
