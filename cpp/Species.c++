@@ -338,11 +338,14 @@ double Species::K(double const distance) const
 	if (refKernel_doi == "10.1016/j.jtbi.2005.12.019") // Moorcroft2006
 		proba = (1.0 - propLDD)/2.0*exp(-std::abs(distance)) + propLDD*relLDDtoSDD/2.0*exp(-relLDDtoSDD*distance);
 
-	if (refKernel_doi == "laplacian") // Laplacian with parameter = 100 (for testing)
+	if (refKernel_doi == "laplacian") // Laplace kernel with parameter = 100 (for testing), Cousens2008, p. 82
 		proba = 1.0/(2*M_PI*100*100) * std::exp(- distance/100);
 
 	if (refKernel_doi == "10.2307/176541") // 2Dt Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
+	
+	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 3
+		proba = 1.0/(M_PI*3*3) * std::exp(-distance*distance/(3*3));
 
 	if (refKernel_doi == "dirac")
 		proba = (distance == 0) ? 1 : 0;
@@ -362,6 +365,9 @@ double Species::K(double delta_lon, double delta_lat) const
 
 	if (refKernel_doi == "10.2307/176541") // Clark1999, Boisvert-Marsh2020 (might be 2021)
 		proba = twoDt_a/(M_PI*twoDt_b) * std::exp((-twoDt_a - 1)*std::log(1 + distance*distance/twoDt_b));
+
+	if (refKernel_doi == "gaussian") // Gaussian, Cousens2008, p. 82, with a = 3
+		proba = 1.0/(M_PI*3*3) * std::exp(-distance*distance/(3*3));
 
 	if (refKernel_doi == "dirac")
 		proba = (distance == 0) ? 1 : 0;
