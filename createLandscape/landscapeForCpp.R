@@ -47,7 +47,7 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, del
 #### Common variables
 ## Folders
 loadPath = "~/projects/def-dgravel/amael/article1/progToSendToReview/"
-outputPath = "./climate_200x7_abba-acsa/"
+outputPath = "./climate_200x7_abba/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
@@ -74,15 +74,17 @@ climate_rs = stack(paste0(loadPath, "clim60sec/clim_2010.grd"))
 # Projection
 crs = crs(climate_rs, asText = TRUE)
 
-## Define crop extent
-lonMin = -74
-lonMax = -73.9
-latMin = 41
-latMax = 41.2
+## Define crop extent number 1 (Mont-Orford National Park):
+lonMin = -72.2117
+lonMax = -72.1117
+latMin = 45.3179
+latMax = 45.5179
+
+## Define crop extent number 2 (Old Tappan Borough, NJ 07675, USA):
 # lonMin = -74
-# lonMax = -73.99
-# latMin = 41.09
-# latMax = 41.1
+# lonMax = -73.9
+# latMin = 41
+# latMax = 41.2
 
 crop_extent = extent(c(lonMin, lonMax, latMin, latMax))
 crop_extent = projectExtent(raster(crop_extent, crs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"),
@@ -103,29 +105,34 @@ downScale_factors = floor(res(croppedClimate)/20)
 croppedClimate = disaggregate(x = croppedClimate, fact = downScale_factors, method = "bilinear")
 
 #! --- Crash test zone, to have a smaller landscape
-# For a 100 x 100 landscape
-crop_extent = extent(c(2135078, 2137078, -93158, -91146)) # order = xmin, xmax, ymin, ymax
-
+#? What follows is for the crop extent number 1 (Mont-Orford National Park)
 # For a 200 x 7 landscape
-crop_extent = extent(c(2135078, 2135218, -93158, -89136))
+crop_extent = extent(c(2111758, 2111898, 406431.3, 410453.3)) # order = xmin, xmax, ymin, ymax
 
-# For a 100 x 5 landscape
-crop_extent = extent(c(2135078, 2135178, -93158, -91146))
+#? What follows is for the crop extent number 2 (Old Tappan Borough, NJ 07675, USA)
+# # For a 100 x 100 landscape
+# crop_extent = extent(c(2135078, 2137078, -93158, -91146)) # order = xmin, xmax, ymin, ymax
 
-# For a 10 x 100 landscape
-crop_extent = extent(c(2135078, 2137078, -93158, -92957))
+# # For a 200 x 7 landscape
+# crop_extent = extent(c(2135078, 2135218, -93158, -89136))
 
-# For a 20 x 20 landscape
-crop_extent = extent(c(2135078, 2135478, -93158, -92758))
+# # For a 100 x 5 landscape
+# crop_extent = extent(c(2135078, 2135178, -93158, -91146))
 
-# For a 5 x 5 landscape
-crop_extent = extent(c(2135078, 2135178, -93158, -93057))
+# # For a 10 x 100 landscape
+# crop_extent = extent(c(2135078, 2137078, -93158, -92957))
+
+# # For a 20 x 20 landscape
+# crop_extent = extent(c(2135078, 2135478, -93158, -92758))
+
+# # For a 5 x 5 landscape
+# crop_extent = extent(c(2135078, 2135178, -93158, -93057))
 #! --- End crash test zone, to have a smaller landscape
 
 croppedClimate = crop(croppedClimate, crop_extent)
 
-nrows = nrow(croppedClimate)
-ncols = ncol(croppedClimate)
+(nrows = nrow(croppedClimate))
+(ncols = ncol(croppedClimate))
 
 deltaX = xres(croppedClimate) # 20
 deltaY = yres(croppedClimate) # 20.10989
@@ -172,8 +179,15 @@ vals[row %in% seq(max(row) - 19, max(row)), isPopulated := "true"]
 # Populations are at the 100 top lines of the landscape
 vals[row %in% seq(min(row), min(row) + 99), isPopulated := "true"]
 
+# Populations are at the 180 top lines of the landscape
+vals[row %in% seq(min(row), min(row) + 179), isPopulated := "true"]
+
 # Populations are at the 100 bottom lines of the landscape
 vals[row %in% seq(max(row) - 99, max(row)), isPopulated := "true"]
+
+# Print number of colonised patches
+print(paste0("Number of colonised patches = ", sum(vals$isPopulated == "true")))
+print(paste0("Number of colonised rows = ", sum(vals$isPopulated == "true")/ncols))
 
 # Add refugia
 if (refugiaOption)
@@ -209,21 +223,22 @@ vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs, delt
 patch_id = vals[isPopulated == "true", patch_id]
 
 # Abies balsamea
-maxRow_abba = 100
+maxRow_abba = 180
 max_index_limitRow = (maxRow_abba - 1)*ncols + ncols - 1
 ls_id_abba = patch_id[patch_id <= max_index_limitRow]
 abba = data.table(patch_id = ls_id_abba, species = "Abies_balsamea")
 
 # Acer saccharum
-minRow_acsa = 100
+minRow_acsa = 181
 min_index_limitRow = (minRow_acsa - 1)*ncols
 ls_id_acsa = patch_id[patch_id >= min_index_limitRow]
 acsa = data.table(patch_id = ls_id_acsa, species = "Acer_saccharum")
 
 # Merge all the species in a data.table
 patch_data = rbind(abba, acsa)
+patch_data[, .N, by = "species"]
 
-# Save patch cata
+# Save patch data
 saveRDS(patch_data, paste0(outputPath, "populatedPatches.rds"))
 
 ## Write data to create Matlab's data
