@@ -131,16 +131,22 @@ delta_t = (tmax - t0)/(nIter - 1)
 # [5] "Acer_saccharum_200x7_fat-tailed_noBC_20init"
 # [6] "Acer_saccharum_200x7_noFat_noBC_20init"     
 # [7] "toto"
-pathSummary = "../cpp/summary/Acer_saccharum_200x7_fat-tailed_noBC_20init/"
-pathSummary = pathSummary[1] # In the case there is more than one species
-initPath = "../createIC/randomInitialCondition/Acer_saccharum_200x7/"
-initPath = initPath[1] # In the case there is more than one species
-# nIter = 1997
-# delta_t = 1000/2999
-# tmax = (nIter - 1)*delta_t
-# ls_init = paste0("ic_", 9000:9999, ".txt")
-# nRow_land = 100
-# nCol_land = 100
+#? Orford region
+pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_abba-acsa/"
+pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_alone_noFat/"
+pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_alone_fat-tailed/"
+
+pathSummary = "../cpp/summary/orfordRun/Abies_balsamea_200x7_alone/"
+pathSummary = "../cpp/summary/orfordRun/Abies_balsamea_200x7_abba-acsa/"
+
+#? New-Jersey region
+pathSummary = "../cpp/summary/newJerseyRun/Acer_saccharum_200x7_abba-acsa/"
+pathSummary = "../cpp/summary/newJerseyRun/Abies_balsamea_200x7_abba-acsa/"
+pathSummary = "../cpp/summary/newJerseyRun/Abies_balsamea_200x7_abba_alone/"
+
+#* Init path
+initPath = "../createIC/randomInitialCondition/Acer_saccharum/"
+initPath = "../createIC/randomInitialCondition/Abies_balsamea/"
 #! END TEMPORARY ZONE
 
 #### Load results c++
@@ -148,6 +154,9 @@ initPath = initPath[1] # In the case there is more than one species
 # List files
 if (any(!dir.exists(initPath)))
 	stop(paste0("*** Folder <", initPath[!dir.exists(initPath)], "> does not exist ***"))
+
+if (any(!dir.exists(pathSummary)))
+	stop(paste0("*** Folder <", pathSummary[!dir.exists(pathSummary)], "> does not exist ***"))
 
 ls_init = list.files(initPath)
 
@@ -175,7 +184,7 @@ transect_ns = data.table(patch_id = integer(length = nbData_ns), iteration = num
 
 ls_origin = c()
 
-# Loop on the North-South transects
+# Loop on the North-South transects, distance is from the northest point of the transect
 for (i in 1:length(init_col))
 {
 	ind_start = (i - 1)*nRow_land*nIter + 1
@@ -225,6 +234,8 @@ speed_dt[, year := iteration*delta_t]
 speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
 
 paste0("The averaged speed is: ", speed_dt[, round(mean(speed, na.rm = TRUE), 2)], " m/yr")
+paste0("The minimum speed is: ", speed_dt[, round(min(speed, na.rm = TRUE), 2)], " m/yr")
+paste0("The minimum positive speed is: ", speed_dt[speed >= 0, round(min(speed, na.rm = TRUE), 2)], " m/yr")
 
 #### Plot travelling waves emanating from same origin, at different time 
 ## Common variables
@@ -233,17 +244,21 @@ count = 1
 iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
 
 ## Plot
-kernelType = "acsa-versus-abba" # "noFat"
+kernelType = "acsa-versus-abba" # "fat-tailed" "acsa-versus-abba" # "noFat"
 landscapeSize = paste0(nRow_land, "x", nCol_land)
-initOption = "100RowsInit" # "20RowsInit"
+initOption = "20RowsInit"
+climateRegion = "NewJersey" # "Orford", "NewJersey"
+smootherOption = TRUE
+
+transect_ns[(iteration == iterToPlot[length(iterToPlot)]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), range(basalArea)]
 
 # pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 4.5, height = 3)
-tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".tex"), width = 4.5, height = 3)
+tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"), width = 4.5, height = 3)
 count = 1
 op <- par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
 plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
 	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
-	type = "l", ylim = c(0, 125), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
+	type = "l", ylim = c(0, 120), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
 	xlab = "Distance", ylab = "Basal area", lwd = 2)
 
 ## For loop on time
@@ -257,18 +272,26 @@ for (i in iterToPlot[2:length(iterToPlot)])
 	count = count + 1
 }
 
-legend(x = 3670, y = 130, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
-	title = "Years", legend = iterToPlot, lwd = 2, col = c("#000000", coloursVec), bty = "n")
+legend(x = 3670, y = 110, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
+	title = "Years", legend = ceiling(iterToPlot*delta_t), lwd = 2, col = c("#000000", coloursVec), bty = "n")
 
 dev.off()
 
 ## Plot speed on a 2nd graph
 # pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.pdf"), width = 4.5, height = 3)
-tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.tex"), width = 4.5, height = 3)
+if (smootherOption)
+	smo = smooth.spline(x = speed_dt[!is.na(speed), year], y = speed_dt[!is.na(speed), speed], spar = 0.5)
+tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
+	ifelse(smootherOption,"-smo", ""),".tex"), width = 4.5, height = 3)
 op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
-plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
-	lwd = 2, xlab = "Year", ylab = "speed (m/yr)")
 
+if (smootherOption)
+{
+	plot(predict(smo, speed_dt[!is.na(speed), year]), type = "l", lwd = 2, xlab = "Year", ylab = "speed (m/yr)")
+} else {
+	plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
+		lwd = 2, xlab = "Year", ylab = "speed (m/yr)")
+}
 dev.off()
 
 #! ------------------------------------------------------------
@@ -276,6 +299,52 @@ dev.off()
 #? WHAT FOLLOW IS A CRASH TEST ZONE CONTAINING MANY CRASH TESTS
 #* ------------------------------------------------------------
 #! ------------------------------------------------------------
+
+#### ! CRASH TEST ZONE 0, ON ABBA, REMEMBER: distance is from the northest point of the transect
+#### Creating a modified distance. #? REMEMBER: distance is from the northest point of the transect
+# transect_ns[, newDist := ] # In the particular case initial condition = 100 northest rows
+
+#### Plot density of ABBA for the selected transect
+## Common variables
+coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
+count = 1
+iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
+
+## Plot
+kernelType = "abba-density_alone" # "abba-density_alone" "abba-density_with-acsa"
+landscapeSize = paste0(nRow_land, "x", nCol_land)
+initOption = "180RowsInit" # "20RowsInit"
+climateRegion = "NewJersey" # "Orford", "NewJersey"
+
+transect_ns[(iteration == iterToPlot[length(iterToPlot)]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), range(basalArea)]
+
+# pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 4.5, height = 3)
+maxLat_dist = (nRow_land - 1)*deltaLat
+
+tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"), width = 4.5, height = 3)
+count = 1
+op <- par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
+plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), maxLat_dist - distance], # maxLat_dist - distance = distance to the south
+	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), basalArea],
+	type = "l", ylim = c(0, 100), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
+	xlab = "Distance", ylab = "Basal area", lwd = 2)
+
+## For loop on time
+for (i in iterToPlot[2:length(iterToPlot)])
+{
+	if (count > length(coloursVec))
+		print("*** Warning, curve will not be plotted because of undefined colour")
+	lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), maxLat_dist - distance],
+		transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), basalArea],
+		lwd = 2, col = coloursVec[count])
+	count = count + 1
+}
+
+legend(x = 4040, y = 110, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
+	title = "Years", legend = ceiling(iterToPlot*delta_t), lwd = 2, col = c("#000000", coloursVec), bty = "n")
+
+dev.off()
+
 
 #### ! CRASH TEST ZONE 1, ON RASTER
 ## Load everything
