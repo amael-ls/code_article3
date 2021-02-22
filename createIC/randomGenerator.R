@@ -25,7 +25,7 @@
 # 		- 1 km^2 might contain more than 60,000 trees (https://www.reddit.com/r/MapPorn/comments/47f9s5/trees_per_square_km_in_europe_1200x1000/)
 #		- 1 ha might contain up to 2,500 trees (plantation), between 620-1,500 (regeneration) or 15-150 (old-growth forest)
 # 			source: https://naldc.nal.usda.gov/download/34466/PDF
-# 3/. If there is more than one species, you need to rerun this program for each one of them. Please change the variable sp accordingly!
+# 3/. If there is more than one species, you need to rerun this program for each one of them. Please change the variables sp and maxDiameter accordingly!
 #
 
 #### Load library and clear memory
@@ -67,7 +67,7 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 
 #### Parameters
 ## Folder and id plots (for names initial condition)
-sp = "Acer_saccharum"
+sp = "Abies_balsamea" # "Acer_saccharum"
 outputPath = paste0("./randomInitialCondition/", sp, "/")
 filenamePattern = "ic_"
 pathLandscape = "../createLandscape/climate_200x7_abba-acsa/"
@@ -79,7 +79,7 @@ if (length(id_plots) == 0)
 
 ## Cohorts 
 nbCohorts = 150
-maxDiameter = 960
+maxDiameter = 900
 minDiameter = 2
 nbPlots = length(id_plots)
 
