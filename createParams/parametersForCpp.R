@@ -78,6 +78,8 @@ C0_C1 = C0_C1[!(parameter %in% c("Rus", "Vus"))]
 fec = 0.0071 # From Purves et al. 2008: http://www.pnas.org/content/105/44/17018.abstract
 minAgeReproduction = 22 # For Acer saccharum; from Burns & Honkala 1990, Silvics: www.fs.usda.gov/treesearch/pubs/1548
 
+minAgeReproduction = 20 # For Abies baslamea; from Burns & Honkala 1990, Silvics: https://www.fs.usda.gov/treesearch/pubs/1547
+
 ## Max diameter (it correspond to the infinite dbh, which is the dbh at 45 meters)
 # cf article 1, to check the time it takes to grow up to 45m (folder article1/code/time)
 dbh_bounds = fread(paste0(matlabPath, "dbh_params.csv"));
