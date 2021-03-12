@@ -173,12 +173,12 @@ nbData_ns = nRow_land*nIter*length(init_col) # nb of row x nIter x number of col
 # nbData_ew = nCol_land*nIter*length(init_row) # nb of row x nIter x number of rows to cover
 
 transect_ns = data.table(patch_id = integer(length = nbData_ns), iteration = numeric(length = nbData_ns),
-	localSeedProduced = numeric(length = nbData_ns), localSeedBank = numeric(length = nbData_ns),
+	localSeedProduced = numeric(length = nbData_ns), height_star = numeric(length = nbData_ns),
 	sumTrunkArea = numeric(length = nbData_ns), totalDensity = numeric(length = nbData_ns),
 	distance = numeric(length = nbData_ns), transectOrigin = integer(length = nbData_ns))
 
 # transect_ew = data.table(patch_id = integer(length = nbData_ew), iteration = numeric(length = nbData_ew),
-# 	localSeedProduced = numeric(length = nbData_ew), localSeedBank = numeric(length = nbData_ew),
+# 	localSeedProduced = numeric(length = nbData_ew), height_star = numeric(length = nbData_ew),
 # 	sumTrunkArea = numeric(length = nbData_ew), totalDensity = numeric(length = nbData_ew),
 # 	distance = numeric(length = nbData_ew), transectOrigin = integer(length = nbData_ew))
 
@@ -202,7 +202,7 @@ for (i in 1:length(init_col))
 		patch_id = init_col[i] + row*nCol_land
 		temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
 		transect_ns[ind_start:ind_end, patch_id := ..patch_id]
-		transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "localSeedBank", "sumTrunkArea", "totalDensity") := temporary]
+		transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "height_star", "sumTrunkArea", "totalDensity") := temporary]
 		transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat]
 		transect_ns[ind_start:ind_end, signedDistance := (currentRow - row)*deltaLat]
 		transect_ns[ind_start:ind_end, transectOrigin := currentOrigin]
@@ -351,7 +351,7 @@ dev.off()
 nbPatches = nRow_land*nCol_land
 nbData = nbPatches*nIter
 summary_dt = data.table(patch_id = integer(length = nbData), iteration = numeric(length = nbData),
-	localSeedProduced = numeric(length = nbData), localSeedBank = numeric(length = nbData),
+	localSeedProduced = numeric(length = nbData), height_star = numeric(length = nbData),
 	sumTrunkArea = numeric(length = nbData), totalDensity = numeric(length = nbData),
 	row = numeric(length = nbData), col = integer(length = nbData))
 
@@ -363,7 +363,7 @@ for (patch_id in 0:(nbPatches - 1))
 	ind_end = (patch_id + 1)*nIter
 	temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
 	summary_dt[ind_start:ind_end, patch_id := ..patch_id]
-	summary_dt[ind_start:ind_end, c("iteration", "localSeedProduced", "localSeedBank", "sumTrunkArea", "totalDensity") := temporary]
+	summary_dt[ind_start:ind_end, c("iteration", "localSeedProduced", "height_star", "sumTrunkArea", "totalDensity") := temporary]
 }
 
 summary_dt[, basalArea := sumTrunkArea/plotArea_ha]
