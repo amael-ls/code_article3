@@ -2,11 +2,10 @@
 *.txt.tmp
 *.DS_Store
 *.vscode
-cpp/test
-test/
 *.jpg
 *.pdf
 *.rds
 *.png
 *.zip
-*.sh
+*.tex
+oldStuff
