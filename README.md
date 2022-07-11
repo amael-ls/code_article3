@@ -108,7 +108,7 @@ This argument can contain several names, separated by **a comma and a space**. E
 species_filenames = Acer_saccharum.txt, Abies_balsamea.txt
 ```
 
-Then, each file will be read in the folder `species_path`. There are seven files per species, here given for Abies balsamea:
+Then, each file will be read in the folder `species_path`. There are seven files per species. Here is an example for Abies balsamea, for any other species, replace `Abies_balsamea` by any species name from `species_filenames` (e.g., `Acer_saccharum`):
 
 1. **Abies_balsamea.txt**: contains the name of the species, its fecundity parameter, and its maximum diameter
 2. **Abies_balsamea_M.txt**: contains the mortality parameters
@@ -129,7 +129,7 @@ See section above
 
 #### initPath and initFilenamePattern
 
-Specifies where to load the initial densities for trees (i.e., initial condition of the forest structure for eac plot initially colonised). If a plot is originally empty, they there should be no file for that plot. Only filenames starting by the pattern specified in `filenamePattern` will be read. In this example, the filenames start by `ic_` (ic stands for initial condition).
+Specifies where to load the initial densities for trees (i.e., initial condition of the forest structure for each plot initially colonised). If a plot is originally empty, they there should be no file for that plot. Only filenames starting by the pattern specified in `filenamePattern` will be read. In this example, the filenames start by `ic_` (ic stands for initial condition).
 
 #### summaryFilePath, popDynFilePath, summaryFilePattern, popDynFilePattern
 
@@ -159,3 +159,7 @@ It specifies how the cells of the landscape are organised. If `rasterOrder_Rlang
 
 ### Creating the initial condition, the landscape, and the species files
 
+The first thing is to create the file `simulationParameters.txt` (or whatever name you choose, see the content of this file in the section [Execution](#execution)) and then run the script `helpher.sh` that will create automatically the necessary directories. Then, you can run the following R scripts to help you with the climate data and the initial condition:
+
+1. **landscapeForCpp.R**: lala
+2. 
