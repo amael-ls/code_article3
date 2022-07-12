@@ -9,3 +9,5 @@
 *.zip
 *.tex
 oldStuff
+obj_alglib/
+obj_ebt/
