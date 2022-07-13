@@ -8,6 +8,10 @@ CXX = g++
 CXXFLAGS = -std=c++2a -Wall -O2
 OUTPUT = ebt
 
+# Operating system
+OS := $(shell uname)
+$(info Operating system = ${OS})
+
 ## Directories
 # Sources
 src_dir_ebt = ./cpp
@@ -20,7 +24,12 @@ object_dir_ebt = ./obj_ebt
 object_dir_alglib = ./obj_alglib
 
 # Libraries
-libs_dir = -L/opt/homebrew/lib
+ifeq ($(OS), Linux)
+	libs_dir = -L/usr/include
+endif
+ifeq ($(OS), Darwin)
+	libs_dir = -L/opt/homebrew/lib
+endif
 
 ## Input files (headers and scripts)
 # EBT files
