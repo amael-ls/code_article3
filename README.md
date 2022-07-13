@@ -8,13 +8,17 @@ This document is organised as follow:
 2. Input for x-EBT
 3. Output from x-EBT
 
-# List of folders
+# List of directories
 
+- **alglib**: contains the C++ library alglib
 - **analyses**: contains R scripts to analyse the output of simulations ran by C++
 - **cpp**: contains the Escalator Boxcar Train algorithm (x-EBT) in C++
-- **createIC**: to create initial condition for x-EBT
-- **createLandscape**: to create the landscape (climate conditions, patch size)
-- **createParams**: to create the species used by x-EBT. This folder contains R scripts and uses the parameters estimated in @LeSquin2020
+- **createIC**: to create initial condition for x-EBT. This directory is made by the script `helper.sh`
+- **createLandscape**: to create the landscape (climate conditions, patch size). This directory is made by the script `helper.sh`
+- **createParams**: to create the species used by x-EBT. This folder contains R scripts and uses the parameters estimated in @LeSquin2020. This directory is made by the script `helper.sh`
+- **helpers**: contains scripts to help building the initial condition, the environmental conditions, and the directories to save results
+- **obj_alglib**: contains the *.o files from the compilation of alglib. Those files are created with the `Makefile`
+- **obj_ebt**: contains the *.o files from the compilation of x-EBT (from cpp/ folder). Those files are created with the `Makefile`
 
 # Execution of x-EBT
 
@@ -22,20 +26,20 @@ This document is organised as follow:
 
 ### Compilation
 
-I compiled the program with **gcc-10.3** with the following command line:
+I compiled the program with **gcc-10.3** with the `Makefile` from the root directory, using the command line:
 
 ```sh
-g++ -std=c++2a -Wall -O2 -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp -ltbb
+make ebt
 ```
 
-Note that the last flag `-ltbb` had to be placed at the end for me. I do not know why... You must have the TBB library
+Note that you must have the TBB library. You might have to update the makefile to your own computer, specifically the directory of the TBB library.
 
 ### Execution
 
 I use the following command line to run the program:
 
 ```sh
-./demo.out simulationParameters.txt
+./ebt simulationParameters.txt
 ```
 
 where `simulationParameters.txt` is a file written as follow (you must respect the space before and after equal sign!):
@@ -159,7 +163,7 @@ It specifies how the cells of the landscape are organised. If `rasterOrder_Rlang
 
 ### Creating the initial condition, the landscape, and the species files
 
-The first thing is to create the file `simulationParameters.txt` (or whatever name you choose, see the content of this file in the section [Execution](#execution)) and then run the script `helpher.sh` that will create automatically the necessary directories. Then, you can run the following R scripts to help you with the climate data and the initial condition:
+The first thing is to create the file `simulationParameters.txt` (or whatever name you choose, see the content of this file in the section [Execution](#execution)) and then run the script `helpers/helpher.sh` that will create automatically the necessary directories. Then, you can run the following R scripts to help you with the climate data and the initial condition:
 
 1. **landscapeForCpp.R**: lala
 2. 
