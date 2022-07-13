@@ -14,14 +14,14 @@ $(info Operating system = ${OS})
 
 ## Directories
 # Sources
-src_dir_ebt = ./cpp
-src_dir_alglib += ./alglib
+src_dir_ebt = ./code_ebt/cpp
+src_dir_alglib += ./code_ebt/alglib
 src_dir = $(src_dir_ebt) $(src_dir_alglib)
 include_dirs = $(addprefix -I, $(src_dir))
 
 # Object (*.o)
-object_dir_ebt = ./obj_ebt
-object_dir_alglib = ./obj_alglib
+object_dir_ebt = ./code_ebt/obj_ebt
+object_dir_alglib = ./code_ebt/obj_alglib
 
 # Libraries
 ifeq ($(OS), Linux)
