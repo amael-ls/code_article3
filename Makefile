@@ -31,6 +31,11 @@ ifeq ($(OS), Darwin)
 	libs_dir = -L/opt/homebrew/lib
 endif
 
+# Output run directory
+ifndef
+    run_dir = ./run
+endif
+
 ## Input files (headers and scripts)
 # EBT files
 includes_ebt = $(wildcard *.h++ $(foreach fd, $(src_dir_ebt)/, $(fd)*.h++))
@@ -42,6 +47,11 @@ sources_alglib = $(wildcard *.cpp $(foreach fd, $(src_dir_alglib)/, $(fd)*.cpp))
 
 # Libraries
 libs = -ltbb
+
+# Simulation file
+ifndef
+    sim_file = simulationParameters.txt
+endif
 
 ## Output compilation objects
 objects_ebt = $(addprefix $(object_dir_ebt)/, $(notdir $(sources_ebt:.c++=.o)))
@@ -60,6 +70,9 @@ $(object_dir_ebt)/%.o: $(src_dir_ebt)/%.c++ $(includes_ebt) $(includes_alglib)
 $(object_dir_alglib)/%.o: $(src_dir_alglib)/%.cpp $(includes_alglib)
 	mkdir -p $(@D)
 	$(CXX) -o $@ -c $< $(CXXFLAGS) $(include_dirs)
+
+mkdir_sim: code_helpers/mkdir_sim.sh
+	./code_helpers/mkdir_sim.sh $(run_dir)/simulationParameters.txt
 
 clean:
 	rm -rf $(object_dir_ebt)/*.o $(object_dir_alglib)/*.o
