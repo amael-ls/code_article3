@@ -37,7 +37,7 @@ library(data.table)
 library(stringi)
 library(terra)
 
-#### Tool function
+#### Tool functions
 ## Function to get the dates of each raster (uses the naming pattern of Chelsa)
 getDates = function(str, var, pattern = "varYearMonth", isThereUnderscore = TRUE)
 {
@@ -64,6 +64,20 @@ getDates = function(str, var, pattern = "varYearMonth", isThereUnderscore = TRUE
 	}
 
 	return (data.table(fileName = str, year = getYear, month = getMonth, monthName = monthName))
+}
+
+## Compute min over a quarter (i.e., the three contiguous min value of the year for a given location). Example: driest quarter of the year
+min_quarter = function(stack_rs)
+{
+	combinations = data.table(l1 = 1:10, l2 = 2:11, l3 = 3:12)
+	nComb = combinations[, .N]
+	temporary_stack = vector(mode = "list", length = nComb)
+	names(temporary_stack) = paste0("l", 1:nComb)
+	for (i in 1:nComb)
+		temporary_stack[[paste0("l", i)]] = app(x = subset(stack_rs, c(i, i + 1, i + 2)), fun = "sum")
+	rs = rast(temporary_stack)
+	rs = min(rs)
+	return(rs)
 }
 
 #### Define common variables
@@ -116,19 +130,38 @@ for (var in selectedVariables)
 	# Crop to USA/Canada
 	climate_rs = crop(x = climate_rs, y = usa_canada)
 
+	# Compute 'min' quarter (such as driest, coolest)
+	quarter_min_rs = min_quarter(climate_rs)
+
+	# Compute annual min
+	annual_min_rs = min(climate_rs)
+
 	# Compute annual mean
-	climate_rs = mean(climate_rs)
+	annual_mean_rs = mean(climate_rs)
 
 	# Compute temperature in celsius (°C), check at the beginning of this script for the x/10:
 	if (var %in% c("tmax", "tmean", "tmin", "tas", "tasmin", "tasmax"))
-		climate_rs = app(x = climate_rs, fun = function(x){x/10 - 273.15})
+	{
+		quarter_min_rs = app(x = quarter_min_rs, fun = function(x){x/10 - 273.15})
+		annual_min_rs = app(x = annual_min_rs, fun = function(x){x/10 - 273.15})
+		annual_mean_rs = app(x = annual_mean_rs, fun = function(x){x/10 - 273.15})
+	}
 
 	if (var == "pr")
-		climate_rs = 12/100*climate_rs # Times 12 is to get per year (rather than per month), and see comments for /100
+	{
+		quarter_min_rs = quarter_min_rs/100 # See comments for /100
+		annual_min_rs = 12/100*annual_min_rs # Times 12 is to get per year (rather than per month), and see comments for /100
+		annual_mean_rs = 12/100*annual_mean_rs
+	}
 
 	savingPath = paste0(folderRawData, var, "/")
-	
-	writeRaster(x = climate_rs, filename = paste0(savingPath, year, ".tif"), filetype = "GTiff")
+
+	mask(x = quarter_min_rs, mask = usa_canada, inverse = FALSE, updatevalue = NA, touches = TRUE,
+		filename = paste0(savingPath, year, "_quarter_min.tif"), filetype = "GTiff", overwrite = TRUE)
+	mask(x = annual_min_rs, mask = usa_canada, inverse = FALSE, updatevalue = NA, touches = TRUE,
+		filename = paste0(savingPath, year, "_annual_min.tif"), filetype = "GTiff", overwrite = TRUE)
+	mask(x = annual_mean_rs, mask = usa_canada, inverse = FALSE, updatevalue = NA, touches = TRUE,
+		filename = paste0(savingPath, year, "_annual_mean.tif"), filetype = "GTiff", overwrite = TRUE)
 
 	print(paste(var, " done"))
 }
