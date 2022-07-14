@@ -142,7 +142,7 @@ for (var in selectedVariables)
 	# Compute temperature in celsius (°C), check at the beginning of this script for the x/10:
 	if (var %in% c("tmax", "tmean", "tmin", "tas", "tasmin", "tasmax"))
 	{
-		quarter_min_rs = app(x = quarter_min_rs, fun = function(x){x/10 - 273.15})
+		quarter_min_rs = app(x = quarter_min_rs, fun = function(x){x/10 - 3*273.15})
 		annual_min_rs = app(x = annual_min_rs, fun = function(x){x/10 - 273.15})
 		annual_mean_rs = app(x = annual_mean_rs, fun = function(x){x/10 - 273.15})
 	}
