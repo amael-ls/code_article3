@@ -3,7 +3,7 @@
 #### Check number of arguments
 if [[ "$#" -ne 1 ]]
 then
-	echo "You must specify the file containing the simulation parameters"
+	echo "You must provide the txt file containing the simulation parameters"
 	exit
 fi
 
