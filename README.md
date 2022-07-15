@@ -39,10 +39,10 @@ Note that you must have the TBB library. You might have to update the makefile t
 I use the following command line to run the program:
 
 ```sh
-./ebt simulationParameters.txt
+./ebt run/simulationParameters.txt
 ```
 
-where `simulationParameters.txt` is a file written as follow (you must respect the space before and after equal sign!):
+where `run/simulationParameters.txt` is a file stored in the folder `run`, and written as follow (you must respect the space before and after equal sign!):
 
 ```bash
 #### Files
@@ -76,7 +76,34 @@ maxCohorts = 500
 rasterOrder_Rlang = true
 ```
 
-The name of this file does not matter, as long as it matches your command line. I now describe the use of each entry of this file. To run, the program requires many input. Some of them can be created automatically, see the section [Creating the initial condition](#creating-the-initial-condition,-the-landscape,-and-the-species-files)
+The name of this file does not matter, as long as it matches your command line. I now describe the use of each entry of this file. To run, the program requires many input. Some of them can be created automatically, see the section [Creating the initial condition](#creating-the-initial-condition,-the-landscape,-and-the-species-files).
+
+**Before executing the program x-EBT, the following things must be ready:**
+
+- Folder to store the results
+- Climate conditions
+- Initial condition
+- Species parameters
+
+There are helping scripts to do these tasks.
+
+**For the folder**, I recommend using the target `mkdir_sim` from the makefile:
+
+```sh
+make mkdir_sim
+```
+
+This will run the script `code_helper/mkdir_sim.sh` with the default argument `./run/` for the folder, and `simulationParameters.txt` for the file storing the simulation informations. The target `mkdir_sim` also accepts two optional arguments to change the folder and filename:
+
+```shell
+make run_dir=path/to/dir sim_file=whatever.txt mkdir_sim
+```
+
+**For the climate conditions**, it is possible to use:
+
+1. **downloadClimateData.R**: Download world climate data from Chelsa
+2. **prepareRawClimateData.R**: Prepare the raw climate data (subset to USA and Canada, compute bioclimatic variable 17---mean precipitation driest quarter)
+3. **landscapeForCpp.R**: Write the files needed for x-EBT for the landscape (one file per patch). Note that the folder `run/data/` (or whatever was chosen) should be created before that (it should be the case if the target `mkdir_sim` was executed properly).
 
 #### climate_file
 
