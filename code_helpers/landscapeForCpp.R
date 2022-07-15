@@ -72,7 +72,7 @@ writeLandscape_txt = function(values, outfileName = "../run/landscape.txt", sep 
 #### Common variables
 ## Folders
 loadPath = "../raw_data/"
-outputPath = "../run/data/landscape_300x11/"
+outputPath = "../run/data/landscape_300x11_acsa/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
