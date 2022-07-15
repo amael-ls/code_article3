@@ -46,10 +46,33 @@ writeCppClimate_DT = function(climateNamedVector, cppNames, id, crs, deltaX, del
 	close(ofstream)
 }
 
+## Write file landscape.txt
+writeLandscape_txt = function(values, outfileName = "../run/landscape.txt", sep = "=", rm_dots = TRUE, rm_dots_vars = "path", rm = TRUE)
+{
+	if (!is.list(values))
+		stop("Values must be a list")
+
+	varNames = names(values)
+	
+	if (rm & file.exists(outfileName))
+		file.remove(outfileName)
+
+	if (rm_dots)
+		values[[rm_dots_vars]] = stri_replace(str = values[[rm_dots_vars]], replacement = "./", regex = "^../")
+
+	ofstream = file(outfileName)
+	line = ""
+	for (current_var in varNames)
+		line = paste0(line, current_var, sep, values[[current_var]], "\n")
+
+	writeLines(line, ofstream)
+	close(ofstream)
+}
+
 #### Common variables
 ## Folders
 loadPath = "../raw_data/"
-outputPath = "../run/data/landscape_300x7/"
+outputPath = "../run/data/landscape_300x11/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
@@ -236,7 +259,18 @@ if (refugiaOption)
 
 #### Save files
 ## Environment files for C++ prog
-vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs_str, deltaX, deltaY, path = outputPath, sep = " = ", rm = TRUE), by = rowNumber]
+vals[, writeCppClimate_DT(unlist(vals[rowNumber]), cppNames, patch_id, crs_str, deltaX, deltaY,
+	path = outputPath, sep = " = ", rm = TRUE), by = rowNumber]
+
+writeLandscape_txt(values = list(
+	nRow = nrow(croppedClimate),
+	nCol = ncol(croppedClimate),
+	path = outputPath,
+	delimiter = " = ",
+	filenamePattern = "climate_",
+	deltaLon = xres(croppedClimate),
+	deltaLat = yres(croppedClimate),
+	distance = "euclidean"))
 
 ## Id files of populated patches (to create the Initial Condition in createIC folder)
 # List occupied patches
