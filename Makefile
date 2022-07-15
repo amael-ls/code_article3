@@ -72,7 +72,7 @@ $(object_dir_alglib)/%.o: $(src_dir_alglib)/%.cpp $(includes_alglib)
 	$(CXX) -o $@ -c $< $(CXXFLAGS) $(include_dirs)
 
 mkdir_sim: code_helpers/mkdir_sim.sh
-	./code_helpers/mkdir_sim.sh $(run_dir)/$(sim_file).txt
+	./code_helpers/mkdir_sim.sh $(run_dir)/$(sim_file)
 
 clean:
 	rm -rf $(object_dir_ebt)/*.o $(object_dir_alglib)/*.o
