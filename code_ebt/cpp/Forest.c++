@@ -215,17 +215,16 @@ void Forest::recruitment(double const t, double const delta_t)
 					sourcePatch = &m_patchVec[row*m_nCol_land + col];
 					// Compute dispersal from source to target, and update the seed banks:
 					patch.dispersal(sourcePatch, *sp_it, (m_map_dispersal.at(*sp_it)).m_map_distance_integral, m_deltaLat, m_deltaLon);
-					// // Compute dispersal from source to target, and update the seed banks (with Neumann BC = 0, i.e., rebound):
-					// patch.dispersal(sourcePatch, *sp_it, (m_map_dispersal.at(*sp_it)).m_totalIntegral,
-					// (m_map_dispersal.at(*sp_it)).m_map_distance_integral, m_deltaLat, m_deltaLon);
 				}
 			}
-			// patch.recruitment(*sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
 		}
 	});
-	std::for_each(std::execution::par_unseq, m_patchVec.begin(), m_patchVec.end(),
+
+	// std::mutex m;
+	std::for_each(std::execution::seq, m_patchVec.begin(), m_patchVec.end(),
 	[&] (Patch& patch)
 	{
+		// std::lock_guard<std::mutex> lock{m};
 		for (sp_it = m_speciesList.cbegin(); sp_it != m_speciesList.cend(); ++sp_it)
 			patch.recruitment(*sp_it, t, delta_t); // Compute recruitment for target patch and reset its seed bank
 	});
@@ -256,7 +255,7 @@ void Forest::dynamics()
 			if (iter % m_freqSave == 0)
 				this->saveForest();
 		}
-		if (!m_lastIncludedInFreq)
+		if (!m_lastIncludedInFreq) // To save the last iteration in case the frequency is not a divider of m_nIter
 			this->saveForest();
 	}
 	else
