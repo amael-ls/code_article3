@@ -72,7 +72,7 @@ writeLandscape_txt = function(values, outfileName = "../run/landscape.txt", sep 
 #### Common variables
 ## Folders
 loadPath = "../raw_data/"
-outputPath = "../run/data/landscape_300x11_acsa/"
+outputPath = "../run/data/landscape_5x5_acsa/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
@@ -145,24 +145,27 @@ croppedClimate = disagg(x = croppedClimate, fact = downScale_factors, method = "
 # For a 300 x 11 landscape
 crop_extent = ext(c(626881, 627106, 151133, 157253)) # order = xmin, xmax, ymin, ymax
 
+# For a 100 x 5 landscape
+crop_extent = ext(c(626881, 626983, 151133, 151235))
+
 #? What follows is for the crop extent number 2 (Old Tappan Borough, NJ 07675, USA)
 # # For a 100 x 100 landscape
-# crop_extent = extent(c(xxx, xxx, xxx, xxx))
+# crop_extent = ext(c(xxx, xxx, xxx, xxx))
 
 # # For a 200 x 7 landscape
-# crop_extent = extent(c(xxx, xxx, xxx, xxx))
+# crop_extent = ext(c(xxx, xxx, xxx, xxx))
 
 # # For a 100 x 5 landscape
-# crop_extent = extent(c(xxx, xxx, xxx, xxx))
+# crop_extent = ext(c(xxx, xxx, xxx, xxx))
 
 # # For a 10 x 100 landscape
-# crop_extent = extent(c(xxx, xxx, xxx, xxx))
+# crop_extent = ext(c(xxx, xxx, xxx, xxx))
 
 # # For a 20 x 20 landscape
-# crop_extent = extent(c(xxx, xxx, xxx, xxx))
+# crop_extent = ext(c(xxx, xxx, xxx, xxx))
 
 # # For a 5 x 5 landscape
-# crop_extent = extent(c(xxx, xxx, xxx, xxx))
+# crop_extent = ext(c(xxx, xxx, xxx, xxx))
 #! --- End crash test zone, to have a smaller landscape
 
 croppedClimate = crop(croppedClimate, crop_extent)
