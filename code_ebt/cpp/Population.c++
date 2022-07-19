@@ -269,7 +269,7 @@ In Purves2008, the reproduction is proportional to the total sun-exposed crown
 area (which is 0 for understorey trees). That is to say:
 	Seed production = fecundity x crownArea(s, s*)
 The fecundity parameter is from table S4 Purves2008. It is a difficult parameter
-to estimate (check his Appendix2: Parameter estimation)
+to estimate (check his Appendix 2: Parameter estimation)
 */
 void Population::seedProduction(double const height_star)
 {

@@ -32,7 +32,7 @@ Except_Forest::Except_Forest(std::string const& path, std::string const& key):
 	if (path.empty())
 		m_error_msg += "The path corresponding to the key <" + key + "> is empty";
 	else
-		m_error_msg += "The path <" + path + "> correspinding to the key <" + key + "> should end by a slash";
+		m_error_msg += "The path <" + path + "> corresponding to the key <" + key + "> should end by a slash";
 }
 
 const char* Except_Forest::what() const throw()

@@ -111,7 +111,7 @@ void Patch::recruitment(Species* species, double const t, double const delta_t)
 
 /* Competition calculation:
 To compute competition within a patch, it is necessary to first get all
-the cohorts (that have a non zeroheight), regardless species. Once the
+the cohorts (that have a non zero height), regardless species. Once the
 cohorts are all gathered, I use dichotomy:
 	- First set s* = maxHeight/2
 	- Compute the sum of the crown areas for such s*

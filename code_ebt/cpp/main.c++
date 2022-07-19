@@ -10,8 +10,8 @@
 #include "Forest.h++"
 #include "Params.h++"
 
-// Compilation on the super computer; the -ltbb flag might be required (not with gcc/10.2.0):
-// g++ -I. -std=c++2a -Wall -O2 -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp
+// Compilation on the Bayreuth super computer; the -ltbb flag is required and must be added at the end:
+// g++ -std=c++2a -Wall -O2 -o demo.out main.c++ Cohort.c++ Species.c++ Params.c++ Environment.c++ Error_classes.c++ Population.c++ Patch.c++ Forest.c++ Dispersal.c++ Distance.c++ *.cpp -ltbb
 
 void* pt2Object; // global variable which points to an arbitrary Dispersal object for kernel integration
 
