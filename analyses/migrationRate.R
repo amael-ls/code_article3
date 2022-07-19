@@ -11,6 +11,9 @@ library(tikzDevice)
 library(stringi)
 library(raster)
 
+if(!("plotrix" %in% installed.packages()))
+	install.packages("plotrix")
+
 #### Clear memory and graphs
 rm(list = ls())
 graphics.off()
@@ -68,7 +71,8 @@ checkOrder = function(dbh)
 ######## Part I: Population dynamics
 #### Load parameters c++
 ## Simulation parameters
-simulationParameters = setDT(read.table(file = "../cpp/simulationParameters2.txt", header = FALSE, sep = "=", comment.char = "#", blank.lines.skip = TRUE))
+simulationParameters = setDT(read.table(file = "../run/simulationParameters.txt", header = FALSE,
+	sep = "=", comment.char = "#", blank.lines.skip = TRUE))
 setnames(x = simulationParameters, new = c("parameters", "values"))
 
 ## Clean parameters
@@ -86,11 +90,11 @@ speciesList = stringCleaner(speciesList, ".txt")
 speciesList = stringCleaner(speciesList, " ")
 
 ## Paths to files
-pathCpp = "../cpp/"
+pathCpp = "../"
 
 pathSummary = paste0(pathCpp, simulationParameters[parameters == "summaryFilePath", values], speciesList, "/")
 pathPopDyn = paste0(pathCpp, simulationParameters[parameters == "popDynFilePath", values], speciesList, "/")
-initPath = paste0(simulationParameters[parameters == "initPath", values], speciesList, "/")
+initPath = paste0(pathCpp, simulationParameters[parameters == "initPath", values], speciesList, "/")
 
 ## Files' patterns
 summaryPattern = simulationParameters[parameters == "summaryFilePattern", values]
@@ -131,22 +135,31 @@ delta_t = (tmax - t0)/(nIter - 1)
 # [5] "Acer_saccharum_200x7_fat-tailed_noBC_20init"
 # [6] "Acer_saccharum_200x7_noFat_noBC_20init"     
 # [7] "toto"
-#? Orford region
-pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_abba-acsa/"
-pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_alone_noFat/"
-pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_alone_fat-tailed/"
+# #? Orford region
+# pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_abba-acsa/"
+# pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_alone_noFat/"
+# pathSummary = "../cpp/summary/orfordRun/Acer_saccharum_200x7_alone_fat-tailed/"
 
-pathSummary = "../cpp/summary/orfordRun/Abies_balsamea_200x7_alone/"
-pathSummary = "../cpp/summary/orfordRun/Abies_balsamea_200x7_abba-acsa/"
+# pathSummary = "../cpp/summary/orfordRun/Abies_balsamea_200x7_alone/"
+# pathSummary = "../cpp/summary/orfordRun/Abies_balsamea_200x7_abba-acsa/"
 
-#? New-Jersey region
-pathSummary = "../cpp/summary/newJerseyRun/Acer_saccharum_200x7_abba-acsa/"
-pathSummary = "../cpp/summary/newJerseyRun/Abies_balsamea_200x7_abba-acsa/"
-pathSummary = "../cpp/summary/newJerseyRun/Abies_balsamea_200x7_abba_alone/"
+# #? New-Jersey region
+# pathSummary = "../cpp/summary/newJerseyRun/Acer_saccharum_200x7_abba-acsa/"
+# pathSummary = "../cpp/summary/newJerseyRun/Abies_balsamea_200x7_abba-acsa/"
+# pathSummary = "../cpp/summary/newJerseyRun/Abies_balsamea_200x7_abba_alone/"
 
-#* Init path
-initPath = "../createIC/randomInitialCondition/Acer_saccharum/"
-initPath = "../createIC/randomInitialCondition/Abies_balsamea/"
+# #? Others
+# pathSummary = "../cpp/summary/abba-acsa-orfordCrash/Abies_balsamea/"
+# pathSummary = "../cpp/summary/abba-acsa-orfordCrash/Acer_saccharum/"
+
+# #* Init path
+# initPath = "../createIC/randomInitialCondition/Abies_balsamea/"
+# initPath = "../createIC/randomInitialCondition/Acer_saccharum/"
+
+# #* If filed not moved to folder
+# pathSummary = "../cpp/summary/Abies_balsamea/"
+# pathSummary = "../cpp/summary/Acer_saccharum/"
+
 #! END TEMPORARY ZONE
 
 #### Load results c++
@@ -209,6 +222,7 @@ for (i in 1:length(init_col))
 		ind_start = ind_start + nIter
 		ind_end = ind_end + nIter
 	}
+	print(paste(round(i*100/length(init_col), 2), "% done"))
 }
 
 ## Compute basal area
@@ -216,11 +230,12 @@ transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
 
 #### Compute speed of travelling wave
 ## Common variables
-threshold_BA = 1 # Required basal area to consider a plot is populated
+threshold_BA = 0.1 # Required basal area to consider a plot is populated
+compute_asymSpeed = TRUE # Should the asymptotic speed be calculated, it does not make sense for accelerating travelling waves for instance
 
 ## Data table for speed (keep only positive distance, going northward)
 # Select transect
-transect_index = 3
+transect_index = 6
 
 if ((transect_index < 1) | (transect_index > length(ls_origin)))
 	stop(paste0("The index transect_index must be between 1 and ", length(ls_origin), ". Currently, transect_index = ", transect_index))
@@ -233,9 +248,18 @@ setorder(speed_dt, -distance)
 speed_dt[, year := iteration*delta_t]
 speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
 
+## Print results
 paste0("The averaged speed is: ", speed_dt[, round(mean(speed, na.rm = TRUE), 2)], " m/yr")
 paste0("The minimum speed is: ", speed_dt[, round(min(speed, na.rm = TRUE), 2)], " m/yr")
 paste0("The minimum positive speed is: ", speed_dt[speed >= 0, round(min(speed, na.rm = TRUE), 2)], " m/yr")
+
+## Compute asymptotic speed (I assume it is the most represented speed, since it should be at equilibrium)
+if (compute_asymSpeed)
+{
+	asymSpeed = speed_dt[, .N, by = speed][which.max(N), speed]
+	if (asymSpeed/speed_dt[1:round(.N/4), mean(speed)] > 1.05)
+		warning("The asymptotic speed differs from the last quarter of speed_dt by more than 5%")
+}
 
 #### Plot travelling waves emanating from same origin, at different time 
 ## Common variables
@@ -244,10 +268,10 @@ count = 1
 iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
 
 ## Plot
-kernelType = "acsa-versus-abba" # "fat-tailed" "acsa-versus-abba" # "noFat"
+kernelType = "noFat" # "fat-tailed" "acsa-versus-abba" # "noFat"
 landscapeSize = paste0(nRow_land, "x", nCol_land)
-initOption = "20RowsInit"
-climateRegion = "NewJersey" # "Orford", "NewJersey"
+initOption = "30RowsInit"
+climateRegion = "Orford" # "Orford", "NewJersey"
 smootherOption = TRUE
 
 transect_ns[(iteration == iterToPlot[length(iterToPlot)]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), range(basalArea)]
@@ -272,7 +296,7 @@ for (i in iterToPlot[2:length(iterToPlot)])
 	count = count + 1
 }
 
-legend(x = 3670, y = 110, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
+legend(x = 5670, y = 110, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
 	title = "Years", legend = ceiling(iterToPlot*delta_t), lwd = 2, col = c("#000000", coloursVec), bty = "n")
 
 dev.off()
@@ -292,7 +316,29 @@ if (smootherOption)
 	plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
 		lwd = 2, xlab = "Year", ylab = "speed (m/yr)")
 }
+
+if (asymSpeed)
+	abline(h = asymSpeed, lwd = 1.5, lty = "dashed", col = "#135255")
+
 dev.off()
+
+#! Response to comment 11 from Steven Ellner (Ph.D.) to change y-axis Fig. 3.4.3
+
+plotrix::gap.plot(
+  x = df$gdpPercap, 
+  y = df$lifeExp, 
+  gap = c(87, 243), 
+  breakcol = "white", 
+  xlab = "GDP per capita", 
+  ylab = "life Expectancy",
+  ytics = c(70, 75, 80, 85, 245),
+  ylim = c(68, 247)
+)
+
+# decorate the gaps with diagonal slashes
+plotrix::axis.break(2, 87.2, breakcol="black", style="slash")
+plotrix::axis.break(4, 87.2, breakcol="black", style="slash")
+#! END Response to comment 11 from Steven Ellner (Ph.D.) to change y-axis Fig. 3.4.3
 
 #! ------------------------------------------------------------
 #* ------------------------------------------------------------
