@@ -75,7 +75,7 @@ mkdir_sim: code_helpers/mkdir_sim.sh
 	./code_helpers/mkdir_sim.sh $(run_dir)/$(sim_file)
 
 clean:
-	rm -rf $(object_dir_ebt)/*.o $(object_dir_alglib)/*.o
+	rm -rf $(object_dir_ebt)/*.o
 
 echoes:
 	@echo "Include files for ebt: $(includes_ebt)"
