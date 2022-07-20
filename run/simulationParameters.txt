@@ -1,6 +1,6 @@
 
 #### Files
-climate_file = ./run/landscapeData.txt
+climate_file = ./run/landscape.txt
 species_filenames = Acer_saccharum.txt
 
 #### Paths
