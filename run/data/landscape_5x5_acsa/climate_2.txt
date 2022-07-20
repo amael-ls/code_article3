@@ -1,0 +1,12 @@
+annual_mean_temperature = 6.34787893295288
+min_temperature_of_coldest_month = -7.22313642501831
+annual_precipitation = 1506.96655273438
+precipitation_of_driest_quarter = 240.826507568359
+isPopulated = false
+longitude = 626922.400972482
+latitude = 151215.354268987
+patch_id = 2
+row = 0
+col = 2
+plotArea = 417.435699429914
+proj4string = NAD83(CSRS) / MTQ Lambert, EPSG:3799
