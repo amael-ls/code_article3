@@ -60,47 +60,7 @@ find them in Purves2008's appendices.
 */
 double Cohort::crownArea(double const height_star) const
 {
-	// Access parameters from *Species to calculate the crown radius
-	// Table S2 Purves 2008
-	double R0_C0 = m_species->R0_C0;
-	double R0_C1 = m_species->R0_C1;
-
-	double R40_C0 = m_species->R40_C0;
-	double R40_C1 = m_species->R40_C1;
-
-	double M_C0 = m_species->M_C0;
-	double M_C1 = m_species->M_C1;
-
-	double B_C0 = m_species->B_C0;
-	double B_C1 = m_species->B_C1;
-
-	// double a = m_species->a;
-	// double b = m_species->b;
-	double T_param = m_species->T_param;
-
-	// Appendix S3, Eq S3.3 (erroneously denoted S2.3 in the article)
-	double R0 = (1 - T_param)*R0_C0 + T_param*R0_C1;
-	double R40 = (1 - T_param)*R40_C0 + T_param*R40_C1;
-
-	double M = (1 - T_param)*M_C0 + T_param*M_C1;
-	double B = (1 - T_param)*B_C0 + T_param*B_C1;
-
-	// Calculate potential max radius Eq S1.6, watch out dbh in cm in Purves 2008!
-	double Rp_max = R0 + (R40 - R0)*m_mu/400;
-
-	// // Convert dbh to height. If dbh is in mm, then height is in m. Trick: x^n = Exp[n Log[x]]
-	// double height_star = std::exp((a - b + b*std::log10(s_star))*std::log(10));
-
-	if (m_height == 0)
-		return 0;
-
-	// Calculate distance to the top
-	double distToTop = m_height - height_star;
-
-	// Vector crown radius
-	double crownRadius = Rp_max * std::exp(B*std::log(std::min(distToTop, m_height*M) / (m_height*M))); // R_{i, y}^p
-
-	return M_PI*crownRadius*crownRadius;
+	return std::exp(-m_mu); // It is exp(-s) in the article, with s being the dbh!
 }
 
 
