@@ -1,0 +1,6 @@
+scaling_dbh_mu_M = 187.136540505847
+scaling_dbh_sd_M = 106.147728220638
+scaling_temp_mu_M = -18.1945506147582
+scaling_temp_sd_M = 5.26211041850251
+scaling_precip_mu_M = 158.796261307339
+scaling_precip_sd_M = 42.5669051202128
