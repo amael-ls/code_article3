@@ -1,4 +1,5 @@
 *.txt
+!run/data/speciesParameters/Acer_saccharum*txt
 *.txt.tmp
 *.DS_Store
 *.vscode
