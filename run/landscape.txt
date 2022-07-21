@@ -1,6 +1,6 @@
 nRow=5
 nCol=5
-path=./run/data/landscape_5x5/
+path=./run/data/landscape_5x5_acsa/
 delimiter= = 
 filenamePattern=climate_
 deltaLon=20.43124
