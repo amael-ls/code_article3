@@ -1,5 +1,9 @@
 *.txt
 !run/data/speciesParameters/Acer_saccharum*txt
+!run/landscape.txt
+!run/simulationParameters.txt
+!run/data/initialCondition/Acer_saccharum/*txt
+!run/data/landscape_5x5_acsa/*txt
 *.txt.tmp
 *.DS_Store
 *.vscode
