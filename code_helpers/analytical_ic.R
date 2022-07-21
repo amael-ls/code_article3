@@ -1,9 +1,5 @@
 
-#### Aim of prog: Create initial condition for analytical cases:
-# Case 1: No dispersal, no fecundity, no competition. Path = ic_1/
-# Case 2: No dispersal, no fecundity. Path = ic_2/
-# Case 3: No dispersal, no competition. Path = ic_3/
-# Case 4: No dispersal. Path = ic_4/
+#### Aim of prog: Create initial condition for analytical case
 
 #### Load library and clear memory
 library(data.table)
@@ -19,13 +15,13 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 	if (length(dbh) != nbCohorts)
 		stop(paste0("Number of cohorts (", nbCohorts, ") and dbh (", length(dbh), ") mismatch"))
 	
-	if (length(id_plots) != nbPlots)
-		stop(paste0("Number of plots (", nbPlots, ") and id_plots (", length(id_plots), ") mismatch"))
+	if (id_plots[, .N] != nbPlots)
+		stop(paste0("Number of plots (", nbPlots, ") and id_plots (", id_plots[, .N], ") mismatch"))
 
 	for (plot in 1:nbPlots)
 	{
-		outfileName = paste0(path, filenamePattern, id_plots[plot], ".txt")
-
+		outfileName = paste0(path, filenamePattern, id_plots[plot, patch_id], ".txt")
+	
 		if (reset & file.exists(outfileName))
 			file.remove(outfileName)
 
@@ -52,9 +48,9 @@ minDiameter = 2
 
 #### Case number 1
 ## Parameters
-path = "./ic_1/Acer_saccharum/"
-id_plots = readRDS("../createLandscape/clim_5x5/populatedPatches.rds")
-nbPlots = length(id_plots)
+path = "../run/data/initialCondition/Acer_saccharum/"
+id_plots = readRDS("../run/data/landscape_5x5_acsa/populatedPatches.rds")
+nbPlots = id_plots[, .N]
 
 if (!dir.exists(path))
 	dir.create(path)
