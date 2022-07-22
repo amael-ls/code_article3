@@ -61,14 +61,7 @@ species = stringCleaner(species, ".txt")
 
 ## Paths to files
 pathCpp = "../"
-
-pathSummary = paste0(pathCpp, simulationParameters[parameters == "summaryFilePath", values], species, "/")
 pathPopDyn = paste0(pathCpp, simulationParameters[parameters == "popDynFilePath", values], species, "/")
-initPath = paste0(pathCpp, simulationParameters[parameters == "initPath", values], species, "/")
-
-## Files' patterns
-summaryPattern = simulationParameters[parameters == "summaryFilePattern", values]
-initPattern = simulationParameters[parameters == "initFilenamePattern", values]
 
 ## Time
 t0 = as.numeric(simulationParameters[parameters == "t0", values])
