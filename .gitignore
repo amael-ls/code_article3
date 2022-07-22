@@ -10,6 +10,7 @@
 *.jpg
 *.pdf
 *.rds
+!analyses/diffResults/*.rds
 *.png
 *.zip
 *.tex
