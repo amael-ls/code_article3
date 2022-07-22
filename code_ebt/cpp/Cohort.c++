@@ -3,6 +3,8 @@
 	Remarks:
 		1. Ref: Purves 2008, Predicting and understanding forest dynamics using a simple tractable model. PNAS
 		2. In Purves 2008, the dbh is in mm
+		3. Ref: LeSquin2022, Development of a spatial Escalator Boxcar Train algorithm for sessile species: application to the
+			boreal-temperate forest ecotone
 */
 
 #ifndef COHORT_C
@@ -97,7 +99,7 @@ std::vector<double> Cohort::ODE_V(double const s_star, Environment const& env, d
 	*/
 	std::vector<double> y (2);
 
-	double pi = m_lambda*m_mu;
+	double pi = m_lambda*m_mu; // See equation 15 in reference Le Squin et. al. 2022 (See README.md)
 
 	double temperature_growth = env.annual_mean_temperature;
 	double precipitation_growth = env.annual_precipitation;

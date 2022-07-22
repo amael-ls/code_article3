@@ -276,9 +276,8 @@ void Population::seedProduction(double const height_star)
 	double popReprod = 0;
 	c_cohort_it cohort_it = m_cohortsVec.cbegin();
 
-	double limiting_size = std::max(height_star, m_species->minHeightReproduction);
-
-	while (cohort_it != m_cohortsVec.cend() && cohort_it->m_height > limiting_size) // sum_l F * lambda (eq 27 article), sum_k is managed by Forest
+	// For the analytical example, trees reproduce from size 0 (no competition)
+	while (cohort_it != m_cohortsVec.cend()) // sum_l F * lambda (eq 27 in reference), sum_k is managed by Forest.
 	{
 		popReprod += cohort_it->crownArea(height_star) * cohort_it->m_lambda;
 		++cohort_it;

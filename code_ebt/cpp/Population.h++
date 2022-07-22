@@ -83,8 +83,8 @@ class Population
 
 	// --- Reproduction
 		unsigned int m_nonZeroCohort; // Number of non empty cohorts
-		double m_localProducedSeeds; // Seeds produced in local patch (part of it are propagated)
-		double m_localSeedBank; // Seeds received from local source and from external source (dispersal)
+		double m_localProducedSeeds; // Seeds produced in local patch (part of it is propagated)
+		double m_localSeedBank; // Seeds received from local source and from external sources (dispersal)
 	
 	// --- Total population
 		double m_sumTrunkArea; // Basal area, an output variable
@@ -102,7 +102,6 @@ class Population
 		void savePopulation(double const height_star) const;
 		void summary(double const height_star) const;
 		void closeOutputFiles();
-		
 };
 
 #endif
