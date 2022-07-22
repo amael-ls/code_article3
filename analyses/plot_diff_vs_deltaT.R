@@ -10,14 +10,60 @@ rm(list = ls())
 graphics.off()
 options(max.print = 500)
 
+#### Tool function
+stringCleaner = function(str, fixed, skip = NULL)
+{
+	if (is.null(skip))
+		return (stri_replace(str = str, replacement = "", fixed = fixed));
+	
+	skipPos = stri_locate_all(str, fixed = skip)[[1]]
+	fixedPos = stri_locate_all(str, fixed = fixed)[[1]]
+	fixedInSkip = stri_locate_all(skip, fixed = fixed)[[1]]
+	
+	if (anyNA(skipPos))
+		return (stri_replace(str = str, replacement = "", fixed = fixed));
+	
+	if (fixedInSkip[, "start"] == 1)
+		fixedPos = fixedPos[!(fixedPos[, "start"] %in% skipPos[, "start"]), ]
+
+	if (fixedInSkip[, "end"] == stri_length(skip))
+		fixedPos = fixedPos[!(fixedPos[, "end"] %in% skipPos[, "end"]), ]
+
+	if (nrow(fixedPos) == 0) # All the fixed must be skipped
+		return (str);
+
+	strToReturn = stri_sub(str, from = 1, to = fixedPos[1, "start"] - 1) # if fixedPos[1, "start"] == 1, then it returns an empty string
+	
+	for (i in 1:nrow(fixedPos) - 1)
+		strToReturn = paste0(strToReturn, stri_sub(str, from = fixedPos[i, "end"] + 1, to = fixedPos[i + 1, "start"] - 1))
+	
+	strToReturn = paste0(strToReturn, stri_sub(str, from = fixedPos[nrow(fixedPos), "end"] + 1, to = stri_length(str)))
+
+	return (strToReturn);
+}
+
 #### Load results
 pathResults = "./diffResults/"
+if (!dir.exists(pathResults))
+	stop("Directory is missing")
+
 ls_files = list.files(pathResults)
 nbFiles = length(ls_files)
 nbFiles_density = sum(stri_detect(str = ls_files, regex = "density"))
 nbFiles_dbh = sum(stri_detect(str = ls_files, regex = "dbh"))
 
-tmax = 100
+#### Load parameters c++
+## Simulation parameters
+simulationParameters = setDT(read.table(file = "../run/simulationParameters.txt", header = FALSE,
+	sep = "=", comment.char = "#", blank.lines.skip = TRUE))
+setnames(x = simulationParameters, new = c("parameters", "values"))
+
+## Clean parameters
+simulationParameters[, parameters := stringCleaner(parameters, " ")]
+simulationParameters[, values := stringCleaner(values, " ")]
+simulationParameters[, values := stringCleaner(values, fixed = "./", skip = "../"), by = parameters]
+
+tmax = as.numeric(simulationParameters[parameters == "tmax", values])
 
 ls_results_density = vector(mode = "list", length = nbFiles_density)
 ls_results_dbh = vector(mode = "list", length = nbFiles_dbh)
@@ -99,5 +145,4 @@ abline(
 points(ls_results_dbh[iterationBirth == 0, log10(deltaT)], ls_results_dbh[iterationBirth == 0, log10(delta_dbh)], pch = 19)
 dev.off()
 
-print(paste0("The slope is: ", round(coeffs["slope"], 3)))
-
+print(paste0("The slope is: ", round(coeffs["slope"], 5)))
