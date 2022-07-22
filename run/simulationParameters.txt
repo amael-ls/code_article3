@@ -17,14 +17,14 @@ popDynFilePattern = pd_
 #### Time simulation
 t0 = 0
 tmax = 100
-nIter = 500
+nIter = 751
 
 #### Saving options
-saveOnlyLast = true
+saveOnlyLast = false
 freqSave = 1
 
 #### Size population
-maxCohorts = 500
+maxCohorts = 1000
 
 #### Order landscape
 rasterOrder_Rlang = true
