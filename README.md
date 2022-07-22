@@ -11,7 +11,7 @@ This document is organised as follow:
 # List of directories
 
 - **analyses**: contains R scripts to analyse the output of simulations ran by C++
-- **code_helpers:** contains the following folders:
+- **code_ebt:** contains the C++ scripts for the x-EBT program in different folders:
 	- **alglib**: contains the C++ library alglib
 	- **cpp**: contains the Escalator Boxcar Train algorithm (x-EBT) in C++
 	- **obj_alglib**: contains the *.o files from the compilation of alglib. Those files are created with the `Makefile`
