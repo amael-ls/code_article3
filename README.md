@@ -10,15 +10,13 @@ This document is organised as follow:
 
 # List of directories
 
-- **alglib**: contains the C++ library alglib
 - **analyses**: contains R scripts to analyse the output of simulations ran by C++
-- **cpp**: contains the Escalator Boxcar Train algorithm (x-EBT) in C++
-- **createIC**: to create initial condition for x-EBT. This directory is made by the script `helper.sh`
-- **createLandscape**: to create the landscape (climate conditions, patch size). This directory is made by the script `helper.sh`
-- **createParams**: to create the species used by x-EBT. This folder contains R scripts and uses the parameters estimated in @LeSquin2020. This directory is made by the script `helper.sh`
-- **helpers**: contains scripts to help building the initial condition, the environmental conditions, and the directories to save results
-- **obj_alglib**: contains the *.o files from the compilation of alglib. Those files are created with the `Makefile`
-- **obj_ebt**: contains the *.o files from the compilation of x-EBT (from cpp/ folder). Those files are created with the `Makefile`
+- **code_ebt:** contains the C++ scripts for the x-EBT program in different folders:
+	- **alglib**: contains the C++ library alglib
+	- **cpp**: contains the Escalator Boxcar Train algorithm (x-EBT) in C++
+	- **obj_alglib**: contains the *.o files from the compilation of alglib. Those files are created with the `Makefile`
+	- **obj_ebt**: contains the *.o files from the compilation of x-EBT (from cpp/ folder). Those files are created with the `Makefile`
+- **code_helpers**: contains scripts to help building the initial condition, the environmental conditions, and the directories to save results
 
 # Execution of x-EBT
 
