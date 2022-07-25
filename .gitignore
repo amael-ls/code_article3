@@ -3,7 +3,7 @@
 !run/landscape.txt
 !run/simulationParameters.txt
 !run/data/initialCondition/Acer_saccharum/*txt
-!run/data/landscape_5x5_acsa/*txt
+!run/data/landscape_1x1_acsa/*txt
 !run/results/popDyn/Acer_saccharum/*txt
 !run/results/summary/Acer_saccharum/*txt
 *.txt.tmp
