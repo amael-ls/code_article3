@@ -16,8 +16,8 @@ popDynFilePattern = pd_
 
 #### Time simulation
 t0 = 0
-tmax = 1
-nIter = 10
+tmax = 3
+nIter = 31
 
 #### Saving options
 saveOnlyLast = false
