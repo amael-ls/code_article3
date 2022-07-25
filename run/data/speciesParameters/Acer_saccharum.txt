@@ -1,0 +1,4 @@
+species = Acer_saccharum
+fecundity = 0
+minAgeReproduction = 22
+maxDiameter = 100

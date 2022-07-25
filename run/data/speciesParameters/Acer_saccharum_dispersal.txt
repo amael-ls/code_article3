@@ -1,0 +1,8 @@
+keysToRead = dispersalDistThreshold, refKernel_doi, propLDD, relLDDtoSDD, twoDt_a, twoDt_b
+dispersalProbaThreshold = 0.01
+refKernel_doi = dirac
+propLDD = 0.1
+relLDDtoSDD = 0.1
+dispersalDistThreshold = 10000
+twoDt_a = 2.015
+twoDt_b = 24355.4

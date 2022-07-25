@@ -1,0 +1,8 @@
+scaling_G_mu = 0.527843697563177
+scaling_G_sd = 0.868285600781141
+scaling_dbh_mu_G = 189.028985904428
+scaling_dbh_sd_G = 105.279790104659
+scaling_temp_mu_G = 5.11214210675363
+scaling_temp_sd_G = 2.81824137279367
+scaling_precip_mu_G = 1017.23712899778
+scaling_precip_sd_G = 154.363536382657
