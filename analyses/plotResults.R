@@ -1,130 +1,113 @@
 
-#### Aim of prog: Plot and analyse the ouptuts of Cpp prog
-## Plot densities (initial and last states)
-#
+#### Aim of prog: Plot results (initial and last densities) for the appendix ???
+## Reference:
+# See appendix ??? in the paper:
+# Development of a spatial Escalator Boxcar Train algorithm for sessile species: application to the boreal-temperate forest ecotone
+# Link: 
 
-#### Load packages
+#### Load library and clear memory
 library(data.table)
 library(tikzDevice)
+library(stringi)
 
-#### Clear memory and graphs
 rm(list = ls())
 graphics.off()
 
-######## Part I: No dispersion effect (goudriann, 1986)
-#### Load results c++
-## Path
-pathCpp = "../cpp/"
+#### Options tikzDevice
+options(tikzDefaultEngine = "luatex")
 
-## Initial state
-init = fread(paste0(pathCpp, "initNoDisp.txt"))
-
-## Last state
-end = fread(paste0(pathCpp, "endNoDisp.txt"))
-
-## Competition, reproduction, basal area and total density
-compReprod = fread(paste0(pathCpp, "compReprodNoDisp.txt"))
-
-## Dynamics
-# Load the density and dbh dynamics of cohorts
-dyn = fread(paste0(pathCpp, "popDynNoDisp.txt"))
-
-# Determine the number of cohorts and time steps
-nbTimeSteps = dim(compReprod)[1]
-nbCohorts = dim(dyn)[1]/nbTimeSteps - ifelse(end[.N, density] == 0, 1, 0)
-
-#### Tikz plots
-tikz("./noDisp.tex", width = 3.1, height = 3.1) #, standAlone = TRUE)
-op <- par(mar = c(2.5, 2.5, 2.5, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
-xmax = max(end[, dbh])
-ymax = max(end[, density])
-plot(x = NULL, y = NULL, xlim = c(0, xmax + 0.1),
-	ylim = c(0, ymax + 0.1), axes = FALSE, xlab = "Size",
-	ylab = "Density")
-for (i in 1:nbCohorts)
+#### Tool function
+stringCleaner = function(str, fixed, skip = NULL)
 {
-	# Initial state
-	tikzCoord(init[i, dbh], 0, paste0("init_start_", i))
-	tikzCoord(init[i, dbh], init[i, density], paste0("init_end_", i))
-	tikzAnnotate(paste0("\\draw (init_start_", i, ") -- (init_end_", i, ");"))
+	if (is.null(skip))
+		return (stri_replace(str = str, replacement = "", fixed = fixed));
+	
+	skipPos = stri_locate_all(str, fixed = skip)[[1]]
+	fixedPos = stri_locate_all(str, fixed = fixed)[[1]]
+	fixedInSkip = stri_locate_all(skip, fixed = fixed)[[1]]
+	
+	if (anyNA(skipPos))
+		return (stri_replace(str = str, replacement = "", fixed = fixed));
+	
+	if (fixedInSkip[, "start"] == 1)
+		fixedPos = fixedPos[!(fixedPos[, "start"] %in% skipPos[, "start"]), ]
 
-	# End state
-	tikzCoord(end[i, dbh], 0, paste0("end_start_", i))
-	tikzCoord(end[i, dbh], end[i, density], paste0("end_end_", i))
-	tikzAnnotate(paste0("\\draw[dashed] (end_end_", i, ") -- (end_start_", i, ");"))
+	if (fixedInSkip[, "end"] == stri_length(skip))
+		fixedPos = fixedPos[!(fixedPos[, "end"] %in% skipPos[, "end"]), ]
 
-	# Arrow movement
-	tikzAnnotate(paste0("\\draw[arrow, draw = orange] (init_end_", i, ") -- (end_end_", i, ");"))
+	if (nrow(fixedPos) == 0) # All the fixed must be skipped
+		return (str);
+
+	strToReturn = stri_sub(str, from = 1, to = fixedPos[1, "start"] - 1) # if fixedPos[1, "start"] == 1, then it returns an empty string
+	
+	for (i in 1:nrow(fixedPos) - 1)
+		strToReturn = paste0(strToReturn, stri_sub(str, from = fixedPos[i, "end"] + 1, to = fixedPos[i + 1, "start"] - 1))
+	
+	strToReturn = paste0(strToReturn, stri_sub(str, from = fixedPos[nrow(fixedPos), "end"] + 1, to = stri_length(str)))
+
+	return (strToReturn);
 }
-# Axes
-axis(side = 1, at = 0:xmax, labels = 0:xmax)
-axis(side = 2, at = 0:ymax, labels = 0:ymax)
 
-# Legend
-legend(x = "topleft", legend = c("t = 0", "t = 3"), xpd = TRUE,
-	lty = c("solid", "dashed"), lwd = 2, bty = "n", inset = c(0, -0.15))
+#### Load parameters c++
+## Simulation parameters
+simulationParameters = setDT(read.table(file = "../run/simulationParameters.txt", header = FALSE,
+	sep = "=", comment.char = "#", blank.lines.skip = TRUE))
+setnames(x = simulationParameters, new = c("parameters", "values"))
 
-dev.off()
+## Clean parameters
+simulationParameters[, parameters := stringCleaner(parameters, " ")]
+simulationParameters[, values := stringCleaner(values, " ")]
+simulationParameters[, values := stringCleaner(values, fixed = "./", skip = "../"), by = parameters]
 
-######## Part II: Population dynamics
-#### Load results c++
-## Path
-pathCpp = "../cpp/"
+## Species
+species = simulationParameters[parameters == "species_filenames", values]
+species = stringCleaner(species, ".txt")
 
-	## Initial state
-init = fread(paste0(pathCpp, "init.txt"))
+## Paths to files
+pathCpp = "../"
+pathPopDyn = paste0(pathCpp, simulationParameters[parameters == "popDynFilePath", values], species, "/")
+
+## Time
+t0 = as.numeric(simulationParameters[parameters == "t0", values])
+tmax = as.numeric(simulationParameters[parameters == "tmax", values])
+(nIter = as.integer(simulationParameters[parameters == "nIter", values]))
+delta_t = (tmax - t0)/(nIter - 1)
+
+#### Results
+## Loading
+results = fread(paste0(pathPopDyn, "pd_0.txt"))
+
+## Add column and keep only row/columns of interest
+results[, time := iteration*delta_t]
+results = results[iteration %in% c(0, nIter - 1)]
+results[, c("iterationBirth", "height") := NULL]
+
+## Initial condition
+N0_initCond = results[iteration == 0, density]
+dbh0_initCond = results[iteration == 0, dbh]
 
 ## Last state
-end = fread(paste0(pathCpp, "end.txt"))
+N0_end = results[iteration == nIter - 1, density]
+dbh0_end = results[iteration == nIter - 1, dbh]
 
-## Competition, reproduction, basal area and total density
-compReprod = fread(paste0(pathCpp, "compReprod.txt"))
-
-## Dynamics
-# Load the density and dbh dynamics of cohorts
-dyn = fread(paste0(pathCpp, "popDyn.txt"))
-
-# Determine the number of cohorts and time steps
-nbTimeSteps = dim(compReprod)[1]
-nbCohorts = dim(dyn)[1]/nbTimeSteps
-
-#### Plots
-## Initial state
-plot(init$dbh, init$density)
-
-## Last state
-plot(end$dbh, end$density)
-
-## Dynamic plot
-# Limits xlim and ylim
-max_dbh = dyn[, max(dbh)]
-max_density = dyn[, max(density)]
-
-# Plot
-plot(dyn[1:nbCohorts, dbh], dyn[1:nbCohorts, density], pch = '', # type = 'l',
-	xlim = c(0, max_dbh), ylim = c(0, max_density))
-invisible(sapply(2:nbTimeSteps, function(x, nbCohorts) {
-	Sys.sleep(0.005)
-	ind_start = (x - 1)*nbCohorts + 1
-	ind_end = x*nbCohorts
-	plot(dyn[ind_start:ind_end, dbh], dyn[ind_start:ind_end, density], type = 'l', lwd = 1,
-		xlim = c(0, max_dbh), ylim = c(0, max_density))
-}, nbCohorts = nbCohorts))
-
-## Reproduction and competition
-par(mfrow = c(4,1))
-plot(compReprod$time, compReprod$reproduction, type = "l", lwd = 2,
-	xlab = "Time", ylab = "Reproduction")
-plot(compReprod$time, compReprod$competition, type = "l", lwd = 2,
-	xlab = "Time", ylab = "Competition")
-plot(compReprod$time, compReprod$basalArea, type = "l", lwd = 2,
-	xlab = "Time", ylab = "Basal area")
-plot(compReprod$time, compReprod$totalDensity, type = "l", lwd = 2,
-	xlab = "Time", ylab = "Total density")
-
-#### Tikz version
-tikz(paste0("./ba_plot.tex"), width = 3.1, height = 3.1) #, standAlone = TRUE)
-op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
-plot(compReprod$time, compReprod$basalArea, type = "l", lwd = 2,
-	xlab = "Time", ylab = "Basal area")
+#### Plot
+tikz("noDisp.tex", width = 3.1, height = 3.1,
+	packages = c(getOption("tikzLatexPackages"), "\\usetikzlibrary{arrows}"))
+op = par(mar = c(4, 4, 3, 0.8), mgp = c(2, 0.9, 0), tck = -0.015, xpd = TRUE)
+plot(0, type = "n", axes = FALSE, xlim = c(0, max(dbh0_end)), ylim = c(0, max(N0_end)), ann = FALSE)
+axis(side = 1, at = 0:max(dbh0_end))
+axis(side = 2, at = 0:max(N0_end), las = 1)
+title(xlab = "Size", ylab = "Density")
+for (i in 1:length(N0_end))
+{
+	# Densities
+	segments(x0 = dbh0_initCond[i], y0 = 0, x1 = dbh0_initCond[i], y1 = N0_initCond[i], lty = "solid", lwd = 1)
+	segments(x0 = dbh0_end[i], y0 = 0, x1 = dbh0_end[i], y1 = N0_end[i], lty = "dashed", lwd = 1)
+	
+	# Arrows from initial condition to last state
+	tikzCoord(dbh0_initCond[i], N0_initCond[i], paste0("arrow_start_", i))
+	tikzCoord(dbh0_end[i], N0_end[i], paste0("arrow_end_", i))
+	tikzAnnotate(paste0("\\draw[arrow, draw = orange] (arrow_start_", i,") -- (arrow_end_", i,");"))
+}
+legend(x = "topleft", inset = c(0, -0.2), legend = c("t = 0", "t = 3"), lty = c("solid", "dashed"), bty = "n")
 dev.off()
