@@ -88,9 +88,6 @@ double Cohort::crownArea(double const height_star) const
 	// Calculate potential max radius Eq S1.6, watch out dbh in cm in Purves 2008!
 	double Rp_max = R0 + (R40 - R0)*m_mu/400;
 
-	// // Convert dbh to height. If dbh is in mm, then height is in m. Trick: x^n = Exp[n Log[x]]
-	// double height_star = std::exp((a - b + b*std::log10(s_star))*std::log(10));
-
 	if (m_height == 0)
 		return 0;
 

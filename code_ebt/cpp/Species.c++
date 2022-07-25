@@ -201,136 +201,25 @@ Species::Species(std::string const& species_filename, std::string const& species
 // Individual growth rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::v(double s, double const s_star, double temp, double precip) const
 {
-	/*
-		It is assumed that none of the variables is scaled.
-	*/
-	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
-
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_G)/scaling_dbh_sd_G;
-	temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
-	precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
-
-	// Define the coefficient of the polynomial of s
-	beta_0 = intercept_G +
-	(beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
-		beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
-	beta_T*temp + beta_T_sq*temp*temp + beta_P*precip + beta_P_sq*precip*precip;
-
-	beta_1 = beta_dbh + beta_dbh_T*temp + beta_dbh_T_sq*temp*temp +
-		beta_dbh_P*precip + beta_dbh_P_sq*precip*precip;
-
-	beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
-		beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
-
-	// Growth function
-	return std::exp(scaling_G_mu + scaling_G_sd * (beta_0 + beta_1*s + beta_2*s*s));
+	return 1;
 }
 
 // Individual death rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::d(double s, double const s_star, double temp, double precip) const
 {
-	/*
-		It is assumed that none of the variables is scaled.
-	*/
-
-	bool cs = s_star < s; // ? false : true;
-	double beta_0;
-
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
-	temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
-	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
-
-	// Define the coefficient of the polynomial of s
-	beta_0 = intercept_M +
-	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
-		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
-	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
-
-	return std::exp(beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s);
-	// Probability: 1 - std::exp(-std::exp(beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s));
-	// Remember that rate = - ln[1 - proba]
+	return 0;
 }
 
 // Differentiate individual growth rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::dv_ds(double s, double const s_star, double temp, double precip) const
 {
-	/*
-		It is assumed that none of the variables is scaled.
-		This function is only weakly differentiable, due to the jump at s_star (hereafter s*)
-		Its weak derivative is (δ_0(s - s*) + β_1 + 2 β_2 s) Exp[β_0 + β_1 s + β_2 s^2]
-		where the βs are defined in v.
-
-		However, I guess I can also work in [0, s*[ and ]s*, +Inf[, and set a continuity condition at s*.
-		This was done in the paper of Adams et al. 2007:
-		Understanding height-structured competition in forests: is there an R* for light?
-		the total rate at which cohorts 'arrive' at size s* as canopy trees must equal the rate at which they
-		'leave' s* as understory trees.
-	*/
-
-	bool cs = s_star < s; // ? false : true;
-	double beta_0, beta_1, beta_2;
-
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_G)/scaling_dbh_sd_G;
-	temp = (temp - scaling_temp_mu_G)/scaling_temp_sd_G;
-	precip = (precip - scaling_precip_mu_G)/scaling_precip_sd_G;
-
-	// Define the coefficient of the polynomial of s
-	beta_0 = intercept_G +
-	(beta_cs + beta_cs_T*temp + beta_cs_T_sq*temp*temp +
-		beta_cs_P*precip + beta_cs_P_sq*precip*precip)*cs +
-	beta_T*temp + beta_T_sq*temp*temp + beta_P*precip + beta_P_sq*precip*precip;
-
-	beta_1 = beta_dbh + beta_dbh_T*temp + beta_dbh_T_sq*temp*temp +
-		beta_dbh_P*precip + beta_dbh_P_sq*precip*precip;
-
-	beta_2 = beta_dbh_sq + beta_dbh_sq_T*temp + beta_dbh_sq_T_sq*temp*temp +
-		beta_dbh_sq_P*precip + beta_dbh_sq_P_sq*precip*precip;
-
-	// Polynomial of s (order 2)
-	double dbh_polynomial = beta_0 + beta_1*s + beta_2*s*s;
-
-	return scaling_G_sd*(beta_1 + 2*beta_2*s) * std::exp(scaling_G_mu + scaling_G_sd * dbh_polynomial);
+	return 0;
 }
 
 // Differentiate individual mortality rate, s is the diameter, s_star is dbh_star (obtained from height_star)
 double Species::dd_ds(double s, double const s_star, double temp, double precip) const
 {
-	/*
-		It is assumed that none of the variables is scaled.
-		This function is only weakly differentiable, due to the jump at s_star (hereafter s*)
-		Its weak derivative is + (δ_0(s - s*) + β_1 + 2 β_2 s) Exp[-u]/(1 + Exp[-u])^2
-		where the βs are defined in d, and u = β_0 + β_1 s + β_2 s^2.
-		an equivalent expression is: u'/(2 + Exp[-u] + Exp[u]), which tends to 0 when u tends to +Inf
-
-		However, I guess I can also work in [0, s*[ and ]s*, +Inf[, and set a continuity condition at s*.
-		This was done in the paper of Adams et al. 2007:
-		Understanding height-structured competition in forests: is there an R* for light?
-		the total rate at which cohorts 'arrive' at size s* as canopy trees must equal the rate at which they
-		'leave' s* as understory trees.
-	*/
-
-	bool cs = s_star < s; // ? false : true;
-	double beta_0;
-
-	// Scaling all the variables (size, temperature and precipitation)
-	s = (s - scaling_dbh_mu_M)/scaling_dbh_sd_M;
-	temp = (temp - scaling_temp_mu_M)/scaling_temp_sd_M;
-	precip = (precip - scaling_precip_mu_M)/scaling_precip_sd_M;
-
-	// Define the coefficient of the polynomial of s
-	beta_0 = intercept_M +
-	(beta_cs_M + beta_cs_T_M*temp + beta_cs_T_sq_M*temp*temp
-		+ beta_cs_P_M*precip + beta_cs_P_sq_M*precip*precip)*cs +
-	beta_T_M*temp + beta_T_sq_M*temp*temp +beta_P_M*precip + beta_P_sq_M*precip*precip;
-
-	// Polynomial of s (order 2)
-	double dbh_polynomial = beta_0 + beta_dbh_M*s + beta_dbh_sq_M*s*s;
-
-	return (beta_dbh_M + 2*beta_dbh_sq_M*s)*std::exp(dbh_polynomial);
+	return 0;
 }
 
 /*************************************/
