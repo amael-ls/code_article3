@@ -1,0 +1,8 @@
+nRow=1
+nCol=1
+path=./run/data/landscape_1x1_acsa/
+delimiter= = 
+filenamePattern=climate_
+deltaLon=20.43124
+deltaLat=20.43124
+distance=euclidean
