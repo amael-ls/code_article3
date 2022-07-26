@@ -72,7 +72,7 @@ writeLandscape_txt = function(values, outfileName = "../run/landscape.txt", sep 
 #### Common variables
 ## Folders
 loadPath = "../raw_data/"
-outputPath = "../run/data/landscape_300x11_abba-acsa/"
+outputPath = "../run/data/landscape_5x5_acsa/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
@@ -168,30 +168,6 @@ vals[, isPopulated := "false"]
 # Populations are at the bottom of the landscape
 vals[row == max(row), isPopulated := "true"]
 
-<<<<<<< HEAD
-=======
-# Populations are at the 10 bottom lines of the landscape
-vals[row %in% seq(max(row) - 9, max(row)), isPopulated := "true"]
-
-# Populations are at the 20 bottom lines of the landscape
-vals[row %in% seq(max(row) - 19, max(row)), isPopulated := "true"]
-
-# Populations are at the 30 bottom lines of the landscape #! i.e., 10% of the 300*11 landscape, starting from the bottom
-vals[row %in% seq(max(row) - 29, max(row)), isPopulated := "true"]
-
-# Populations are at the 100 top lines of the landscape
-vals[row %in% seq(min(row), min(row) + 99), isPopulated := "true"]
-
-# Populations are at the 180 top lines of the landscape
-vals[row %in% seq(min(row), min(row) + 179), isPopulated := "true"]
-
-# Populations are at the 280 top lines of the landscape #! i.e., 90% of the 300*11 landscape, starting from the top
-vals[row %in% seq(min(row), min(row) + 279), isPopulated := "true"]
-
-# Populations are at the 100 bottom lines of the landscape
-vals[row %in% seq(max(row) - 99, max(row)), isPopulated := "true"]
-
->>>>>>> origin/master
 # Print number of colonised patches
 print(paste0("Number of colonised patches = ", sum(vals$isPopulated == "true")))
 print(paste0("Number of colonised rows = ", sum(vals$isPopulated == "true")/ncols))
