@@ -67,10 +67,10 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 
 #### Parameters
 ## Folder and id plots (for names initial condition)
-sp = "Acer_saccharum" # "Acer_saccharum", "Abies_balsamea"
+sp = "Abies_balsamea" # "Acer_saccharum", "Abies_balsamea"
 outputPath = paste0("../run/data/initialCondition/", sp, "/")
 filenamePattern = "ic_"
-pathLandscape = "../run/data/landscape_300x11_acsa/"
+pathLandscape = "../run/data/landscape_300x11_abba-acsa/"
 
 if (!dir.exists(pathLandscape))
 	stop("Directory not found")
@@ -83,7 +83,7 @@ if (length(id_plots) == 0)
 
 ## Cohorts 
 nbCohorts = 150
-maxDiameter = 900
+maxDiameter = 600
 minDiameter = 2
 nbPlots = length(id_plots)
 
