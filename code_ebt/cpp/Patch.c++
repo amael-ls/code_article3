@@ -86,6 +86,9 @@ void Patch::dispersal(Patch* sourcePatch, Species* species,
 {
 	Distance dist(m_env, sourcePatch->m_env, deltaLat, deltaLon);
 
+	if (dist > species->dispersalDistThreshold)
+		return;
+
 	// withdrawn seeds from source = local production of source times amount dispersed by K
 	double withdrawnSeeds = ((sourcePatch->m_pop_map).at(species)).m_localProducedSeeds * distToIntegral.at(dist);
 	(m_pop_map.at(species)).m_localSeedBank += withdrawnSeeds;

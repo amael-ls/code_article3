@@ -47,6 +47,11 @@ bool operator<(Distance const d1, Distance const d2)
 	return d1.m_manhattan[1] < d2.m_manhattan[1];
 }
 
+bool operator>(Distance const d1, double const length)
+{
+	return d1.m_euclidean > length;
+}
+
 bool operator==(Distance const d1, Distance const d2)
 {
 	return (d1.m_manhattan == d2.m_manhattan); // This operator is overloaded for vectors

@@ -4,7 +4,7 @@
 		1. Ref: Purves 2008, Predicting and understanding forest dynamics using a simple tractable model. PNAS
 		2. In Purves 2008, the dbh is in mm
 		3. Ref: LeSquin2022, Development of a spatial Escalator Boxcar Train algorithm for sessile species: application to the
-			boreal-temperate forest ecotone
+			boreal-temperate forest ecotone. ???
 */
 
 #ifndef COHORT_C

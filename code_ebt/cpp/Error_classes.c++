@@ -120,6 +120,12 @@ Except_Species::Except_Species(int const nbVals, double const integVal)
 		m_error_msg += "The integrals of G should be positive. Currently " + std::to_string(integVal);
 }
 
+Except_Species::Except_Species(bool const dispProba, bool const dispersalDisp)
+{
+	if ((dispProba) && (dispersalDisp))
+		m_error_msg += "Both <minimal dispersal probability> and <maximal dispersal distance are used>. Only one parameter can be used!";
+}
+
 const char* Except_Species::what() const throw()
 {
 	return (m_error_msg.c_str());

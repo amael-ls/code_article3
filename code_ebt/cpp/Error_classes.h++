@@ -67,6 +67,7 @@ class Except_Species : public std::exception
 {
 	public:
 		Except_Species(int const nbVals, double const integVal);
+		Except_Species(bool const dispProba, bool const dispersalDisp);
 		const char* what() const throw();
 
 	private:

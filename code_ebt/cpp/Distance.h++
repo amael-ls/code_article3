@@ -21,6 +21,7 @@ class Distance
 
 	// Overloads
 		friend bool operator<(Distance const d1, Distance const d2);
+		friend bool operator>(Distance const d1, double const length);
 		friend bool operator==(Distance const d1, Distance const d2);
 		friend std::ostream& operator<<(std::ostream& os, Distance const &dist);
 

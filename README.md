@@ -16,7 +16,6 @@ This document is organised as follow:
 	- **cpp**: contains the Escalator Boxcar Train algorithm (x-EBT) in C++
 	- **obj_alglib**: contains the *.o files from the compilation of alglib. Those files are created with the `Makefile`
 	- **obj_ebt**: contains the *.o files from the compilation of x-EBT (from cpp/ folder). Those files are created with the `Makefile`
-
 - **code_helpers**: contains scripts to help building the initial condition, the environmental conditions, and the directories to save results
 - **run:** contains the results and data associated to this branch (*analytical_case*)
 

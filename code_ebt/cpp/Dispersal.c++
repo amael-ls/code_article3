@@ -371,13 +371,13 @@ void landscapeIntegrals(Dispersal& disp)
 			
 			disp.m_totalIntegral += integPatch;
 
-			if ((disp.m_dispersalProbaThreshold) &&(integPatch >= disp.m_min_dispersalProba)) // If using proba threshold
+			if ((disp.m_min_dispersalProba) && (integPatch >= disp.m_dispersalProbaThreshold)) // If using proba threshold
 			{
 				if (disp.m_map_distance_integral.find(distanceToZero) == disp.m_map_distance_integral.end())
 					disp.m_map_distance_integral[distanceToZero] = integPatch;
 			}
 
-			if ((disp.m_dispersalDistThreshold) && (euclideanDistanceToZero <= disp.m_dispersalDistThreshold)) // If using distance threshold
+			if ((disp.m_max_dispersalDist) && (euclideanDistanceToZero <= disp.m_dispersalDistThreshold)) // If using distance threshold
 			{
 				if (disp.m_map_distance_integral.find(distanceToZero) == disp.m_map_distance_integral.end())
 					disp.m_map_distance_integral[distanceToZero] = integPatch;
