@@ -29,6 +29,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	checkPath(m_popDynFilePath, "popDynFilePath");
 
 	m_freqSave = forestParameters.get_val<unsigned int>("freqSave");
+	m_saveFrom = forestParameters.get_val<unsigned int>("saveFrom");
 
 	// Simulation parameters
 	m_t0 = forestParameters.get_val<double>("t0");
@@ -252,7 +253,7 @@ void Forest::dynamics()
 
 			this->summary();
 
-			if (iter % m_freqSave == 0)
+			if ((iter > m_saveFrom) && (iter % m_freqSave == 0))
 				this->saveForest();
 		}
 		if (!m_lastIncludedInFreq) // To save the last iteration in case the frequency is not a divider of m_nIter

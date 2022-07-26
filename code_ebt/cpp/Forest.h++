@@ -78,6 +78,7 @@ class Forest
 		std::string m_popDynFilePath;
 		bool m_saveOnlyLast;
 		unsigned int m_freqSave;
+		unsigned int m_saveFrom;
 		bool m_lastIncludedInFreq;
 
 	// --- Functions
