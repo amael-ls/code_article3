@@ -395,10 +395,10 @@ void landscapeIntegrals(Dispersal& disp)
 		disp.m_totalIntegral = 1;
 	}
 
-	std::map<Distance, double>::const_iterator it = disp.m_map_distance_integral.cbegin();
-	for (; it != disp.m_map_distance_integral.cend(); ++it)
-		std::cout << it->first << "    " << it->second << std::endl;
-	std::cout << std::endl;
+	// std::map<Distance, double>::const_iterator it = disp.m_map_distance_integral.cbegin();
+	// for (; it != disp.m_map_distance_integral.cend(); ++it)
+	// 	std::cout << it->first << "    " << it->second << std::endl;
+	// std::cout << std::endl;
 	
 	if ((disp.m_totalIntegral > 1.01) || (disp.m_totalIntegral < 0)) // 1.01 to allow computation errors up to 0.01
 		throw Except_Dispersal(disp.m_totalIntegral, disp.m_species->getName());
