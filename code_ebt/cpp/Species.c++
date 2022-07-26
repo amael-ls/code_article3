@@ -191,6 +191,10 @@ Species::Species(std::string const& species_filename, std::string const& species
 	if (keysToRead.find("laplaceParam") != std::string::npos)
 		laplaceParam = speciesParams_dispersal.get_val<double>("laplaceParam");
 
+	// Check that there is only onw limiting factor for dispersal (either minimal probability or maximal distance)
+	if ((min_dispersalProba) && (max_dispersalDist))
+		throw Except_Species(min_dispersalProba, max_dispersalDist);
+
 	// Others
 	maxDiameter = speciesParams.get_val<double>("maxDiameter");
 }

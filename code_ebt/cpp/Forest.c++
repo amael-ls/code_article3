@@ -182,7 +182,7 @@ void Forest::patchDynamics(double const t, double const delta_t)
 	/*  Explanation lambda functions: https://docs.microsoft.com/en-us/cpp/cpp/lambda-expressions-in-cpp?view=vs-2019
 		Square brackets [] are for the capture clause, i.e., how to access variables in the enclosing scope.
 		In my case, the variables are t and delta_t. Because I put [=], I access them by value.
-		If I had put [&], they were be accessed by reference. I could have put an hybrid such as [&t, delta_t]
+		If I had put [&], they would be accessed by reference. I could have put an hybrid such as [&t, delta_t]
 	*/
 }
 
@@ -285,8 +285,8 @@ void Forest::neighbours_indices(unsigned int const target, std::vector<unsigned 
 	else
 		maxDispersalDist = 100; // default value
 
-	unsigned int influenceRadius_x = std::ceil(maxDispersalDist/m_deltaLon);
-	unsigned int influenceRadius_y = std::ceil(maxDispersalDist/m_deltaLat);
+	unsigned int influenceRadius_x = std::floor(maxDispersalDist/m_deltaLon);
+	unsigned int influenceRadius_y = std::floor(maxDispersalDist/m_deltaLat);
 
 	unsigned int col_ind = target % m_nCol_land;
 	unsigned int row_ind = (int) (target - col_ind)/m_nCol_land;
