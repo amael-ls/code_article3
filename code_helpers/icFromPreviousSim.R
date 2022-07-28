@@ -44,6 +44,7 @@ stringCleaner = function(str, fixed, skip = NULL)
 
 	return (strToReturn);
 }
+
 ## Function to print initial condition
 printIC = function(dt, path, filenamePattern, sep = " ", reset = TRUE)
 {
@@ -60,7 +61,7 @@ printIC = function(dt, path, filenamePattern, sep = " ", reset = TRUE)
 
 		line = paste0("density", sep, "dbh", sep = "\n")
 
-		line = paste0(line, paste0(dt[patch_id == plot, density], sep, dt[patch_id == plot, dbh], collapse = "\n"))
+		line = paste0(line, paste0(dt[patch_id == id_plots[plot], density], sep, dt[patch_id == id_plots[plot], dbh], collapse = "\n"))
 
 		writeLines(line, ofstream)
 		close(ofstream)
