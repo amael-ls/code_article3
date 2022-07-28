@@ -1,8 +1,9 @@
 
 #### Aim of prog: Generate the initial condition from a previous run
-# There are two things to save:
+# There are three things to save:
 #	1. The new initial condition (1 file per plot per species)
-#	2. The new populated patches file. Saved in the landscape directory, but no overwrite of the previous file
+#	2. The new landscape (1 file per plot, same as the first landscape, except the value of isPopulated that might change)
+#	3. The new populated patches file (according to the value of isPopulated for each plot)
 
 #### Load library and clear memory
 library(data.table)
@@ -67,6 +68,45 @@ printIC = function(dt, path, filenamePattern, sep = " ", reset = TRUE)
 	}
 }
 
+## Function to read a landscape file and modify the value of isPopulated if necessary
+updateLandscape = function(inputDir, outputDir, patternFile, concernedFiles, key, newValues)
+{
+	if (length(concernedFiles) != length(newValues))
+		stop("Dimensions mismatch between the concerned files and the new values")
+
+	if (!all(stri_detect(str = concernedFiles, regex = paste0("^", patternFile))))
+	{
+		warning("Some concerned files do not follow the pattern. They have been ignored")
+		concernedFiles = concernedFiles[stri_detect(str = concernedFiles, regex = paste0("^", patternFile))]
+	}
+
+	# filename = concernedFiles[1]
+	count = 1
+	for (filename in concernedFiles)
+	{
+		# Read file
+		input = fread(input = paste0(inputDir, filename), sep = "=", header = FALSE)
+		setnames(input, c("parameters", "values"))
+		setindex(input, parameters)
+
+		# Update value
+		input[key, values := newValues[count], on = "parameters"]
+
+		# Write output
+		outfileName = paste0(outputDir, filename)
+		ofstream = file(outfileName)
+
+		line = ""
+		for (i in 1:input[, .N])
+			line = paste0(line, input[i, parameters], "=", input[i, values], "\n")
+
+		writeLines(line, ofstream)
+		close(ofstream)
+
+		count = count + 1
+	}
+}
+
 #### Load parameters c++
 ## Simulation parameters
 simulationParameters = setDT(read.table(file = "../run/simulationParameters.txt", header = FALSE,
@@ -117,8 +157,11 @@ setnames(landscape_metadata, new = c("parameters", "values"))
 
 landscape_metadata[, values := stringCleaner(values, fixed = "./", skip = "../"), by = parameters]
 pathLandscape = paste0(pathCpp, landscape_metadata[parameters == "path", values])
+landscapePattern = landscape_metadata[parameters == "filenamePattern", values]
 
 dimLandscape = as.integer(landscape_metadata[parameters == "nRow", values]) * as.integer(landscape_metadata[parameters == "nCol", values])
+
+populatedPatches = readRDS(paste0(pathLandscape, "populatedPatches.rds"))
 
 ## Check existence directories
 if (any(!dir.exists(path_ic)))
@@ -132,7 +175,11 @@ if (any(!dir.exists(pathLandscape)))
 
 #### Create initial condition from previous run
 ## Output directories
-outputDir = paste0(stri_replace_last(str = path_ic, replacement = "", regex = "/"), "_from_prev_run/")
+outputDir_ic = paste0(stri_replace_last(str = path_ic, replacement = "", regex = "/"), "_from_prev_run/")
+outputDir_env = paste0(stri_replace_last(str = pathLandscape, replacement = "", regex = "/"), "_from_prev_run/")
+
+if (!dir.exists(outputDir_env))
+	dir.create(outputDir_env)
 
 ## Common variables
 # Select the iteration that will be the initial condition
@@ -157,7 +204,7 @@ for (species in speciesList)
 {
 	# Species specific path data
 	path_data = pathPopDyn[stri_detect(str = pathPopDyn, regex = paste0(species, "/$"))]
-	out_data = outputDir[stri_detect(str = outputDir, regex = species)]
+	out_data = outputDir_ic[stri_detect(str = outputDir_ic, regex = species)]
 	
 	# List population dynamics file
 	ls_files = list.files(path = path_data, pattern = paste0("^", popDynPattern, ".*.txt$"))
@@ -189,6 +236,27 @@ for (species in speciesList)
 	printIC(popDyn_ls, out_data, initPattern)
 }
 
-populatedPatches = rbindlist(populatedPatches_ls, idcol = "species")
+#### Rewrite landscape files
+## Populated patches
+populatedPatches_new = rbindlist(populatedPatches_ls, idcol = "species")
+saveRDS(populatedPatches, paste0(outputDir_env, "populatedPatches_restart.rds"))
 
-saveRDS(populatedPatches, paste0(pathLandscape, "populatedPatches_restart.rds"))
+## Compare previous landscape and new landscape with respect to patch occupancy
+originally_occupied = populatedPatches[, unique(patch_id)]
+currently_occupied = populatedPatches_new[, unique(patch_id)]
+
+similarPatches = currently_occupied[currently_occupied %in% originally_occupied]
+differentPatches = currently_occupied[!(currently_occupied %in% originally_occupied)]
+
+if (length(similarPatches) != 0)
+{
+	for (patch in similarPatches)
+		file.copy(from = paste0(pathLandscape, landscapePattern, patch, ".txt"), to = paste0(outputDir_env, landscapePattern, patch, ".txt"))
+}
+
+if (length(differentPatches) != 0)
+{
+	current_occupancy = data.table(patch_id = differentPatches, newValues = differentPatches %in% populatedPatches_new[, unique(patch_id)])
+	updateLandscape(inputDir = pathLandscape, outputDir = outputDir_env, patternFile = landscapePattern,
+		concernedFiles = paste0(landscapePattern, differentPatches, ".txt"), key = "isPopulated", newValues = current_occupancy[, newValues])
+}
