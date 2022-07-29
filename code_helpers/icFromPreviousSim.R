@@ -220,11 +220,20 @@ for (species in speciesList)
 		if (i %% 100 == 0)
 			print(paste0(round(i*100/dimLandscape, digits = 3), "% done"))
 	}
-	popDyn_ls = rbindlist(popDyn_ls, idcol = "patch_id")
+	popDyn_ls = rbindlist(popDyn_ls, idcol = "ls_files_id")
+	popDyn_ls[, patch_id := as.integer(stri_sub(str = ls_files[ls_files_id],
+		from = stri_locate(str = ls_files[ls_files_id], regex = paste0("^", popDynPattern))[, "end"] + 1,
+		to = stri_locate(str = ls_files[ls_files_id], regex = ".txt$")[, "start"] - 1))]
+
 
 	# List colonised patches for initial condition
-	populatedPatches_ls[[species]] = popDyn_ls[, .(unique(patch_id - 1))]
+	populatedPatches_ls[[species]] = popDyn_ls[, .(unique(patch_id))]
 	setnames(populatedPatches_ls[[species]], new = "patch_id")
+
+	## Remove all values smaller than 1e-25
+	# std::stod in C++ cannot handle smaller numbers than std::numeric_limits<double>::min(), around 1e-308
+	popDyn_ls[abs(density) < 1e-25, density := 0]
+	popDyn_ls = popDyn_ls[density != 0]
 
 	# Create output directory
 	if (!dir.exists(out_data))
