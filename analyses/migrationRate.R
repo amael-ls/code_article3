@@ -21,6 +21,7 @@ graphics.off()
 options(max.print = 500)
 
 #### Tool functions
+## Function to clean strings
 stringCleaner = function(str, fixed, skip = NULL)
 {
 	if (is.null(skip))
@@ -210,19 +211,6 @@ for (i in 1:length(init_col))
 
 ## Compute basal area
 transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
-
-#! CRASH TEST ZONE
-transect_ns = transect_ns[patch_id == 2321]
-plot(transect_ns[5200:5210, iteration], transect_ns[5200:5210, totalDensity], type = "l")
-transect_ns[5205, totalDensity]
-transect_ns[5206, totalDensity]
-unique(transect_ns[1:5206, totalDensity])
-transect_ns[5207, totalDensity]
-
-transect_ns = transect_ns[iteration < 5096]
-transect_ns[, range(basalArea)]
-nIter = 5096
-#! END CRASH TEST ZONE
 
 #### Compute speed of travelling wave
 ## Common variables

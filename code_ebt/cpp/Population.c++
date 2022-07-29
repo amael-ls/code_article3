@@ -367,7 +367,7 @@ std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, dou
 	
 	double mu = 0;
 	double lambda = 0;
-	unsigned int birthIteration = 0;
+	double birthIteration = 0; // Will be cast later into a unsigned int, but I first need a double for weighted sum
 
 	// First: remove null density cohorts and reset them to zeros cohorts
 	for (moving_it = m_cohortsVec.begin(); moving_it != lim_it; ++moving_it)
@@ -384,7 +384,7 @@ std::vector<bool> Population::mergeCohorts(double const thresholdSimilarity, dou
 
 	// --- Update or reset iterators
 	lim_it = m_cohortsVec.begin() + m_nonZeroCohort; // update (m_nonZeroCohorts might have changed)
-	moving_it = m_cohortsVec.begin() + 1; // reset for second step
+	moving_it = m_cohortsVec.begin() + 1; // reset for second step, equivalent to std::next(first), where first = m_cohortsVec.begin()
 
 	// Second: merging cohorts taller than m_s_inf, useless to go beyond lim_it
 	while ((moving_it != lim_it) && (moving_it->m_mu > m_s_inf))

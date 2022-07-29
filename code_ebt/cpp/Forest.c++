@@ -29,6 +29,7 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 	checkPath(m_popDynFilePath, "popDynFilePath");
 
 	m_freqSave = forestParameters.get_val<unsigned int>("freqSave");
+	m_saveFrom = forestParameters.get_val<unsigned int>("saveFrom");
 
 	// Simulation parameters
 	m_t0 = forestParameters.get_val<double>("t0");
@@ -64,6 +65,13 @@ Forest::Forest(par::Params const& forestParameters, std::vector<Species*> const 
 
 	if (m_freqSave > m_nIter && !m_saveOnlyLast)
 		throw Except_Forest(m_freqSave, m_nIter, m_dim_land, false);
+
+	if ((m_saveFrom > m_nIter) && (!m_saveOnlyLast))
+	{
+		std::cout << "saveFrom is superior to the number of iteration. This is equivalent to set m_saveOnlyLast = true" << std::endl;
+		std::cout << "Only the last iteration will be saved, despite frequency = " << m_freqSave << std::endl;
+		m_saveOnlyLast = true;
+	}
 
 	// Check if last iteration is included when saving with a frequency
 	m_lastIncludedInFreq = (((m_nIter - 1) % m_freqSave) == 0); // -1 because it goes from 0 to nIter - 1
@@ -252,7 +260,7 @@ void Forest::dynamics()
 
 			this->summary();
 
-			if (iter % m_freqSave == 0)
+			if ((iter > m_saveFrom) && (iter % m_freqSave == 0))
 				this->saveForest();
 		}
 		if (!m_lastIncludedInFreq) // To save the last iteration in case the frequency is not a divider of m_nIter

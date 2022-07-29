@@ -67,7 +67,7 @@ printIC = function(densities, dbh, path, filenamePattern, id_plots = 1:nrow(dens
 
 #### Parameters
 ## Folder and id plots (for names initial condition)
-sp = "Abies_balsamea" # "Acer_saccharum", "Abies_balsamea"
+sp = "Acer_saccharum" # "Acer_saccharum", "Abies_balsamea"
 outputPath = paste0("../run/data/initialCondition/", sp, "/")
 filenamePattern = "ic_"
 pathLandscape = "../run/data/landscape_300x11_abba-acsa/"
@@ -83,7 +83,7 @@ if (length(id_plots) == 0)
 
 ## Cohorts 
 nbCohorts = 150
-maxDiameter = 600
+maxDiameter = 900
 minDiameter = 2
 nbPlots = length(id_plots)
 
@@ -122,7 +122,7 @@ for (i in 1:nbPlots)
 ## Number of trees per patch
 data.table(id_plots, density_patch = rowSums(densities))
 
-## Remove all values smaller than 1e-50
+## Remove all values smaller than 1e-25
 # I do this because std::stod in C++ cannot handle smaller numbers than std::numeric_limits<double>::min() which is around 1e-308 in my computer
 densities[densities < 1e-25] = 0
 
