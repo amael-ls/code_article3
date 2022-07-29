@@ -58,7 +58,7 @@ Patch::Patch(Environment const& env, std::vector<Species*> const speciesList,
 			m_filenamePattern_map[*species_it] = "not initialised";
 		}
 
-// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
+		// Would be smarter to do it in forest rather than here, and to transmit it as an argument rather than having it as a member
 		if (((m_pop_map.find(*species_it))->second).m_delta_s < m_minDelta_s)  
 			m_minDelta_s = ((m_pop_map.find(*species_it))->second).m_delta_s;
 	}
