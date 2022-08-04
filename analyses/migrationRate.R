@@ -181,7 +181,11 @@ names(compute_tw) = speciesList
 compute_asymSpeed = c(FALSE, TRUE)
 names(compute_asymSpeed) = speciesList
 
-## Ploting options
+## Define original position of the species
+fromSouth = c(FALSE, TRUE)
+names(fromSouth) = speciesList
+
+## Plotting options
 kernelType = "acsa-versus-abba" # "fat-tailed" "acsa-versus-abba" # "noFat"
 landscapeSize = paste0(nRow_land, "x", nCol_land)
 climateRegion = "Orford" # "Orford", "NewJersey"
@@ -294,7 +298,7 @@ for (species in speciesList)
 	iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 coming from the first plot (black curve)
 	
 	yMax = transect_ns[(iteration %in% iterToPlot) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-		(signedDistance >= 0), max(basalArea)]
+		(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), max(basalArea)]
 
 	kernelType = kernelType_fct(species, length(speciesList))
 	# Plot
@@ -305,9 +309,9 @@ for (species in speciesList)
 	# 	width = 4.5, height = 3)
 	op <- par(mar = c(3.5, 3.5, 0.8, 5.5), mgp = c(2.4, 0.8, 0), tck = -0.02, xpd = TRUE)
 	plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
-			!is.na(basalArea) & (signedDistance >= 0), distance],
+			!is.na(basalArea) & (ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), distance],
 		transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-			(signedDistance >= 0), basalArea],
+			(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), basalArea],
 		type = "l", ylim = c(0, 1.01*yMax), las = 1, xlab = "Distance", ylab = "Basal area", lwd = 2)
 
 	## For loop on time
@@ -315,8 +319,10 @@ for (species in speciesList)
 	{
 		if (count > length(coloursVec))
 			print("*** Warning, curve will not be plotted because of undefined colour")
-		lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
-			transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
+		lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+				(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), distance],
+			transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+				(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), basalArea],
 			lwd = 2, col = coloursVec[count])
 		count = count + 1
 	}
