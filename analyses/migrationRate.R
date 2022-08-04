@@ -184,9 +184,9 @@ names(compute_asymSpeed) = speciesList
 ## Define original position of the species
 fromSouth = c(FALSE, TRUE)
 names(fromSouth) = speciesList
+maxLat_dist = (nRow_land - 1)*deltaLat # maxLat_dist - distance = distance to the south for a northern species
 
 ## Plotting options
-kernelType = "acsa-versus-abba" # "fat-tailed" "acsa-versus-abba" # "noFat"
 landscapeSize = paste0(nRow_land, "x", nCol_land)
 climateRegion = "Orford" # "Orford", "NewJersey"
 smootherOption = TRUE
@@ -240,7 +240,7 @@ for (species in speciesList)
 		for (row in 0:(nRow_land - 1))
 		{
 			patch_id = init_col[i] + row*nCol_land
-			temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
+			temporary = fread(paste0(pathSummary_current, summaryPattern, patch_id, ".txt"))
 			transect_ns[ind_start:ind_end, patch_id := ..patch_id]
 			transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "height_star", "sumTrunkArea", "totalDensity") := temporary]
 			transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat]
@@ -269,10 +269,13 @@ for (species in speciesList)
 			stop(paste0("The index transect_index must be between 1 and ", length(ls_origin), ". Currently, transect_index = ", transect_index))
 
 		# Subset data
-		speed_dt = transect_ns[(transectOrigin == ls_origin[transect_index]) & (basalArea > threshold_BA) & (signedDistance >= 0),
-			min(iteration, na.rm = TRUE), by = distance]
+		speed_dt = transect_ns[(transectOrigin == ls_origin[transect_index]) & (basalArea > threshold_BA) &
+			(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), min(iteration, na.rm = TRUE), by = distance]
 
 		setnames(speed_dt, new = c("distance", "iteration"))
+		if (!fromSouth[species])
+			speed_dt = speed_dt[iteration > 0]
+		
 		setorder(speed_dt, -distance)
 		speed_dt[, year := iteration*delta_t]
 		speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
@@ -302,14 +305,14 @@ for (species in speciesList)
 
 	kernelType = kernelType_fct(species, length(speciesList))
 	# Plot
-
 	pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".pdf"),
 		width = 17, height = 6)
 	# tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"),
 	# 	width = 4.5, height = 3)
 	op <- par(mar = c(3.5, 3.5, 0.8, 5.5), mgp = c(2.4, 0.8, 0), tck = -0.02, xpd = TRUE)
 	plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
-			!is.na(basalArea) & (ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), distance],
+			!is.na(basalArea) & (ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)),
+			if (fromSouth[species]) distance else maxLat_dist - distance],
 		transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
 			(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), basalArea],
 		type = "l", ylim = c(0, 1.01*yMax), las = 1, xlab = "Distance", ylab = "Basal area", lwd = 2)
@@ -320,7 +323,8 @@ for (species in speciesList)
 		if (count > length(coloursVec))
 			print("*** Warning, curve will not be plotted because of undefined colour")
 		lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-				(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), distance],
+				(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)),
+				if (fromSouth[species]) distance else maxLat_dist - distance],
 			transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
 				(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), basalArea],
 			lwd = 2, col = coloursVec[count])
@@ -338,7 +342,7 @@ for (species in speciesList)
 		if (smootherOption)
 			smo = smooth.spline(x = speed_dt[!is.na(speed), year], y = speed_dt[!is.na(speed), speed], spar = 0.5)
 		pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
-			ifelse(smootherOption,"-smo", ""), ".tex"), width = 17, height = 6)
+			ifelse(smootherOption,"-smo", ""), ".pdf"), width = 17, height = 6)
 		# tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
 		# 	ifelse(smootherOption,"-smo", ""), ".tex"), width = 4.5, height = 3)
 		op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
@@ -351,17 +355,15 @@ for (species in speciesList)
 				lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
 		}
 
-		if (asymSpeed)
+		if (compute_asymSpeed[species])
 			abline(h = asymSpeed, lwd = 1.5, lty = "dashed", col = "#135255")
 
 		dev.off()
 	}
+	print(paste(species, "done"))
 }
 
-
-
 # nbData_ew = nCol_land*nIter*length(init_row) # nb of row x nIter x number of rows to cover
-
 
 # transect_ew = data.table(patch_id = integer(length = nbData_ew), iteration = numeric(length = nbData_ew),
 # 	localSeedProduced = numeric(length = nbData_ew), height_star = numeric(length = nbData_ew),
