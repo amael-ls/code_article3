@@ -69,6 +69,24 @@ checkOrder = function(dbh)
 	return (FALSE);
 }
 
+## Function to select kernel type
+kernelType_fct = function(species, nbSpecies)
+{
+	if (nbSpecies == 1)
+	{
+		if (species == "Abies_balsamea")
+			return ("fat-tailed")
+		
+		if (species == "Acer_saccharum")
+			return ("noFat")
+	}
+
+	if (nbSpecies == 2)
+		return ("abba-vs-acsa")
+
+	return (NULL);
+}
+
 ######## Part I: Population dynamics
 #### Load parameters c++
 ## Simulation parameters
@@ -146,183 +164,204 @@ delta_t = (tmax - t0)/(nIter - 1)
 
 #! END TEMPORARY ZONE
 
-#### Load results c++
-## Initial condition
-# List files
+#### Common variables
+## Check directories
 if (any(!dir.exists(initPath)))
 	stop(paste0("*** Folder <", initPath[!dir.exists(initPath)], "> does not exist ***"))
 
 if (any(!dir.exists(pathSummary)))
 	stop(paste0("*** Folder <", pathSummary[!dir.exists(pathSummary)], "> does not exist ***"))
 
-ls_init = list.files(initPath)
+## Define for which species the travelling wave speed should be computed
+# Travelling wave speed
+compute_tw = c(TRUE, FALSE)
+names(compute_tw) = speciesList
 
-# Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
-init_index = sort(as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
-	to = stri_locate_last(ls_init, fixed = ".txt")[, "start"] - 1)))
+# Asymptotic speed of travelling wave (it does not make sense for accelerating travelling waves for instance)
+compute_asymSpeed = c(FALSE, TRUE)
+names(compute_asymSpeed) = speciesList
 
-init_col = unique(init_index %% nCol_land)
-init_row = unique((init_index - init_col)/nCol_land)
+## Ploting options
+kernelType = "acsa-versus-abba" # "fat-tailed" "acsa-versus-abba" # "noFat"
+landscapeSize = paste0(nRow_land, "x", nCol_land)
+climateRegion = "Orford" # "Orford", "NewJersey"
+smootherOption = TRUE
 
-## Load files belonging to same transect (i.e., either same row = East-West or col = North-South)
-# Prepare results data tables
-nbData_ns = nRow_land*nIter*length(init_col) # nb of row x nIter x number of cols to cover
+#### Loop over species to load C++ results
+species = speciesList[1]
+for (species in speciesList)
+{
+	## Species-specific path
+	initPath_current = initPath[stri_detect(str = initPath, regex = species)]
+	pathSummary_current = pathSummary[stri_detect(str = pathSummary, regex = species)]
+	
+	## Load initial condition
+	# List files
+	ls_init = list.files(initPath_current)
+	initOption = paste0(length(ls_init), "RowsInit")
+
+	# Determine their c++ coordinates (starting from 0 to n-1 rather than 1 to n)
+	init_index = sort(as.integer(stri_sub(ls_init, from = stri_locate_last(ls_init, fixed = "_")[, "end"] + 1,
+		to = stri_locate_last(ls_init, fixed = ".txt")[, "start"] - 1)))
+
+	init_col = unique(init_index %% nCol_land)
+	init_row = unique((init_index - init_col)/nCol_land)
+
+	## Load files belonging to same transect (i.e., either same row = East-West or col = North-South)
+	# Prepare results data tables
+	nbData_ns = nRow_land*nIter*length(init_col) # nb of row x nIter x number of cols to cover
+
+	transect_ns = data.table(patch_id = integer(length = nbData_ns), iteration = numeric(length = nbData_ns),
+		localSeedProduced = numeric(length = nbData_ns), height_star = numeric(length = nbData_ns),
+		sumTrunkArea = numeric(length = nbData_ns), totalDensity = numeric(length = nbData_ns),
+		distance = numeric(length = nbData_ns), transectOrigin = integer(length = nbData_ns))
+
+	ls_origin = c()	
+	
+	# Loop on the North-South transects, distance is from the northeast point of the transect
+	for (i in 1:length(init_col))
+	{
+		ind_start = (i - 1)*nRow_land*nIter + 1
+		ind_end = (i - 1)*nRow_land*nIter + nIter
+	
+		# --- Detect the northeast point colonised in column col_id
+		col_id = i - 1 # C++ starts at 0
+		indicesCol = seq(col_id, (nRow_land - 1)*nCol_land, nCol_land)
+		currentOrigin = min(init_index[init_index %in% indicesCol]) # min because raster starts numbering from north, lower = more north
+		currentRow = (currentOrigin - init_col[i])/nCol_land
+
+		ls_origin = c(ls_origin, currentOrigin)
+
+		# --- Loading files
+		for (row in 0:(nRow_land - 1))
+		{
+			patch_id = init_col[i] + row*nCol_land
+			temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
+			transect_ns[ind_start:ind_end, patch_id := ..patch_id]
+			transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "height_star", "sumTrunkArea", "totalDensity") := temporary]
+			transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat]
+			transect_ns[ind_start:ind_end, signedDistance := (currentRow - row)*deltaLat]
+			transect_ns[ind_start:ind_end, transectOrigin := currentOrigin]
+			ind_start = ind_start + nIter
+			ind_end = ind_end + nIter
+		}
+		print(paste(round(i*100/length(init_col), 2), "% done"))
+	}
+
+	## Compute basal area
+	transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
+
+	## Compute speed of travelling wave
+	if (compute_tw[species])
+	{
+		# Common variables
+		threshold_BA = 0.1 # Required basal area to consider a plot is populated
+
+		## Data table for speed (keep only positive distance, going northward)
+		# Select transect
+		transect_index = 6
+
+		if ((transect_index < 1) | (transect_index > length(ls_origin)))
+			stop(paste0("The index transect_index must be between 1 and ", length(ls_origin), ". Currently, transect_index = ", transect_index))
+
+		# Subset data
+		speed_dt = transect_ns[(transectOrigin == ls_origin[transect_index]) & (basalArea > threshold_BA) & (signedDistance >= 0),
+			min(iteration, na.rm = TRUE), by = distance]
+
+		setnames(speed_dt, new = c("distance", "iteration"))
+		setorder(speed_dt, -distance)
+		speed_dt[, year := iteration*delta_t]
+		speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
+
+		## Print results
+		paste0("The averaged speed is: ", speed_dt[, round(mean(speed, na.rm = TRUE), 2)], " m/yr")
+		paste0("The minimum speed is: ", speed_dt[, round(min(speed, na.rm = TRUE), 2)], " m/yr")
+		paste0("The minimum positive speed is: ", speed_dt[speed >= 0, round(min(speed, na.rm = TRUE), 2)], " m/yr")
+
+		## Compute asymptotic speed (I assume it is the most represented speed, since it should be at equilibrium)
+		if (compute_asymSpeed[species])
+		{
+			asymSpeed = speed_dt[, .N, by = speed][which.max(N), speed]
+			if (asymSpeed/speed_dt[1:round(.N/4), mean(speed)] > 1.05)
+				warning("The asymptotic speed differs from the last quarter of speed_dt by more than 5%")
+		}
+	}
+
+	## Plot travelling waves emanating from same origin, at different time 
+	# Common variables
+	coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
+	count = 1
+	iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 coming from the first plot (black curve)
+	
+	yMax = transect_ns[(iteration %in% iterToPlot) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+		(signedDistance >= 0), max(basalArea)]
+
+	kernelType = kernelType_fct(species, length(speciesList))
+	# Plot
+
+	pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".pdf"),
+		width = 17, height = 6)
+	# tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"),
+	# 	width = 4.5, height = 3)
+	op <- par(mar = c(3.5, 3.5, 0.8, 5.5), mgp = c(2.4, 0.8, 0), tck = -0.02, xpd = TRUE)
+	plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
+			!is.na(basalArea) & (signedDistance >= 0), distance],
+		transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+			(signedDistance >= 0), basalArea],
+		type = "l", ylim = c(0, 1.01*yMax), las = 1, xlab = "Distance", ylab = "Basal area", lwd = 2)
+
+	## For loop on time
+	for (i in iterToPlot[2:length(iterToPlot)])
+	{
+		if (count > length(coloursVec))
+			print("*** Warning, curve will not be plotted because of undefined colour")
+		lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
+			transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
+			lwd = 2, col = coloursVec[count])
+		count = count + 1
+	}
+
+	legend(x = "topright", inset = c(-0.065, 0),
+		title = "Years", legend = round(iterToPlot*delta_t), lwd = 2, col = c("#000000", coloursVec), bty = "n")
+
+	dev.off()
+
+	## Plot speed on a 2nd graph
+	if (compute_tw[species])
+	{
+		if (smootherOption)
+			smo = smooth.spline(x = speed_dt[!is.na(speed), year], y = speed_dt[!is.na(speed), speed], spar = 0.5)
+		pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
+			ifelse(smootherOption,"-smo", ""), ".tex"), width = 17, height = 6)
+		# tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
+		# 	ifelse(smootherOption,"-smo", ""), ".tex"), width = 4.5, height = 3)
+		op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
+
+		if (smootherOption)
+		{
+			plot(predict(smo, speed_dt[!is.na(speed), year]), type = "l", lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
+		} else {
+			plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
+				lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
+		}
+
+		if (asymSpeed)
+			abline(h = asymSpeed, lwd = 1.5, lty = "dashed", col = "#135255")
+
+		dev.off()
+	}
+}
+
+
+
 # nbData_ew = nCol_land*nIter*length(init_row) # nb of row x nIter x number of rows to cover
 
-transect_ns = data.table(patch_id = integer(length = nbData_ns), iteration = numeric(length = nbData_ns),
-	localSeedProduced = numeric(length = nbData_ns), height_star = numeric(length = nbData_ns),
-	sumTrunkArea = numeric(length = nbData_ns), totalDensity = numeric(length = nbData_ns),
-	distance = numeric(length = nbData_ns), transectOrigin = integer(length = nbData_ns))
 
 # transect_ew = data.table(patch_id = integer(length = nbData_ew), iteration = numeric(length = nbData_ew),
 # 	localSeedProduced = numeric(length = nbData_ew), height_star = numeric(length = nbData_ew),
 # 	sumTrunkArea = numeric(length = nbData_ew), totalDensity = numeric(length = nbData_ew),
 # 	distance = numeric(length = nbData_ew), transectOrigin = integer(length = nbData_ew))
 
-ls_origin = c()
-
-# Loop on the North-South transects, distance is from the northeast point of the transect
-for (i in 1:length(init_col))
-{
-	ind_start = (i - 1)*nRow_land*nIter + 1
-	ind_end = (i - 1)*nRow_land*nIter + nIter
-	# Detect the northeast point colonised in column col_id
-	col_id = i - 1 # C++ starts at 0
-	indicesCol = seq(col_id, (nRow_land - 1)*nCol_land, nCol_land)
-	currentOrigin = min(init_index[init_index %in% indicesCol]) # min because raster starts numbering from north, so the lower, the norther
-	currentRow = (currentOrigin - init_col[i])/nCol_land
-
-	ls_origin = c(ls_origin, currentOrigin)
-
-	for (row in 0:(nRow_land - 1))
-	{
-		patch_id = init_col[i] + row*nCol_land
-		temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
-		transect_ns[ind_start:ind_end, patch_id := ..patch_id]
-		transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "height_star", "sumTrunkArea", "totalDensity") := temporary]
-		transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat]
-		transect_ns[ind_start:ind_end, signedDistance := (currentRow - row)*deltaLat]
-		transect_ns[ind_start:ind_end, transectOrigin := currentOrigin]
-		ind_start = ind_start + nIter
-		ind_end = ind_end + nIter
-	}
-	print(paste(round(i*100/length(init_col), 2), "% done"))
-}
-
-## Compute basal area
-transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
-
-#### Compute speed of travelling wave
-## Common variables
-threshold_BA = 0.1 # Required basal area to consider a plot is populated
-compute_asymSpeed = TRUE # Should the asymptotic speed be calculated, it does not make sense for accelerating travelling waves for instance
-
-## Data table for speed (keep only positive distance, going northward)
-# Select transect
-transect_index = 6
-
-if ((transect_index < 1) | (transect_index > length(ls_origin)))
-	stop(paste0("The index transect_index must be between 1 and ", length(ls_origin), ". Currently, transect_index = ", transect_index))
-
-# Subset data
-speed_dt = transect_ns[(transectOrigin == ls_origin[transect_index]) & (basalArea > threshold_BA) & (signedDistance >= 0), min(iteration, na.rm = TRUE), by = distance]
-
-setnames(speed_dt, new = c("distance", "iteration"))
-setorder(speed_dt, -distance)
-speed_dt[, year := iteration*delta_t]
-speed_dt[, speed := c((distance[1:(.N - 1)] - distance[2:.N])/(year[1:(.N - 1)] - year[2:.N]), NA)]
-
-## Print results
-paste0("The averaged speed is: ", speed_dt[, round(mean(speed, na.rm = TRUE), 2)], " m/yr")
-paste0("The minimum speed is: ", speed_dt[, round(min(speed, na.rm = TRUE), 2)], " m/yr")
-paste0("The minimum positive speed is: ", speed_dt[speed >= 0, round(min(speed, na.rm = TRUE), 2)], " m/yr")
-
-## Compute asymptotic speed (I assume it is the most represented speed, since it should be at equilibrium)
-if (compute_asymSpeed)
-{
-	asymSpeed = speed_dt[, .N, by = speed][which.max(N), speed]
-	if (asymSpeed/speed_dt[1:round(.N/4), mean(speed)] > 1.05)
-		warning("The asymptotic speed differs from the last quarter of speed_dt by more than 5%")
-}
-
-#### Plot travelling waves emanating from same origin, at different time 
-## Common variables
-coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
-count = 1
-iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
-
-## Plot
-kernelType = "acsa-versus-abba" # "fat-tailed" "acsa-versus-abba" # "noFat"
-landscapeSize = paste0(nRow_land, "x", nCol_land)
-initOption = "30RowsInit"
-climateRegion = "Orford" # "Orford", "NewJersey"
-smootherOption = TRUE
-
-transect_ns[(iteration == iterToPlot[length(iterToPlot)]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), range(basalArea)]
-
-# pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 4.5, height = 3)
-tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"), width = 4.5, height = 3)
-count = 1
-op <- par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
-plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
-	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
-	type = "l", ylim = c(0, 120), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
-	xlab = "Distance", ylab = "Basal area", lwd = 2)
-
-## For loop on time
-for (i in iterToPlot[2:length(iterToPlot)])
-{
-	if (count > length(coloursVec))
-		print("*** Warning, curve will not be plotted because of undefined colour")
-	lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), distance],
-		transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance >= 0), basalArea],
-		lwd = 2, col = coloursVec[count])
-	count = count + 1
-}
-
-legend(x = 5670, y = 110, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
-	title = "Years", legend = round(iterToPlot*delta_t), lwd = 2, col = c("#000000", coloursVec), bty = "n")
-
-dev.off()
-
-## Plot speed on a 2nd graph
-# pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_speed.pdf"), width = 4.5, height = 3)
-if (smootherOption)
-	smo = smooth.spline(x = speed_dt[!is.na(speed), year], y = speed_dt[!is.na(speed), speed], spar = 0.5)
-tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
-	ifelse(smootherOption,"-smo", ""),".tex"), width = 4.5, height = 3)
-op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
-
-if (smootherOption)
-{
-	plot(predict(smo, speed_dt[!is.na(speed), year]), type = "l", lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
-} else {
-	plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
-		lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
-}
-
-if (asymSpeed)
-	abline(h = asymSpeed, lwd = 1.5, lty = "dashed", col = "#135255")
-
-dev.off()
-
-#! Response to comment 11 from Steven Ellner (Ph.D.) to change y-axis Fig. 3.4.3
-
-plotrix::gap.plot(
-  x = df$gdpPercap, 
-  y = df$lifeExp, 
-  gap = c(87, 243), 
-  breakcol = "white", 
-  xlab = "GDP per capita", 
-  ylab = "life Expectancy",
-  ytics = c(70, 75, 80, 85, 245),
-  ylim = c(68, 247)
-)
-
-# decorate the gaps with diagonal slashes
-plotrix::axis.break(2, 87.2, breakcol="black", style="slash")
-plotrix::axis.break(4, 87.2, breakcol="black", style="slash")
-#! END Response to comment 11 from Steven Ellner (Ph.D.) to change y-axis Fig. 3.4.3
 
 #! ------------------------------------------------------------
 #* ------------------------------------------------------------
@@ -351,7 +390,7 @@ transect_ns[(iteration == iterToPlot[length(iterToPlot)]) & (transectOrigin == l
 # pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 4.5, height = 3)
 maxLat_dist = (nRow_land - 1)*deltaLat
 
-pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 9, height = 6)
+pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 17, height = 6)
 # tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"), width = 4.5, height = 3)
 count = 1
 op <- par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
