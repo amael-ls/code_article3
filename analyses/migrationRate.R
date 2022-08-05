@@ -3,16 +3,11 @@
 ## Plot densities (initial and last states)
 # sumTrunkArea is in m^2
 
-#! I SHOULD CREATE A LOOP FOR SPECIES OR CALL THIS PROG IN A FOR LOOP
-
 #### Load packages
 library(data.table)
 library(tikzDevice)
 library(stringi)
-library(raster)
-
-if(!("plotrix" %in% installed.packages()))
-	install.packages("plotrix")
+# library(raster)
 
 #### Clear memory and graphs
 rm(list = ls())
@@ -87,6 +82,128 @@ kernelType_fct = function(species, nbSpecies)
 	return (NULL);
 }
 
+plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIter = NULL)
+{
+	# Common variables
+	speciesList = plotInfos[["speciesList"]]
+	species = plotInfos[["species"]]
+	fromSouth = plotInfos[["fromSouth"]]
+
+	nIter = plotInfos[["nIter"]]
+	transect_index = plotInfos[["transect_index"]]
+
+	landscapeSize = plotInfos[["landscapeSize"]]
+	initOption = plotInfos[["initOption"]]
+	climateRegion = plotInfos[["climateRegion"]]
+	delta_t = plotInfos[["delta_t"]]
+
+	maxLat_dist = plotInfos[["maxLat_dist"]]
+
+	compute_tw = plotInfos[["compute_tw"]]
+	compute_asymSpeed = plotInfos[["compute_asymSpeed"]]
+
+	coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
+	count = 1
+	iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 coming from the first plot (black curve)
+
+	if (!is.null(subsetIter))
+	{
+		if (length(subsetIter) > length(coloursVec))
+			stop("Dimensions between subsetIter and coloursVec mismatch")
+		
+		if ((max(subsetIter) > length(coloursVec)))
+			stop("subsetIter goes beyond the length of coloursVec")
+		
+		coloursVec = coloursVec[subsetIter]
+		iterToPlot = iterToPlot[subsetIter]
+	}
+	
+	yMax = transect[(iteration %in% iterToPlot) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+		if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, max(basalArea)]
+
+	kernelType = kernelType_fct(species, length(speciesList))
+
+	if (!(formatPlot %in% c("tex", "pdf", "pdf-tex")))
+	{
+		warning("Format not coded, set to pdf by default")
+		formatPlot = "pdf"
+	}
+
+	if (!is.null(maxDistance))
+		transect = transect[distance <= maxDistance]
+
+	# Plot
+	if (formatPlot == "pdf")
+	{
+		pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".pdf"),
+			width = 17, height = 6)
+	} else if (formatPlot == "tex") {
+		tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"),
+			width = plotInfos[["width"]], height = plotInfos[["height"]])
+	} else {
+		for (format_pdfTex in c("pdf", "tex"))
+			plot_tw(transect, format_pdfTex, plotInfos) # Recursive call
+		return (0)
+	}
+
+	op = par(mar = c(4, 4, 0.8, 5.5), mgp = c(2.8, 0.8, 0), tck = -0.02, xpd = TRUE)
+	plot(transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
+			!is.na(basalArea) & if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
+			if (fromSouth[species]) distance else maxLat_dist - distance],
+		transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+			if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
+		type = "l", ylim = c(0, 1.01*yMax), las = 1, xlab = "Distance", ylab = "Basal area", lwd = 2)
+
+	## For loop on time
+	for (i in iterToPlot[2:length(iterToPlot)])
+	{
+		if (count > length(coloursVec))
+			print("*** Warning, curve will not be plotted because of undefined colour")
+		lines(transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+				if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
+				if (fromSouth[species]) distance else maxLat_dist - distance],
+			transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+				if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
+			lwd = 2, col = coloursVec[count])
+		count = count + 1
+	}
+
+	legend(x = "topright", inset = if (formatPlot == "tex") c(-0.2, 0) else c(-0.065, 0),
+		title = "Years", legend = round(iterToPlot*delta_t), lwd = 2, col = c("#000000", coloursVec), bty = "n")
+
+	dev.off()
+
+	## Plot speed on a 2nd graph
+	if (compute_tw[species])
+	{
+		if (smootherOption)
+			smo = smooth.spline(x = speed_dt[!is.na(speed), year], y = speed_dt[!is.na(speed), speed], spar = 0.5)
+		
+		if (formatPlot == "pdf")
+		{
+			pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
+				ifelse(smootherOption,"-smo", ""), ".pdf"), width = 6.25, height = 6.25/(17/6))
+		} else {
+			tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
+				ifelse(smootherOption,"-smo", ""), ".tex"), width = plotInfos[["width"]], height = plotInfos[["height"]])
+		}
+		op = par(mar = c(4, 4, 0.8, 5.5), mgp = c(2.8, 0.8, 0), tck = -0.02)
+
+		if (smootherOption)
+		{
+			plot(predict(smo, speed_dt[!is.na(speed), year]), type = "l", lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
+		} else {
+			plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
+				lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
+		}
+
+		if (compute_asymSpeed[species])
+			abline(h = asymSpeed, lwd = 1.5, lty = "dashed", col = "#135255")
+
+		dev.off()
+	}
+}
+
 ######## Part I: Population dynamics
 #### Load parameters c++
 ## Simulation parameters
@@ -146,21 +263,23 @@ nIter = as.integer(simulationParameters[parameters == "nIter", values])
 delta_t = (tmax - t0)/(nIter - 1)
 
 #! TEMPORARY ZONE
-# #? Orford region
-# pathSummary = 
+# #? Orford region, Acer saccharum alone
+# pathSummary = "../run/results/tmax2000_nIter6000_acsa_orford/summary/Acer_saccharum/"
+# initPath = "../run/data/initialCondition/Acer_saccharum_alone_300x11_Orford"
+# speciesList = "Acer_saccharum"
+# tmax = 2000
+# nIter = 6000
+# delta_t = (tmax - t0)/(nIter - 1)
+# compute_tw = TRUE
+# compute_asymSpeed = FALSE
+# fromSouth = TRUE
 
-# #? New-Jersey region
-# pathSummary = 
-
-# #* Init path
-# initPath = 
-
-# #* If files remained in original directories
-# pathSummary = "../run/results/summary/Abies_balsamea/"
-# initPath = "../run/data/initialCondition/Abies_balsamea/"
-
-# initPath = "../run/data/initialCondition/Acer_saccharum/"
-# pathSummary = "../run/results/summary/Acer_saccharum/"
+# #? Orford region, Abies balsamea and Acer saccharum
+# pathSummary = c("../run/results/tmax2000_nIter9001_abba-acsa_orford/summary/Abies_balsamea/",
+# 	"../run/results/tmax2000_nIter9001_abba-acsa_orford/summary/Acer_saccharum/")
+# initPath = c("../run/data/initialCondition/abba-acsa_300x11_Orford/Abies_balsamea/",
+# 	"../run/data/initialCondition/abba-acsa_300x11_Orford/Acer_saccharum/")
+# speciesList = c("Abies_balsamea", "Acer_saccharum")
 
 #! END TEMPORARY ZONE
 
@@ -174,25 +293,50 @@ if (any(!dir.exists(pathSummary)))
 
 ## Define for which species the travelling wave speed should be computed
 # Travelling wave speed
-compute_tw = c(TRUE, FALSE)
+compute_tw = c(FALSE, TRUE)
 names(compute_tw) = speciesList
 
 # Asymptotic speed of travelling wave (it does not make sense for accelerating travelling waves for instance)
-compute_asymSpeed = c(FALSE, TRUE)
+compute_asymSpeed = c(FALSE, FALSE)
 names(compute_asymSpeed) = speciesList
 
-## Define original position of the species
+## Define original position of the species and select transect
 fromSouth = c(FALSE, TRUE)
 names(fromSouth) = speciesList
 maxLat_dist = (nRow_land - 1)*deltaLat # maxLat_dist - distance = distance to the south for a northern species
 
-## Plotting options
+transect_index = 6
+
+## Plotting options and informations
 landscapeSize = paste0(nRow_land, "x", nCol_land)
-climateRegion = "Orford" # "Orford", "NewJersey"
+climateRegion = "NewJersey" # "Orford", "NewJersey"
 smootherOption = TRUE
 
+formatPlot = "pdf-tex" # "pdf", "tex", "pdf-tex"
+
+plotInfos = vector(mode = "list", length = 14)
+names(plotInfos) = c("speciesList", "species", "fromSouth", "nIter", "transect_index", "landscapeSize", "initOption",
+	"climateRegion", "delta_t", "maxLat_dist", "compute_tw", "compute_asymSpeed", "width", "height")
+
+plotInfos[["speciesList"]] = speciesList
+plotInfos[["fromSouth"]] = fromSouth
+
+plotInfos[["nIter"]] = nIter
+plotInfos[["transect_index"]] = transect_index
+
+plotInfos[["landscapeSize"]] = landscapeSize
+plotInfos[["climateRegion"]] = climateRegion
+plotInfos[["delta_t"]] = delta_t
+
+plotInfos[["maxLat_dist"]] = maxLat_dist
+
+plotInfos[["compute_tw"]] = compute_tw
+plotInfos[["compute_asymSpeed"]] = compute_asymSpeed
+
+plotInfos[["width"]] = 6
+plotInfos[["height"]] = 4
+
 #### Loop over species to load C++ results
-species = speciesList[1]
 for (species in speciesList)
 {
 	## Species-specific path
@@ -252,6 +396,9 @@ for (species in speciesList)
 		print(paste(round(i*100/length(init_col), 2), "% done"))
 	}
 
+	if ((transect_index < 1) | (transect_index > length(ls_origin)))
+		stop(paste0("The index transect_index must be between 1 and ", length(ls_origin), ". Currently, transect_index = ", transect_index))
+
 	## Compute basal area
 	transect_ns[, basalArea := sumTrunkArea/plotArea_ha]
 
@@ -259,22 +406,14 @@ for (species in speciesList)
 	if (compute_tw[species])
 	{
 		# Common variables
-		threshold_BA = 0.1 # Required basal area to consider a plot is populated
-
-		## Data table for speed (keep only positive distance, going northward)
-		# Select transect
-		transect_index = 6
-
-		if ((transect_index < 1) | (transect_index > length(ls_origin)))
-			stop(paste0("The index transect_index must be between 1 and ", length(ls_origin), ". Currently, transect_index = ", transect_index))
+		threshold_BA = 0.01 # Required basal area to consider a plot is populated
 
 		# Subset data
 		speed_dt = transect_ns[(transectOrigin == ls_origin[transect_index]) & (basalArea > threshold_BA) &
 			(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), min(iteration, na.rm = TRUE), by = distance]
 
 		setnames(speed_dt, new = c("distance", "iteration"))
-		if (!fromSouth[species])
-			speed_dt = speed_dt[iteration > 0]
+		speed_dt = speed_dt[iteration > 0]
 		
 		setorder(speed_dt, -distance)
 		speed_dt[, year := iteration*delta_t]
@@ -295,71 +434,11 @@ for (species in speciesList)
 	}
 
 	## Plot travelling waves emanating from same origin, at different time 
-	# Common variables
-	coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
-	count = 1
-	iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 coming from the first plot (black curve)
-	
-	yMax = transect_ns[(iteration %in% iterToPlot) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-		(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), max(basalArea)]
+	plotInfos[["initOption"]] = initOption
+	plotInfos[["species"]] = species
 
-	kernelType = kernelType_fct(species, length(speciesList))
-	# Plot
-	pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".pdf"),
-		width = 17, height = 6)
-	# tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"),
-	# 	width = 4.5, height = 3)
-	op <- par(mar = c(3.5, 3.5, 0.8, 5.5), mgp = c(2.4, 0.8, 0), tck = -0.02, xpd = TRUE)
-	plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
-			!is.na(basalArea) & (ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)),
-			if (fromSouth[species]) distance else maxLat_dist - distance],
-		transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-			(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), basalArea],
-		type = "l", ylim = c(0, 1.01*yMax), las = 1, xlab = "Distance", ylab = "Basal area", lwd = 2)
+	plot_tw(transect = transect_ns, formatPlot = formatPlot, plotInfos = plotInfos)
 
-	## For loop on time
-	for (i in iterToPlot[2:length(iterToPlot)])
-	{
-		if (count > length(coloursVec))
-			print("*** Warning, curve will not be plotted because of undefined colour")
-		lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-				(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)),
-				if (fromSouth[species]) distance else maxLat_dist - distance],
-			transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-				(ifelse(fromSouth[species], signedDistance >= 0, signedDistance <= 0)), basalArea],
-			lwd = 2, col = coloursVec[count])
-		count = count + 1
-	}
-
-	legend(x = "topright", inset = c(-0.065, 0),
-		title = "Years", legend = round(iterToPlot*delta_t), lwd = 2, col = c("#000000", coloursVec), bty = "n")
-
-	dev.off()
-
-	## Plot speed on a 2nd graph
-	if (compute_tw[species])
-	{
-		if (smootherOption)
-			smo = smooth.spline(x = speed_dt[!is.na(speed), year], y = speed_dt[!is.na(speed), speed], spar = 0.5)
-		pdf(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
-			ifelse(smootherOption,"-smo", ""), ".pdf"), width = 17, height = 6)
-		# tikz(paste0("travellingWave_", species, "_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, "_speed",
-		# 	ifelse(smootherOption,"-smo", ""), ".tex"), width = 4.5, height = 3)
-		op <- par(mar = c(2.5, 2.5, 0.8, 0.8), mgp = c(1.5, 0.3, 0), tck = -0.015)
-
-		if (smootherOption)
-		{
-			plot(predict(smo, speed_dt[!is.na(speed), year]), type = "l", lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
-		} else {
-			plot(speed_dt[!is.na(speed), year], speed_dt[!is.na(speed), speed], type = "l",
-				lwd = 2, xlab = "Year", ylab = "speed (m/yr)", las = 1)
-		}
-
-		if (compute_asymSpeed[species])
-			abline(h = asymSpeed, lwd = 1.5, lty = "dashed", col = "#135255")
-
-		dev.off()
-	}
 	print(paste(species, "done"))
 }
 
@@ -401,7 +480,7 @@ maxLat_dist = (nRow_land - 1)*deltaLat
 pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 17, height = 6)
 # tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"), width = 4.5, height = 3)
 count = 1
-op <- par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
+op = par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
 plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), maxLat_dist - distance], # maxLat_dist - distance = distance to the south
 	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), basalArea],
 	type = "l", ylim = c(0, 7405), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
