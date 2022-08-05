@@ -108,10 +108,10 @@ plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIt
 
 	if (!is.null(subsetIter))
 	{
-		if (length(subsetIter) > length(coloursVec))
+		if (length(subsetIter) > length(coloursVec) + 1) # +1 coming from the first plot (black curve)
 			stop("Dimensions between subsetIter and coloursVec mismatch")
 		
-		if ((max(subsetIter) > length(coloursVec)))
+		if (max(subsetIter) > length(coloursVec) + 1) # +1 coming from the first plot (black curve)
 			stop("subsetIter goes beyond the length of coloursVec")
 		
 		coloursVec = coloursVec[subsetIter]
@@ -437,7 +437,7 @@ for (species in speciesList)
 	plotInfos[["initOption"]] = initOption
 	plotInfos[["species"]] = species
 
-	plot_tw(transect = transect_ns, formatPlot = formatPlot, plotInfos = plotInfos, subsetIter = c(1, 4:7))
+	plot_tw(transect = transect_ns, formatPlot = formatPlot, plotInfos = plotInfos)
 
 	print(paste(species, "done"))
 }
