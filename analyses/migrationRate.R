@@ -142,7 +142,7 @@ plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIt
 			width = plotInfos[["width"]], height = plotInfos[["height"]])
 	} else {
 		for (format_pdfTex in c("pdf", "tex"))
-			plot_tw(transect, format_pdfTex, plotInfos) # Recursive call
+			plot_tw(transect, format_pdfTex, plotInfos, maxDistance, subsetIter) # Recursive call
 		return (0)
 	}
 
@@ -437,7 +437,7 @@ for (species in speciesList)
 	plotInfos[["initOption"]] = initOption
 	plotInfos[["species"]] = species
 
-	plot_tw(transect = transect_ns, formatPlot = formatPlot, plotInfos = plotInfos)
+	plot_tw(transect = transect_ns, formatPlot = formatPlot, plotInfos = plotInfos, subsetIter = c(1, 4:7))
 
 	print(paste(species, "done"))
 }
