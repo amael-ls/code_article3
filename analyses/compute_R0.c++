@@ -2,6 +2,7 @@
 	This script is to compute R0 from Le Squin et. al, 2020, Climate-induced variation in the demography of 14 tree species is not sufficient to explain their distribution in eastern North America
 
 	To compile the program, use g++ -I /usr/local/boost_1_79_0 compute_R0.c++ -o test
+	To execute: ./test
 
 	I must admit that I did it quick and dirty, with global variables... All of them are for Acer saccharum
 */
@@ -49,8 +50,8 @@ double height_a = 0.4742;
 double height_b = 0.5743;
 
 // --- Height threshold (in m) and dbh threshold (in mm) at equilibrium for Abies balsamea in Orford
-double height_star_abies = 31.72;
-double dbh_star_abies = 614.4632; // 10^(1/b * (b - a + log(h)/log(10)))
+double height_star_abies = 31.72; // value based on a run with tmax = 2000, and nIter = 9001. Transect number 6, patch_id in [1600, 2601]
+double dbh_star_abies = 614.4632; // 10^(1/b * (b - a + log(h)/log(10))), with h = height_star_abies
 
 // Namespace
 using namespace boost::math::quadrature;
@@ -113,9 +114,9 @@ double crownArea(double dbh, double height_star) // dbh in mm, height_star in m
 	return M_PI*crownRadius*crownRadius;
 }
 
-double recruitment(double dbh)
+double recruitment_ratio_G(double dbh)
 {
-	return 0.0071*crownArea(dbh, height_star_abies);
+	return 0.0071*crownArea(dbh, height_star_abies)/growth_overstorey(dbh);
 }
 
 // --- Proportions survives from inf_bound to x
@@ -138,9 +139,19 @@ double prop(double x, double inf_bound, bool isUnderstorey)
 	return std::exp(-gauss_kronrod<double, 15>::integrate(ratio_overstorey, inf_bound, x, 5, 1e-9, &error));
 }
 
+double integrand(double dbh)
+{
+	return recruitment_ratio_G(dbh) * prop(dbh, dbh_star_abies, false);
+}
+
 int main()
 {
+	double error = 0;
 	double prop_under = prop(dbh_star_abies, 0, true);
+	double integ = gauss_kronrod<double, 15>::integrate(integrand, dbh_star_abies, 1500, 5, 1e-9, &error);
+	double total = prop_under * integ;
 	std::cout << prop_under << std::endl;
+	std::cout << integ << std::endl;
+	std::cout << "R0 = " << total << std::endl;
 	return 0;
 }
