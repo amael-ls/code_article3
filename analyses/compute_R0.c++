@@ -46,12 +46,15 @@ double B_C1 = 0.511;
 
 double T_param = 0.56;
 
-double height_a = 0.4742;
-double height_b = 0.5743;
+double height_a = 0.4742; // For Acer saccharum
+double height_b = 0.5743; // For Acer saccharum
 
 // --- Height threshold (in m) and dbh threshold (in mm) at equilibrium for Abies balsamea in Orford
 double height_star_abies = 31.72; // value based on a run with tmax = 2000, and nIter = 9001. Transect number 6, patch_id in [1600, 2601]
-double dbh_star_abies = 614.4632; // 10^(1/b * (b - a + log(h)/log(10))), with h = height_star_abies
+double dbh_star_acer = 614.4632; // 10^(1/b * (b - a + log(h)/log(10))), with h = height_star_abies
+
+// double height_star_abies = 20.03259; // Actually, this is for Acer, but I was too lazy to change any name in the program...
+// double dbh_star_acer = 276.0255; // 10^(1/b * (b - a + log(h)/log(10))), with h = height_star_acer
 
 // Namespace
 using namespace boost::math::quadrature;
@@ -141,14 +144,14 @@ double prop(double x, double inf_bound, bool isUnderstorey)
 
 double integrand(double dbh)
 {
-	return recruitment_ratio_G(dbh) * prop(dbh, dbh_star_abies, false);
+	return recruitment_ratio_G(dbh) * prop(dbh, dbh_star_acer, false);
 }
 
 int main()
 {
 	double error = 0;
-	double prop_under = prop(dbh_star_abies, 0, true);
-	double integ = gauss_kronrod<double, 15>::integrate(integrand, dbh_star_abies, 1500, 5, 1e-9, &error);
+	double prop_under = prop(dbh_star_acer, 0, true);
+	double integ = gauss_kronrod<double, 15>::integrate(integrand, dbh_star_acer, 1500, 5, 1e-9, &error);
 	double total = prop_under * integ;
 	std::cout << prop_under << std::endl;
 	std::cout << integ << std::endl;
