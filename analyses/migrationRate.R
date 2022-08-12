@@ -470,53 +470,6 @@ for (species in speciesList)
 #* ------------------------------------------------------------
 #! ------------------------------------------------------------
 
-#### ! CRASH TEST ZONE 0, ON ABBA, REMEMBER: distance is from the northest point of the transect
-#### Creating a modified distance. #? REMEMBER: distance is from the northest point of the transect
-# transect_ns[, newDist := ] # In the particular case initial condition = 100 northest rows
-
-#### Plot density of ABBA for the selected transect
-## Common variables
-coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
-count = 1
-iterToPlot = round(seq(0, nIter - 1, length.out = length(coloursVec) + 1)) # +1 comming from the first plot (black curve)
-
-## Plot
-kernelType = "abba-density_with-acsa" # "abba-density_alone" "abba-density_with-acsa"
-landscapeSize = paste0(nRow_land, "x", nCol_land)
-initOption = "280RowsInit" # "20RowsInit"
-climateRegion = "Orford" # "Orford", "NewJersey"
-
-transect_ns[(iteration == iterToPlot[length(iterToPlot)]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), range(basalArea)]
-
-# pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 4.5, height = 3)
-maxLat_dist = (nRow_land - 1)*deltaLat
-
-pdf(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, ".pdf"), width = 17, height = 6)
-# tikz(paste0("travellingWave_", landscapeSize,"_", initOption, "_", kernelType, "_", climateRegion, ".tex"), width = 4.5, height = 3)
-count = 1
-op = par(mar = c(2.5, 2.5, 0.8, 5.5), mgp = c(1.5, 0.3, 0), tck = -0.015)
-plot(transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), maxLat_dist - distance], # maxLat_dist - distance = distance to the south
-	transect_ns[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), basalArea],
-	type = "l", ylim = c(0, 7405), # transect_ns[transectOrigin == ls_origin[transect_index], max(basalArea, na.rm = TRUE)]
-	xlab = "Distance", ylab = "Basal area", lwd = 2)
-
-## For loop on time
-for (i in iterToPlot[2:length(iterToPlot)])
-{
-	if (count > length(coloursVec))
-		print("*** Warning, curve will not be plotted because of undefined colour")
-	lines(transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), maxLat_dist - distance],
-		transect_ns[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) & (signedDistance <= 0), basalArea],
-		lwd = 1, col = coloursVec[count])
-	count = count + 1
-}
-
-legend(x = 6250, y = 7405, , xpd = NA, # horiz = TRUE, x.intersp = 0.25,
-	title = "Years", legend = round(iterToPlot*delta_t), lwd = 1, col = c("#000000", coloursVec), bty = "n")
-
-dev.off()
-
-
 #### ! CRASH TEST ZONE 1, ON RASTER
 ## Load everything
 nbPatches = nRow_land*nCol_land
