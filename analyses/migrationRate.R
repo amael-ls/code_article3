@@ -293,23 +293,37 @@ if (any(!dir.exists(pathSummary)))
 
 ## Define for which species the travelling wave speed should be computed
 # Travelling wave speed
+# compute_tw = TRUE
+# compute_tw = FALSE
 compute_tw = c(FALSE, TRUE)
 names(compute_tw) = speciesList
 
 # Asymptotic speed of travelling wave (it does not make sense for accelerating travelling waves for instance)
+# compute_asymSpeed = FALSE
 compute_asymSpeed = c(FALSE, FALSE)
 names(compute_asymSpeed) = speciesList
 
 ## Define original position of the species and select transect
+# fromSouth = TRUE
+# fromSouth = FALSE
 fromSouth = c(FALSE, TRUE)
 names(fromSouth) = speciesList
 maxLat_dist = (nRow_land - 1)*deltaLat # maxLat_dist - distance = distance to the south for a northern species
 
 transect_index = 6
 
+if (length(compute_tw) != length(speciesList))
+	stop("Dimensions mismatch between `compute_tw` and species list")
+
+if (length(compute_asymSpeed) != length(speciesList))
+	stop("Dimensions mismatch between `compute_asymSpeed` and species list")
+
+if (length(fromSouth) != length(speciesList))
+	stop("Dimensions mismatch between `fromSouth` and species list")
+
 ## Plotting options and informations
 landscapeSize = paste0(nRow_land, "x", nCol_land)
-climateRegion = "NewJersey" # "Orford", "NewJersey"
+climateRegion = "Orford" # "Orford", "NewJersey"
 smootherOption = TRUE
 
 formatPlot = "pdf-tex" # "pdf", "tex", "pdf-tex"
@@ -437,7 +451,7 @@ for (species in speciesList)
 	plotInfos[["initOption"]] = initOption
 	plotInfos[["species"]] = species
 
-	plot_tw(transect = transect_ns, formatPlot = formatPlot, plotInfos = plotInfos)
+	plot_tw(transect = transect_ns, formatPlot = formatPlot, plotInfos = plotInfos) # subsetIter = c(1, 4:8)
 
 	print(paste(species, "done"))
 }
@@ -654,3 +668,50 @@ aa = aa[density > 1/plotArea]
 # plot(compReprod$time, compReprod$basalArea, type = "l", lwd = 2,
 # 	xlab = "Time", ylab = "Basal area")
 # dev.off()
+#### ! END CRASH TEST ZONE 2
+
+#### ! CRASH TEST ZONE 3
+kernel = function(d, p, u)
+	return (p/(pi*u*(1 + d^2/u)^(p + 1)))
+
+abba = function(x)
+	return (kernel(x, 0.6372, 813.1))
+
+acsa = function(x)
+	return (kernel(x, 2.015, 24355.4))
+
+ratio = function(x)
+	return(abba(x)/acsa(x))
+
+curve(ratio, 0, 1000, lwd = 2, col = "#F64905")
+curve(abba, 0, 200, lwd = 2, col = "#E28431")
+curve(acsa, 0, 200, lwd = 2, col = "#135255", add = TRUE)
+
+
+patches = ll[(patch_id > 1599) & (patch_id < 2602), unique(patch_id)]
+lim = length(patches)
+
+ll[patch_id == 1600]
+
+pdf("test.pdf", width = 18, height = 13)
+plot(ll[patch_id == patches[1], iteration], ll[patch_id == patches[1], height_star], type = "l", lwd = 0.5, ylim = c(0, 35))
+for (i in 2:lim)
+	lines(ll[patch_id == patches[i], iteration], ll[patch_id == patches[i], height_star], type = "l", lwd = 0.5)
+dev.off()
+
+ll[(patch_id > 1599) & (patch_id < 2602) & (iteration > 4000), mean(height_star)]
+
+# Compute diameter for an Abies balsamea of 31.72 m high
+heightToDBH = function(h, a, b) # Give the dbh in mm from height in m
+	return (10^(1/b*(b - a + log(h)/log(10))))
+
+DBH_to_height = function(dbh, a, b)
+	return (exp((a - b + b*log10(dbh))*log(10)));
+
+heightToDBH(31.72, 0.4742, 0.5743)
+R0 = 0.214645
+
+heightToDBH(20.03259, 0.4742, 0.5743)
+R0 = 3.43808
+
+DBH_to_height(heightToDBH(31.72, 0.4742, 0.5743), 0.4742, 0.5743) # Should be identity
