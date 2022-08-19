@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
 	{
 		Species* sp = new Species(*species_filenames_it, species_path, " = "); // Be extremely careful with the delimiter, especially white spaces
 		speciesList.emplace_back(sp);
+		std::cout << *sp << std::endl;
 	}
 
 	/***** Build forest and run simulation *****/
