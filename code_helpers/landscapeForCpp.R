@@ -72,7 +72,7 @@ writeLandscape_txt = function(values, outfileName = "../run/landscape.txt", sep 
 #### Common variables
 ## Folders
 loadPath = "../raw_data/"
-outputPath = "../run/data/landscape_300x11_abba-acsa/"
+outputPath = "../run/data/landscape_300x11_acsa_orford/"
 
 if (!dir.exists(outputPath))
 	dir.create(outputPath)
@@ -108,10 +108,10 @@ latMin = 45.345086
 latMax = 45.545086
 
 ## Define crop extent number 2 (Old Tappan Borough, NJ 07675, USA):
-# lonMin = -74
-# lonMax = -73.9
-# latMin = 41
-# latMax = 41.2
+lonMin = -74
+lonMax = -73.9
+latMin = 41
+latMax = 41.2
 
 crop_extent = ext(c(lonMin, lonMax, latMin, latMax))
 
@@ -149,23 +149,9 @@ crop_extent = ext(c(626881, 627106, 151133, 157253)) # order = xmin, xmax, ymin,
 # crop_extent = ext(c(626881, 626983, 151133, 151235))
 
 #? What follows is for the crop extent number 2 (Old Tappan Borough, NJ 07675, USA)
-# # For a 100 x 100 landscape
-# crop_extent = ext(c(xxx, xxx, xxx, xxx))
+# # For a 300 x 11 landscape
+crop_extent = ext(c(461382, 461605, -326635, -320561)) # order = xmin, xmax, ymin, ymax
 
-# # For a 200 x 7 landscape
-# crop_extent = ext(c(xxx, xxx, xxx, xxx))
-
-# # For a 100 x 5 landscape
-# crop_extent = ext(c(xxx, xxx, xxx, xxx))
-
-# # For a 10 x 100 landscape
-# crop_extent = ext(c(xxx, xxx, xxx, xxx))
-
-# # For a 20 x 20 landscape
-# crop_extent = ext(c(xxx, xxx, xxx, xxx))
-
-# # For a 5 x 5 landscape
-# crop_extent = ext(c(xxx, xxx, xxx, xxx))
 #! --- End crash test zone, to have a smaller landscape
 
 croppedClimate = crop(croppedClimate, crop_extent)
@@ -229,7 +215,7 @@ vals[row %in% seq(min(row), min(row) + 99), isPopulated := "true"]
 vals[row %in% seq(min(row), min(row) + 179), isPopulated := "true"]
 
 # Populations are at the 280 top lines of the landscape #! i.e., 90% of the 300*11 landscape, starting from the top
-vals[row %in% seq(min(row), min(row) + 279), isPopulated := "true"]
+vals[row %in% seq(min(row), min(row) + 269), isPopulated := "true"]
 
 # Populations are at the 100 bottom lines of the landscape
 vals[row %in% seq(max(row) - 99, max(row)), isPopulated := "true"]

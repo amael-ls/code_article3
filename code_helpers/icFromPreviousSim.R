@@ -131,6 +131,8 @@ speciesList = stringCleaner(speciesList, " ")
 pathCpp = "../"
 
 pathPopDyn = paste0(pathCpp, simulationParameters[parameters == "popDynFilePath", values], speciesList, "/")
+# pathPopDyn = c("../run/results/withoutMaxDisp/withoutMinAge/abba-acsa_newJersey/popDyn/Abies_balsamea/",
+# 	"../run/results/withoutMaxDisp/withoutMinAge/abba-acsa_newJersey/popDyn/Acer_saccharum/")
 path_ic = paste0(pathCpp, simulationParameters[parameters == "initPath", values], speciesList, "/")
 
 ## Files' patterns
@@ -183,14 +185,15 @@ if (!dir.exists(outputDir_env))
 
 ## Common variables
 # Select the iteration that will be the initial condition
-selectedIteration = 5200
+selectedIteration = 6750
 if (selectedIteration < saveFrom)
 	stop(paste("You must select an iteration >=", saveFrom))
 
 if (selectedIteration > nIter - 1)
-	stop(paste("You must select an iteration <=", nIter))
+	stop(paste("You must select an iteration <", nIter))
 
 if (selectedIteration %% freqSave)
+{}
 
 if ((saveOnlyLast) & (selectedIteration != nIter - 1) & (selectedIteration != 0))
 	stop(paste("Only the first and last iterations were saved. You must choose between 0 and", nIter - 1))
