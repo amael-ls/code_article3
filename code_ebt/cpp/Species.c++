@@ -119,40 +119,48 @@ Species::Species(std::string const& species_filename, std::string const& species
 	fecundity = speciesParams.get_val<double>("fecundity");
 	minAgeReproduction = speciesParams.get_val<double>("minAgeReproduction");
 
-	// --- Compute minimal size to reproduce
-	// ...... Define void *ptr for parameters
-	double allParameters[24] = {scaling_G_mu, scaling_G_sd,
-		scaling_dbh_mu_G, scaling_dbh_sd_G,
-		scaling_temp_mu_G, scaling_temp_sd_G,
-		scaling_precip_mu_G, scaling_precip_sd_G,
-		intercept_G, beta_dbh, beta_dbh_sq,
-		beta_T, beta_T_sq, beta_dbh_T, beta_dbh_T_sq, beta_dbh_sq_T, beta_dbh_sq_T_sq,
-		beta_P, beta_P_sq, beta_dbh_P, beta_dbh_P_sq, beta_dbh_sq_P, beta_dbh_sq_P_sq};
-	void *ptr = &allParameters;
+	if (minAgeReproduction != 0)
+	{
+		// --- Compute minimal size to reproduce
+		// ...... Define void *ptr for parameters
+		double allParameters[24] = {scaling_G_mu, scaling_G_sd,
+			scaling_dbh_mu_G, scaling_dbh_sd_G,
+			scaling_temp_mu_G, scaling_temp_sd_G,
+			scaling_precip_mu_G, scaling_precip_sd_G,
+			intercept_G, beta_dbh, beta_dbh_sq,
+			beta_T, beta_T_sq, beta_dbh_T, beta_dbh_T_sq, beta_dbh_sq_T, beta_dbh_sq_T_sq,
+			beta_P, beta_P_sq, beta_dbh_P, beta_dbh_P_sq, beta_dbh_sq_P, beta_dbh_sq_P_sq};
+		void *ptr = &allParameters;
 
-	// ...... Define solver parameters
-	std::string timeSpan = "[0, " + std::to_string(minAgeReproduction) + "]";
-	alglib::real_1d_array timeSpanArray(timeSpan.c_str());
-	alglib::real_1d_array y = "[0]"; // Initial condition
-	double eps = 0.00001;
-	double initialTimeStep = 0;
-	alglib::odesolverstate s;
-	alglib::ae_int_t m;
-	alglib::real_1d_array xtbl;
-	alglib::real_2d_array ytbl;
-	alglib::odesolverreport rep;
-	alglib::odesolverrkck(y, timeSpanArray, eps, initialTimeStep, s);
+		// ...... Define solver parameters
+		std::string timeSpan = "[0, " + std::to_string(minAgeReproduction) + "]";
+		alglib::real_1d_array timeSpanArray(timeSpan.c_str());
+		alglib::real_1d_array y = "[0]"; // Initial condition
+		double eps = 0.00001;
+		double initialTimeStep = 0;
+		alglib::odesolverstate s;
+		alglib::ae_int_t m;
+		alglib::real_1d_array xtbl;
+		alglib::real_2d_array ytbl;
+		alglib::odesolverreport rep;
+		alglib::odesolverrkck(y, timeSpanArray, eps, initialTimeStep, s);
 
-	// ...... Solve ds/dt = G(s, t)
-	alglib::odesolversolve(s, Species::growth_callback, ptr);
-	odesolverresults(s, m, xtbl, ytbl, rep);
+		// ...... Solve ds/dt = G(s, t)
+		alglib::odesolversolve(s, Species::growth_callback, ptr);
+		odesolverresults(s, m, xtbl, ytbl, rep);
 
-	// ...... Set minimal size to reproduce
-	if (*(ytbl[1]) < 0 || m != 2)
-		throw Except_Species(m, *(ytbl[1]));
+		// ...... Set minimal size to reproduce
+		if (*(ytbl[1]) < 0 || m != 2)
+			throw Except_Species(m, *(ytbl[1]));
 	
-	minDbhReproduction = *(ytbl[1]);
-	minHeightReproduction = std::exp((a - b + b*std::log10(minDbhReproduction))*std::log(10));
+		minDbhReproduction = *(ytbl[1]);
+		minHeightReproduction = std::exp((a - b + b*std::log10(minDbhReproduction))*std::log(10));
+	}
+	else
+	{
+		minDbhReproduction = 0;
+		minHeightReproduction = 0;
+	}
 
 	// Dispersal parameters, not necessarily all provided by the user. Note: I could have used a map to optimise the coding...
 	keysToRead = speciesParams_dispersal.get_val<std::string>("keysToRead");
