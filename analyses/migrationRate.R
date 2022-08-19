@@ -7,6 +7,7 @@
 library(data.table)
 library(tikzDevice)
 library(stringi)
+library(terra)
 # library(raster)
 
 #### Clear memory and graphs
@@ -264,12 +265,8 @@ delta_t = (tmax - t0)/(nIter - 1)
 
 #! TEMPORARY ZONE
 # #? Orford region, Acer saccharum alone
-# pathSummary = "../run/results/tmax2000_nIter6000_acsa_orford/summary/Acer_saccharum/"
-# initPath = "../run/data/initialCondition/Acer_saccharum_alone_300x11_Orford"
+# pathSummary = "../run/results/withMaxDisp/withoutMinAge/tmax1500_nIter6751_acsa_alone_orford_noFat/"
 # speciesList = "Acer_saccharum"
-# tmax = 2000
-# nIter = 6000
-# delta_t = (tmax - t0)/(nIter - 1)
 # compute_tw = TRUE
 # compute_asymSpeed = FALSE
 # fromSouth = TRUE
@@ -280,6 +277,16 @@ delta_t = (tmax - t0)/(nIter - 1)
 # initPath = c("../run/data/initialCondition/abba-acsa_300x11_Orford/Abies_balsamea/",
 # 	"../run/data/initialCondition/abba-acsa_300x11_Orford/Acer_saccharum/")
 # speciesList = c("Abies_balsamea", "Acer_saccharum")
+
+#? New Jersey region, Abies balsamea and Acer saccharum, restarted simulation (i.e., two parts)
+pathSummary = c("../run/results/mergedResults/summary/Abies_balsamea/",
+	"../run/results/mergedResults/summary/Acer_saccharum/")
+initPath = c("../run/data/initialCondition/abba-acsa_300x11_newJersey/Abies_balsamea/",
+	"../run/data/initialCondition/abba-acsa_300x11_newJersey/Acer_saccharum/")
+speciesList = c("Abies_balsamea", "Acer_saccharum")
+
+nIter = 13501
+tmax = 3000
 
 #! END TEMPORARY ZONE
 
@@ -323,7 +330,7 @@ if (length(fromSouth) != length(speciesList))
 
 ## Plotting options and informations
 landscapeSize = paste0(nRow_land, "x", nCol_land)
-climateRegion = "Orford" # "Orford", "NewJersey"
+climateRegion = "NewJersey" # "Orford", "NewJersey"
 smootherOption = TRUE
 
 formatPlot = "pdf-tex" # "pdf", "tex", "pdf-tex"
@@ -479,13 +486,11 @@ summary_dt = data.table(patch_id = integer(length = nbData), iteration = numeric
 	sumTrunkArea = numeric(length = nbData), totalDensity = numeric(length = nbData),
 	row = numeric(length = nbData), col = integer(length = nbData))
 
-pathSummary = "../cpp/summary/Acer_saccharum/"
-
 for (patch_id in 0:(nbPatches - 1))
 {
 	ind_start = patch_id*nIter + 1
 	ind_end = (patch_id + 1)*nIter
-	temporary = fread(paste0(pathSummary, summaryPattern, patch_id, ".txt"))
+	temporary = fread(paste0(pathSummary, "summary/", species, "/", summaryPattern, patch_id, ".txt"))
 	summary_dt[ind_start:ind_end, patch_id := ..patch_id]
 	summary_dt[ind_start:ind_end, c("iteration", "localSeedProduced", "height_star", "sumTrunkArea", "totalDensity") := temporary]
 }
@@ -498,27 +503,48 @@ summary_dt[, row := (patch_id - col)/nCol_land]
 summary_dt[, x := col*deltaLon]
 summary_dt[, y := (nRow_land - 1 - row)*deltaLat]
 
-coordinates(summary_dt) = ~ x + y
-gridded(summary_dt) = TRUE
-
 indices = seq(1, nbData, nIter) # iter = 0
 l_out = 10
 iterLoaded = round(seq(1, nIter - 1, length.out = l_out))
 summary_list_rs = vector(mode = "list", length = l_out + 1)
-summary_list_rs[[1]] = raster(summary_dt[indices, "basalArea"]) # iter = 0
+
+summary_list_rs[[1]] = rast(x = summary_dt[indices, .(x, y, basalArea, totalDensity, localSeedProduced, height_star)],
+	type = "xyz", crs = "EPSG:3799") # iter = 0
 
 for (i in 1:l_out)
 {
 	iter = iterLoaded[i]
 	indices = seq(iter + 1, nbData, nIter)
-	summary_list_rs[[i + 1]] = raster(summary_dt[indices, "basalArea"])
+	summary_list_rs[[i + 1]] = rast(x = summary_dt[indices, .(x, y, basalArea, totalDensity, localSeedProduced, height_star)],
+		type = "xyz", crs = "EPSG:3799") # raster of 4 layers
 }
+
+
+crop_extent = ext(summary_list_rs[[1]])
+
+pdf("0.pdf")
+par(mfrow = c(1, 4))
+plot(summary_list_rs[[1]][["basalArea"]], axes = FALSE, legend = FALSE)
+plot(summary_list_rs[[2]][["basalArea"]], axes = FALSE, legend = FALSE)
+plot(summary_list_rs[[5]][["basalArea"]], axes = FALSE, legend = FALSE)
+plot(summary_list_rs[[8]][["basalArea"]], axes = FALSE, legend = FALSE)
+dev.off()
+
+
+
+
+toto = sds(summary_list_rs)
+
+
+
+
 
 # Example of cropping
 crop_extent = extent(c(500, 1500, 500, 1500))
 
 # For not cropping
 crop_extent = extent(summary_list_rs[[1]])
+crop_extent = ext(summary_list_rs[[1]])
 
 pdf("0.pdf")
 plot(crop(summary_list_rs[[1]], crop_extent), legend = FALSE)
@@ -633,12 +659,15 @@ abba = function(x)
 acsa = function(x)
 	return (kernel(x, 2.015, 24355.4))
 
+kurtosis = function(p)
+	return (2*(p - 1)/(p - 2))
+
 ratio = function(x)
 	return(abba(x)/acsa(x))
 
-curve(ratio, 0, 1000, lwd = 2, col = "#F64905")
-curve(abba, 0, 200, lwd = 2, col = "#E28431")
-curve(acsa, 0, 200, lwd = 2, col = "#135255", add = TRUE)
+curve(ratio, 0, 10000, lwd = 2, col = "#F64905")
+curve(abba, 2000, 2005, lwd = 2, col = "#E28431", ylim = c(0, 2.4e-10))
+curve(acsa, 2000, 2005, lwd = 2, col = "#135255", add = TRUE)
 
 
 patches = ll[(patch_id > 1599) & (patch_id < 2602), unique(patch_id)]
