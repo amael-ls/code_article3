@@ -38,7 +38,7 @@ Population::Population(unsigned int const maxCohorts, Species const * const spec
 		throw (std::runtime_error (ss.str()));
 	}
 	
-	summary << "iteration localSeedProduced heigh_star sumTrunkArea totalDensity" << std::endl; // height_star not defined yet at time 0
+	summary << "iteration localSeedProduced height_star sumTrunkArea totalDensity" << std::endl; // height_star not defined yet at time 0
 	summary << m_currentIter << " " << m_localProducedSeeds << " " << NAN << " " <<
 		m_sumTrunkArea << " " << m_totalDensity << std::endl;
 
