@@ -65,25 +65,9 @@ checkOrder = function(dbh)
 	return (FALSE);
 }
 
-## Function to select kernel type
-kernelType_fct = function(species, nbSpecies)
-{
-	if (nbSpecies == 1)
-	{
-		if (species == "Abies_balsamea")
-			return ("fat-tailed")
-		
-		if (species == "Acer_saccharum")
-			return ("noFat")
-	}
-
-	if (nbSpecies == 2)
-		return ("abba-vs-acsa")
-
-	return (NULL);
-}
-
-plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIter = NULL)
+setorigin = list(plot_id = 2975)
+setorigin = list(row = 270, col = 5)
+plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIter = NULL, setorigin = NULL)
 {
 	# Common variables
 	speciesList = plotInfos[["speciesList"]]
@@ -94,6 +78,8 @@ plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIt
 	transect_index = plotInfos[["transect_index"]]
 
 	landscapeSize = plotInfos[["landscapeSize"]]
+	nRow_land = plotInfos[["nRow_land"]]
+	nCol_land = plotInfos[["nCol_land"]]
 	initOption = plotInfos[["initOption"]]
 	climateRegion = plotInfos[["climateRegion"]]
 	delta_t = plotInfos[["delta_t"]]
@@ -102,6 +88,8 @@ plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIt
 
 	compute_tw = plotInfos[["compute_tw"]]
 	compute_asymSpeed = plotInfos[["compute_asymSpeed"]]
+	
+	kernelType = plotInfos[["kernelType"]]
 
 	coloursVec = c("#071B1B", "#135255", "#637872", "#B2EF80", "#F7DFC0", "#CFA47D", "#E28431")
 	count = 1
@@ -118,11 +106,50 @@ plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIt
 		coloursVec = coloursVec[subsetIter]
 		iterToPlot = iterToPlot[subsetIter]
 	}
+
+	origin_dist = NULL
+	if (!is.null(setorigin))
+	{
+		if (!is.list(setorigin))
+			stop("setorigin must be a list containing one case among 1: (row, col), 2: distToNorth, 3: distToSouth, 4: plot_id")
+
+		if (length(setorigin) == 2)
+		{
+			keyName = names(setorigin)
+			if (!all(keyName %in% c("row", "col")))
+				stop("setorigin must contain row and col of origin")
+
+			row_id = setorigin[["row"]]
+			col_id = setorigin[["col"]]
+
+			if (row_id > nRow_land)
+				stop("row exceed landscape dimensions")
+
+			if (col_id > nCol_land)
+				stop("col exceed landscape dimensions")
+
+			plot_id_orig = row_id * nCol_land + col_id
+		}
+
+		if (length(setorigin) == 1)
+		{
+			keyName = names(setorigin)
+			if (keyName != "plot_id")
+				stop("setorigin must contain plot_id")
+			
+			plot_id_orig = setorigin[["plot_id"]]
+		}
+
+		if (!transect[transectOrigin == ls_origin[transect_index], plot_id_orig %in% patch_id])
+			stop("The plot_id does not belong to the selected transect!")
+
+		origin_dist = transect[patch_id == plot_id_orig, unique(distance)]
+		if (!fromSouth[species])
+			origin_dist = maxLat_dist - origin_dist
+	}
 	
 	yMax = transect[(iteration %in% iterToPlot) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
 		if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, max(basalArea)]
-
-	kernelType = kernelType_fct(species, length(speciesList))
 
 	if (!(formatPlot %in% c("tex", "pdf", "pdf-tex")))
 	{
@@ -143,30 +170,54 @@ plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIt
 			width = plotInfos[["width"]], height = plotInfos[["height"]])
 	} else {
 		for (format_pdfTex in c("pdf", "tex"))
-			plot_tw(transect, format_pdfTex, plotInfos, maxDistance, subsetIter) # Recursive call
+			plot_tw(transect, format_pdfTex, plotInfos, maxDistance, subsetIter, setorigin) # Recursive call
 		return (0)
 	}
 
 	op = par(mar = c(4, 4, 0.8, 5.5), mgp = c(2.8, 0.8, 0), tck = -0.02, xpd = TRUE)
-	plot(transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
-			!is.na(basalArea) & if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
-			if (fromSouth[species]) distance else maxLat_dist - distance],
-		transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-			if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
-		type = "l", ylim = c(0, 1.01*yMax), las = 1, xlab = "Distance", ylab = "Basal area", lwd = 2)
+	if (!is.null(origin_dist))
+	{
+		plot(transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
+				!is.na(basalArea) & if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
+				if (fromSouth[species]) distance - origin_dist else maxLat_dist - distance - origin_dist],
+			transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+				if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
+			type = "l", ylim = c(0, 1.01*yMax), las = 1,
+			xlab = "Distance from leading edge (orange point in Fig. \\ref{fig::initLandscape})", ylab = "Basal area", lwd = 2)
+	} else {
+		plot(transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) &
+				!is.na(basalArea) & if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
+				if (fromSouth[species]) distance else maxLat_dist - distance],
+			transect[(iteration == iterToPlot[1]) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+				if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
+			type = "l", ylim = c(0, 1.01*yMax), las = 1,
+			xlab = "Distance from leading edge (orange point in Fig. \\ref{fig::initLandscape})", ylab = "Basal area", lwd = 2)
+	}
 
 	## For loop on time
 	for (i in iterToPlot[2:length(iterToPlot)])
 	{
 		if (count > length(coloursVec))
 			print("*** Warning, curve will not be plotted because of undefined colour")
-		lines(transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-				if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
-				if (fromSouth[species]) distance else maxLat_dist - distance],
-			transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
-				if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
-			lwd = 2, col = coloursVec[count])
+
+		if (!is.null(origin_dist))
+		{
+			lines(transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+					if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
+					if (fromSouth[species]) distance - origin_dist else maxLat_dist - distance - origin_dist],
+				transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+					if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
+				lwd = 2, col = coloursVec[count])
 		count = count + 1
+		} else {
+			lines(transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+					if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0,
+					if (fromSouth[species]) distance else maxLat_dist - distance],
+				transect[(iteration == i) & (transectOrigin == ls_origin[transect_index]) & !is.na(basalArea) &
+					if (fromSouth[species]) signedDistance >= 0 else signedDistance <= 0, basalArea],
+				lwd = 2, col = coloursVec[count])
+			count = count + 1
+		}
 	}
 
 	legend(x = "topright", inset = if (formatPlot == "tex") c(-0.2, 0) else c(-0.065, 0),
@@ -174,7 +225,7 @@ plot_tw = function(transect, formatPlot, plotInfos, maxDistance = NULL, subsetIt
 
 	dev.off()
 
-	## Plot speed on a 2nd graph
+	## Plot speed on a 2nd graph, #! speed_dt is a global variable
 	if (compute_tw[species])
 	{
 		if (smootherOption)
@@ -264,12 +315,18 @@ nIter = as.integer(simulationParameters[parameters == "nIter", values])
 delta_t = (tmax - t0)/(nIter - 1)
 
 #! TEMPORARY ZONE
-# #? Orford region, Acer saccharum alone
-# pathSummary = "../run/results/withMaxDisp/withoutMinAge/tmax1500_nIter6751_acsa_alone_orford_noFat/"
+# #? Orford region, Acer saccharum alone, fat-tailed, no max disp, no min age
+# pathSummary = "../run/results/withoutMaxDisp/withoutMinAge/acsa_alone_orford_fat-tail/summary/Acer_saccharum/"
 # speciesList = "Acer_saccharum"
 # compute_tw = TRUE
 # compute_asymSpeed = FALSE
 # fromSouth = TRUE
+# speciesList = "Acer_saccharum"
+# names(compute_tw) = speciesList
+# names(compute_asymSpeed) = speciesList
+# names(fromSouth) = speciesList
+# tmax = 1500
+# nIter = 6751
 
 # #? Orford region, Abies balsamea and Acer saccharum
 # pathSummary = c("../run/results/tmax2000_nIter9001_abba-acsa_orford/summary/Abies_balsamea/",
@@ -279,14 +336,14 @@ delta_t = (tmax - t0)/(nIter - 1)
 # speciesList = c("Abies_balsamea", "Acer_saccharum")
 
 #? New Jersey region, Abies balsamea and Acer saccharum, restarted simulation (i.e., two parts)
-pathSummary = c("../run/results/mergedResults/summary/Abies_balsamea/",
-	"../run/results/mergedResults/summary/Acer_saccharum/")
-initPath = c("../run/data/initialCondition/abba-acsa_300x11_newJersey/Abies_balsamea/",
-	"../run/data/initialCondition/abba-acsa_300x11_newJersey/Acer_saccharum/")
-speciesList = c("Abies_balsamea", "Acer_saccharum")
+# pathSummary = c("../run/results/mergedResults/summary/Abies_balsamea/",
+# 	"../run/results/mergedResults/summary/Acer_saccharum/")
+# initPath = c("../run/data/initialCondition/abba-acsa_300x11_newJersey/Abies_balsamea/",
+# 	"../run/data/initialCondition/abba-acsa_300x11_newJersey/Acer_saccharum/")
+# speciesList = c("Abies_balsamea", "Acer_saccharum")
 
-nIter = 13501
-tmax = 3000
+# nIter = 13501
+# tmax = 3000
 
 #! END TEMPORARY ZONE
 
@@ -346,6 +403,8 @@ plotInfos[["nIter"]] = nIter
 plotInfos[["transect_index"]] = transect_index
 
 plotInfos[["landscapeSize"]] = landscapeSize
+plotInfos[["nRow_land"]] = nRow_land
+plotInfos[["nCol_land"]] = nCol_land
 plotInfos[["climateRegion"]] = climateRegion
 plotInfos[["delta_t"]] = delta_t
 
@@ -356,6 +415,8 @@ plotInfos[["compute_asymSpeed"]] = compute_asymSpeed
 
 plotInfos[["width"]] = 6
 plotInfos[["height"]] = 4
+
+plotInfos[["kernelType"]] = "2Dt_abba-vs-acsa" # "2Dt", "gaussian", "2Dt_abba-vs-acsa"
 
 #### Loop over species to load C++ results
 for (species in speciesList)
@@ -405,7 +466,7 @@ for (species in speciesList)
 		for (row in 0:(nRow_land - 1))
 		{
 			patch_id = init_col[i] + row*nCol_land
-			temporary = fread(paste0(pathSummary_current, summaryPattern, patch_id, ".txt"))
+			temporary = fread(paste0(pathSummary_current, summaryPattern, patch_id, ".txt"))[1:nIter]
 			transect_ns[ind_start:ind_end, patch_id := ..patch_id]
 			transect_ns[ind_start:ind_end, c("iteration", "localSeedProduced", "height_star", "sumTrunkArea", "totalDensity") := temporary]
 			transect_ns[ind_start:ind_end, distance := abs(currentRow - row)*deltaLat]
